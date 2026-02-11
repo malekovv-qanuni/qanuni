@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "Bash(git checkout:*)",
+      "Bash(dir:*)",
+      "Bash(taskkill:*)",
+      "Bash(npx kill-port:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill -9)",
+      "Bash(powershell -Command:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

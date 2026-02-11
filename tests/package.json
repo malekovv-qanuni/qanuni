@@ -1,0 +1,19 @@
+{
+  "name": "qanuni-tests",
+  "version": "40.3.1",
+  "description": "Qanuni Legal Practice Management - Test Suite",
+  "scripts": {
+    "test": "jest --verbose",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "sql.js": "^1.10.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "verbose": true,
+    "testTimeout": 30000
+  }
+}
