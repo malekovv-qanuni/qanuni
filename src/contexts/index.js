@@ -3,7 +3,6 @@ import { NotificationProvider } from './NotificationContext';
 import { TimerProvider } from './TimerContext';
 import { AppProvider } from './AppContext';
 import { DataProvider } from './DataContext';
-import { EntityDataProvider } from './EntityDataContext';
 import { UIProvider } from './UIContext';
 import { FilterProvider } from './FilterContext';
 import { ReportProvider } from './ReportContext';
@@ -15,7 +14,6 @@ export { useNotification } from './NotificationContext';
 export { useTimer } from './TimerContext';
 export { useApp } from './AppContext';
 export { useData } from './DataContext';
-export { useEntityData } from './EntityDataContext';
 export { useUI } from './UIContext';
 export { useFilter } from './FilterContext';
 export { useReport } from './ReportContext';
@@ -27,23 +25,21 @@ export const ContextProviders = ({ children }) => {
   return (
     <AppProvider>
       <DataProvider>
-        <EntityDataProvider>
-          <NotificationProvider>
-            <UIProvider>
-              <FilterProvider>
-                <ReportProvider>
-                  <DialogProvider>
-                    <CalendarProvider>
-                      <TimerProvider>
-                        {children}
-                      </TimerProvider>
-                    </CalendarProvider>
-                  </DialogProvider>
-                </ReportProvider>
-              </FilterProvider>
-            </UIProvider>
-          </NotificationProvider>
-        </EntityDataProvider>
+        <NotificationProvider>
+          <UIProvider>
+            <FilterProvider>
+              <ReportProvider>
+                <DialogProvider>
+                  <CalendarProvider>
+                    <TimerProvider>
+                      {children}
+                    </TimerProvider>
+                  </CalendarProvider>
+                </DialogProvider>
+              </ReportProvider>
+            </FilterProvider>
+          </UIProvider>
+        </NotificationProvider>
       </DataProvider>
     </AppProvider>
   );

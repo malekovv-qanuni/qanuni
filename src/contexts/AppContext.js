@@ -30,6 +30,14 @@ export const AppProvider = ({ children }) => {
   // Current module
   const [currentModule, setCurrentModule] = useState('dashboard');
 
+  // App loading state (Phase 3 - Session 13)
+  const [loading, setLoading] = useState(true);
+
+  // License state (Phase 3 - Session 13)
+  const [licenseStatus, setLicenseStatus] = useState(null);
+  const [licenseChecked, setLicenseChecked] = useState(false);
+  const [machineId, setMachineId] = useState('');
+
   // Persist language changes
   useEffect(() => {
     localStorage.setItem('language', language);
@@ -58,7 +66,16 @@ export const AppProvider = ({ children }) => {
     sidebarCollapsed,
     setSidebarCollapsed,
     currentModule,
-    setCurrentModule
+    setCurrentModule,
+    // App state (Phase 3 - Session 13)
+    loading,
+    setLoading,
+    licenseStatus,
+    setLicenseStatus,
+    licenseChecked,
+    setLicenseChecked,
+    machineId,
+    setMachineId
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

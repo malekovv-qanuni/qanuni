@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import {
   Plus, Users, Briefcase, Clock, Calendar, CalendarDays, FileText, BarChart3,
   Menu, X, Globe, Search, AlertTriangle, CheckCircle, ChevronRight, AlertCircle,
@@ -45,7 +45,14 @@ import GuidedTourSystem from './components/common/GuidedTour';
 
 const App = () => {
   // Navigation & sidebar (migrated to AppContext)
-  const { currentModule, setCurrentModule, sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const {
+    currentModule, setCurrentModule,
+    sidebarCollapsed, setSidebarCollapsed,
+    loading, setLoading,
+    licenseStatus, setLicenseStatus,
+    licenseChecked, setLicenseChecked,
+    machineId, setMachineId
+  } = useApp();
   // Data state (migrated to DataContext)
   const {
     clients, setClients, matters, setMatters, lawyers, setLawyers,
@@ -62,7 +69,6 @@ const App = () => {
   const { calendarView, setCalendarView, calendarDate, setCalendarDate } = useCalendar();
   // Selected matter (migrated to DialogContext)
   const { selectedMatter, setSelectedMatter } = useDialog('selectedMatter');
-  const [loading, setLoading] = useState(true);
   
   // Notification state (migrated to NotificationContext in v48.1)
   const { toast, showToast, hideToast, confirmDialog, showConfirm, hideConfirm } = useNotification();
@@ -70,8 +76,13 @@ const App = () => {
   // Timer state (migrated to TimerContext in v48.1)
   const { timerExpanded, setTimerExpanded } = useTimer();
 
-  // UI state (migrated to UIContext in v48.1 Phase 3c.4b)
-  const { forms, openForm, closeForm } = useUI();
+  // UI state (migrated to UIContext in v48.1 Phase 3c.4b, Session 13)
+  const {
+    forms, openForm, closeForm,
+    hasUnsavedChanges, setHasUnsavedChanges,
+    pendingNavigation, setPendingNavigation,
+    markFormDirty, clearFormDirty
+  } = useUI();
 
   // Modal hooks (migrated to UIContext - Phase 3c.4d)
   const company360Modal = useUIModal('company360Report');
@@ -80,19 +91,6 @@ const App = () => {
   const directorRegistryModal = useUIModal('directorRegistry');
   const widgetSettingsModal = useUIModal('widgetSettings');
 
-  // License state (v46.48)
-  const [licenseStatus, setLicenseStatus] = useState(null);
-  const [licenseChecked, setLicenseChecked] = useState(false);
-  const [machineId, setMachineId] = useState('');
-  
-  // Unsaved changes tracking
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState(null);
-  
-  // Track form dirty state
-  const markFormDirty = useCallback(() => setHasUnsavedChanges(true), []);
-  const clearFormDirty = useCallback(() => setHasUnsavedChanges(false), []);
-  
   // Handle navigation with unsaved changes warning
   const handleModuleChange = useCallback((newModule) => {
     if (hasUnsavedChanges) {
@@ -110,7 +108,7 @@ const App = () => {
     } else {
       setCurrentModule(newModule);
     }
-  }, [hasUnsavedChanges, showConfirm, hideConfirm]);
+  }, [hasUnsavedChanges, setPendingNavigation, showConfirm, setCurrentModule, setHasUnsavedChanges, hideConfirm]);
   
   // Data state — migrated to DataContext
   // Lookup data — migrated to DataContext

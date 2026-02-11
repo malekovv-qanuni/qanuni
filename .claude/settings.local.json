@@ -21,7 +21,8 @@
       "Bash(test:*)",
       "Bash(git status:*)",
       "Bash(Remove-Item \"C:\\\\Projects\\\\qanuni\\\\qanuni-test.db\" -ErrorAction SilentlyContinue)",
-      "Bash(ren:*)"
+      "Bash(ren:*)",
+      "Bash(del \"C:\\\\Projects\\\\qanuni\\\\src\\\\contexts\\\\EntityDataContext.js\")"
     ]
   }
 }

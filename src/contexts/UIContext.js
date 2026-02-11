@@ -4,6 +4,16 @@ const UIContext = createContext(null);
 
 export const UIProvider = ({ children }) => {
   // ========================================
+  // UNSAVED CHANGES TRACKING (Phase 3 - Session 13)
+  // ========================================
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
+
+  // Helper functions for form dirty state
+  const markFormDirty = useCallback(() => setHasUnsavedChanges(true), []);
+  const clearFormDirty = useCallback(() => setHasUnsavedChanges(false), []);
+
+  // ========================================
   // FORMS STATE (14 forms)
   // ========================================
 
@@ -202,6 +212,14 @@ export const UIProvider = ({ children }) => {
   }, []);
 
   const value = {
+    // Unsaved changes (Phase 3 - Session 13)
+    hasUnsavedChanges,
+    setHasUnsavedChanges,
+    pendingNavigation,
+    setPendingNavigation,
+    markFormDirty,
+    clearFormDirty,
+
     // Forms - grouped by type
     forms: {
       client: { isOpen: showClientForm, editing: editingClient, formData: clientFormData, setFormData: setClientFormData },
