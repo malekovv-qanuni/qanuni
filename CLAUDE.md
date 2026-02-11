@@ -1,709 +1,359 @@
-# QANUNI - Legal Practice Management System
+# Qanuni Project Overview
 
-## Project Overview
-Desktop-first legal ERP application for Lebanese law firms and MENA region. Built with Electron, React, SQLite, and Tailwind CSS. English UI with full Unicode support for Arabic data entry.
+**Version:** v48.9 (Phase 4 Complete - Production Infrastructure)
+**Status:** Production-ready backend, distribution preparation pending
+**Last Updated:** February 11, 2026 (Session 11)
 
-**Current Version:** v48.8-session10-complete
-**Last Updated:** February 11, 2026
-**Status:** Session 10 COMPLETE - Scale Testing & Performance Validation
+## Current State
 
-**REST API COMPLETE (Feb 10, 2026):** 21/21 modules refactored, 137/163 REST endpoints operational.
-Dual-mode architecture (Electron + Web) proven and scaled. Desktop app fully backward compatible.
+**Architecture:** Modular, hardened, production-grade
+- **Backend:** 21 IPC modules, 163 handlers, fully tested
+- **Database:** SQLite with atomic writes, migrations, integrity checks, crash recovery
+- **Tests:** 117 integration tests passing (100% pass rate)
+- **Scale:** Validated with 26,268 records, 5-508x faster than targets
+- **Infrastructure:** Migration versioning, crash recovery, file-based logging
 
-**Session 7 Complete (Feb 11, 2026):**
-- ✅ Manual UI verification (3 core forms tested in Electron)
-- ✅ Critical bug fixed: Timesheet validation mismatch (hours→minutes)
-- ✅ Web version operational (localhost:3000 + localhost:3001)
-- ✅ Core CRUD proven functional in browser
-- ✅ Integration tests: 117/117 passing
-- ✅ Tag: v48.5-session7-complete
+**Completed Phases (QANUNI_HARDENING_STRATEGY.md):**
+- ✅ Phase 1: Data Safety (atomic writes, proper IDs, validation)
+- ✅ Phase 2: Modular Backend (21 IPC modules, clean separation)
+- ✅ Phase 4: Production Infrastructure (migrations, integrity checks, crash recovery)
+- ✅ Phase 6: Scale Testing (26K records validated)
 
-**Session 6 Complete (Feb 11, 2026):**
-- ✅ Automated testing operational (test-frontend.mjs)
-- ✅ 21 tests passing (13 forms + workflow)
-- ✅ 30-second test runs (no manual clicking)
-- ✅ REST API fully validated
-- ✅ Tag: v48.5-session6-testing
+**Pending Phases:**
+- ⏳ Phase 3: Frontend Hardening (context state, on-demand loading, error boundaries)
+- ⏳ Phase 5: Code Cleanup (remove console.logs, dead code)
 
-**Session 4 Complete (Feb 11, 2026):**
-- ✅ Phase 3 COMPLETE: All 38 components migrated to apiClient
-- ✅ 7 batches executed (forms, lists, modules, corporate, reports)
-- ✅ ~186 window.electronAPI calls eliminated
-- ✅ api-client.js expanded from 156 to 200+ methods
-- ✅ Zero window.electronAPI calls remaining in src/components/
-- ✅ Integration tests: 117/117 passing
-- ✅ Zero regressions
-- ✅ Tag: v48.4-phase3-complete
+## Project Purpose
 
-**Session 3 Complete (Feb 11, 2026):**
-- ✅ Phase 1: api-client.js created (156 methods, dual-mode architecture)
-- ✅ Phase 2: App.js migrated to apiClient (66 calls replaced)
-- ✅ All method naming mismatches resolved
-- ✅ Tag: v48.2-session3-phase2-final
+Qanuni is a comprehensive legal practice management system (Legal ERP) built with Electron, React, and SQLite, targeting Lebanese law firms and the broader MENA region. Desktop-first strategy to prove concept before transitioning to web-based SaaS.
 
-**Session 2 Complete (Feb 10, 2026):**
-- ✅ All 21 IPC modules refactored to dual-mode (IPC + REST)
-- ✅ 137 REST endpoints operational (84% complete)
-- ✅ Express API server production-ready (port 3001)
-- ✅ Integration tests: 117/117 passing
-- ✅ Desktop app: Zero regressions
-- ✅ Tag: v48.2-session2-complete
+**Key Features:**
+- Bilingual Arabic/English with RTL layout support
+- Client and matter management with conflict checking
+- Court scheduling with Lebanese court system integration
+- Time tracking and sophisticated billing (hourly, fixed, retainer, success, hybrid)
+- Corporate secretary functions (13 Lebanese entity types, share transfers, filings)
+- Financial management (invoices, advances, expenses, reports)
+- Offline-capable desktop application
 
-**Session 9 Complete (Feb 11, 2026):**
-- ✅ Context migration: 27 states moved from App.js to contexts (82% reduction)
-- ✅ AppContext: currentModule, sidebarCollapsed with localStorage persistence
-- ✅ DataContext: 21 entity/lookup states (clients, matters, lawyers, etc.)
-- ✅ CalendarContext: calendarView, calendarDate
-- ✅ DialogContext: selectedMatter migrated
-- ✅ On-demand loading: Startup queries reduced from 20 to 8
-- ✅ Per-module data loading: 12 module-specific loaders with caching
-- ✅ Performance: Faster startup, lower memory usage
-- ✅ useState in App.js: 33 → 6 (only app-level concerns remain)
-- ✅ Tests: 117/117 passing, 0 regressions
-- ✅ Tag: v48.7-session9-complete
+## Technical Stack
 
-**Session 10 Complete (Feb 11, 2026):**
-- ✅ Scale testing: 26,268 test records generated (500 clients, 1K matters, 10K timesheets)
-- ✅ Performance benchmarks: All targets exceeded by 5-508x margins
-- ✅ Startup queries: 5.9ms (target < 3s, 508x faster)
-- ✅ Module loading: 86.8ms slowest (target < 1s, 11.5x faster)
-- ✅ UI workflows: 267ms all modules sequential (target < 2s, 7.5x faster)
-- ✅ Stress test: Zero degradation, SQLite caching improved performance
-- ✅ Memory: 12.6 MB total with all modules loaded
-- ✅ Production readiness: Validated for 10x current scale
-- ✅ Tests: 117/117 passing
-- ✅ Tag: v48.8-session10-complete
+**Core:**
+- Electron 32.2.7 (desktop app framework)
+- React 18 (frontend UI)
+- SQLite via sql.js (embedded database)
+- Tailwind CSS (styling)
 
-**Session 8 Complete (Feb 11, 2026):**
-- ✅ Backend validation: 15 update handlers validated
-- ✅ 22 validation schemas (3 new: share_transfer, filing, meeting)
-- ✅ Fixed 3 schema field mismatches preventing data loss
-- ✅ Structured error returns: All handlers return { success, error }
-- ✅ Frontend error handling: All 13 forms check result.success
-- ✅ Logging: Operational with 30-day retention
-- ✅ Tests: 117/117 passing
-- ✅ Tag: v48.6-session8-complete
+**Development:**
+- Node.js 20+
+- VS Code with PowerShell (Windows)
+- Git for version control
+- electron-builder for distribution
 
-**Immediate Work:** Session 11 planning
-
-**Next Session Options:**
-- Option A: Production Infrastructure (RECOMMENDED - migration versioning, DB integrity checks, crash recovery)
-- Option B: Complete Web Version (add 26 REST endpoints, full browser testing)
-- Option C: Distribution Preparation (clean console.logs, remove dead code, production build)
-
-**Context tracking:** Alert at 75% to create checkpoint
-
-**App.js Lines:** ~1,650
-**App.js useState:** 6 (Session 9 complete - 82% reduction, exceeded 71% target)
-
-> **Architectural Pattern (v48):** English UI with Unicode data support. Arabic data columns (`client_name_arabic`, `name_arabic`, `matter_name_arabic`) are retained for bilingual data entry – these store real user data, not UI translations. The UI translation layer (`translations.js`, `t[language]`, `language === 'ar'` ternaries, `isRTL` conditionals) has been fully removed.
-
----
-
-## 🔄 TWO-CHAT WORKFLOW (CRITICAL - READ FIRST)
-
-### Overview
-Development uses TWO Claude instances working together:
-1. **Claude Web Chat** (this chat) - Strategic planning, breaking down work
-2. **Claude Code Chat** (separate tool) - File operations, code execution
-3. **Malek** (you) - Bridge between the two
-
-### Role Definitions
-
-**Claude Web Chat (Strategic) - ME:**
-- Provides architectural guidance and planning
-- Breaks complex tasks into small, executable steps
-- **Provides ONE step at a time** (50-100 lines max)
-- Waits for user confirmation ("done", "next") before providing next step
-- **NEVER** provides multiple steps at once
-- **NEVER** tells user to upload files to Code Chat
-- Each step must be copy-paste ready for Code Chat
-
-**Claude Code Chat (Execution) - NOT ME:**
-- Performs file operations (create, edit, move files)
-- Executes code and commands
-- Receives instructions FROM user (copied from Web Chat)
-- Works on one step at a time
-
-**Malek (Bridge) - YOU:**
-- Gets one step from Web Chat (me)
-- Copies step to Code Chat for execution
-- Returns to Web Chat (me) with "done" or "next"
-- Repeats until task complete
-
-### Workflow Pattern
-
+**Architecture:**
 ```
-WEB CHAT (Planning - You're talking to me now)
-    ↓
-You: "Ready for next step"
-    ↓
-Me (Claude Web): Provides Step 1 ONLY (50-100 lines)
-    ↓
-You: Copy to Code Chat
-    ↓
-CODE CHAT (Execution - Different tool)
-    ↓
-Executes Step 1
-    ↓
-You: Return to Web Chat (me)
-    ↓
-You: "Done, next"
-    ↓
-Me (Claude Web): Provides Step 2 ONLY
-    ↓
-REPEAT until task complete
+qanuni/
+├── main.js                      # App lifecycle (150 lines)
+├── preload.js                   # IPC bridge
+├── electron/
+│   ├── database.js              # Atomic writes, transactions, integrity
+│   ├── logging.js               # File-based logging (30-day retention)
+│   ├── migrations.js            # 16 versioned migrations
+│   ├── schema.js                # 27 tables + seed data
+│   ├── validation.js            # Input validation schemas
+│   ├── crash-recovery.js        # Crash handling + reports (NEW in v48.9)
+│   └── ipc/                     # 21 modular IPC handlers
+│       ├── clients.js           # 6 handlers
+│       ├── lawyers.js           # 7 handlers
+│       ├── matters.js           # 6 handlers
+│       ├── diary.js             # 4 handlers
+│       ├── hearings.js          # 4 handlers
+│       ├── judgments.js         # 4 handlers
+│       ├── deadlines.js         # 6 handlers
+│       ├── tasks.js             # 4 handlers
+│       ├── timesheets.js        # 5 handlers
+│       ├── expenses.js          # 8 handlers
+│       ├── advances.js          # 10 handlers
+│       ├── invoices.js          # 8 handlers
+│       ├── appointments.js      # 4 handlers
+│       ├── lookups.js           # 9 handlers
+│       ├── conflict-check.js    # 2 handlers
+│       ├── corporate.js         # 24 handlers
+│       ├── trash.js             # 5 handlers
+│       ├── settings.js          # 22 handlers
+│       ├── reports.js           # 12 handlers
+│       ├── client-imports.js    # 2 handlers
+│       └── license.js           # Fail-closed licensing
+├── src/
+│   ├── App.js                   # Main React app (~4,000 lines)
+│   ├── constants/               # translations.js
+│   ├── utils/                   # validators, formatDate, generateId
+│   └── components/
+│       ├── common/              # Shared components
+│       ├── forms/               # ALL 13 form components
+│       ├── lists/               # 11 list components
+│       ├── modules/             # Full modules (Dashboard, Calendar, Reports)
+│       └── corporate/           # Corporate Secretary UI
+├── test-integration.js          # 117 integration tests
+└── PATTERNS.md                  # Code standards and conventions
 ```
 
-### Critical Rules for Claude Web Chat (Me)
+## Database Schema
 
-1. **ONE STEP ONLY** - Never provide Steps 1-5 in one response
-2. **WAIT FOR CONFIRMATION** - User says "done" before next step
-3. **SMALL CHUNKS** - Each step: 50-100 lines maximum
-4. **COPY-PASTE READY** - Complete code/command, not references
-5. **NO FILE UPLOAD INSTRUCTIONS** - Never tell user to upload docs to Code Chat
+**27 Tables:**
+- Core: clients, lawyers, matters, hearings, judgments, deadlines
+- Time & Billing: timesheets, expenses, advances, invoices
+- Organization: tasks, appointments, matter_diary
+- Corporate Secretary: corporate_entities, shareholders, directors, share_transfers, commercial_register_filings, company_meetings
+- Lookups: 13 lookup tables for courts, entity types, etc.
+- System: settings, schema_versions, conflict_check_log
 
-### Example Interaction
+**Key Features:**
+- Foreign key constraints enabled
+- Soft deletes (deleted_at column)
+- Atomic writes with temp file + rename pattern
+- WAL mode for crash safety
+- Integrity checks on startup
+- 16 versioned migrations tracked in schema_versions
 
-**✅ CORRECT:**
-```
-You: "Ready for Phase 1 Step 1"
+## IPC Architecture (Post-Hardening)
 
-Me (Claude Web): 
-"Step 1: Create src/api-client.js with boilerplate
+**Pattern (all 21 modules follow this):**
+```javascript
+ipcMain.handle('channel-name', logger.wrapHandler('channel-name', (event, data) => {
+  // 1. Validate input
+  const check = validation.check(data, 'entityType');
+  if (!check.valid) return check.result;
 
-[50 lines of complete code here]
+  // 2. Generate ID (for creates)
+  const id = database.generateId('PREFIX');
 
-Copy this to Code Chat. Tell me when done."
+  // 3. Execute with immediate save
+  database.execute('INSERT INTO ...', [...]);
 
-You: "Done"
-
-Me (Claude Web): 
-"Step 2: Add client methods
-
-[60 lines of complete code here]
-
-Copy this to Code Chat. Tell me when done."
-```
-
-**❌ WRONG:**
-```
-You: "Ready for Phase 1"
-
-Me (Claude Web): 
-"Here are Steps 1-10:
-Step 1: [code]
-Step 2: [code]
-Step 3: [code]
-..."
+  // 4. Return structured result
+  return { success: true, id };
+}));
 ```
 
-**❌ WRONG:**
-```
-Me (Claude Web): 
-"Upload these files to Code Chat:
-- file1.md
-- file2.md
-Then execute..."
-```
-
-### When to Use Each Chat
-
-**Use Web Chat (me) for:**
-- Planning and strategy
-- Breaking down complex features
-- Architectural decisions
-- Getting next step in a sequence
-- Creating checkpoints
-
-**Use Code Chat (not me) for:**
-- Creating/editing files
-- Running commands
-- Batch file operations
-- Executing the steps I provide
-
-### Checkpoint Workflow
-
-**After major milestones:**
-1. You complete several steps in Code Chat
-2. You return to Web Chat (me): "Phase X complete, create checkpoint"
-3. I create checkpoint document
-4. You start fresh Web Chat with checkpoint
-5. Continue with next phase
-
-### Integration with Project Files
-
-This workflow is documented in:
-- **CLAUDE.md** (this section - permanent reference)
-- **Checkpoint files** (SESSION_X_CHECKPOINT.md - session-specific)
-- **PATTERNS.md** (code patterns, separate from workflow)
-
-Every new chat should start with this workflow understanding.
-
----
-
-## Tech Stack
-- **Frontend:** React 18, Tailwind CSS
-- **Backend:** Electron, Node.js
-- **REST API:** Express.js (Sessions 1-2 COMPLETE)
-- **Database:** SQLite (via sql.js)
-- **Icons:** Lucide React
-- **Reports:** ExcelJS (spreadsheets), custom PDF generation
-- **Testing:** Custom integration test harness (test-integration.js)
-- **i18n:** English UI only (v48). Arabic data columns retained for bilingual data entry.
-
----
-
-## Hardening Strategy (Active)
-
-**Reference:** QANUNI_HARDENING_STRATEGY.md
-
-### Phase 1: Backend Hardening (v47.0) ✅ COMPLETE
-- ✅ Database integrity (atomic operations, transactions, WAL mode)
-- ✅ Logging infrastructure (file-based, crash handlers)
-- ✅ Input validation (22 entity schemas)
-  - client, matter, lawyer, hearing, judgment, deadline, task
-  - timesheet, expense, advance, invoice, appointment
-  - diary_entry, lookup_item, corporate_entity
-  - shareholder, director, currency, exchange_rate
-- ✅ IPC modularization (21 modules, 163 handlers)
-- ✅ Error handling (structured errors, fail-fast)
-- ✅ Integration tests (117 tests, 0 failures)
-
-### Phase 2: REST API Backend (v48.2) ✅ COMPLETE
-- ✅ Dual-mode architecture (IPC + REST)
-- ✅ Express API server (port 3001)
-- ✅ 137/163 REST endpoints (84% coverage)
-- ✅ Route modularization (11 route modules)
-- ✅ API documentation (API_ENDPOINTS.md)
-- ✅ Backward compatibility (desktop app unchanged)
-
-### Phase 3: Frontend API Integration (v48.4) ✅ COMPLETE
-- ✅ API client abstraction layer (src/api-client.js)
-- ✅ 200+ methods (dual-mode: Electron IPC + REST)
-- ✅ App.js migration (66 calls)
-- ✅ Component migration (38 files, ~186 calls)
-- ✅ Zero window.electronAPI calls in src/components/
-- ✅ Integration tests: 117/117 passing
-- ✅ Zero regressions
-
-**Phase 3 Statistics:**
-- **Files migrated:** 38 components
-- **Calls eliminated:** ~186 window.electronAPI calls
-- **Methods added:** ~50 new methods/aliases
-- **Batches executed:** 7 (forms, lists, modules, corporate, reports)
-- **Test results:** 117/117 passing (0 regressions)
-- **Duration:** ~3 hours across Sessions 3-4
-
-### Phase 4: Web Frontend Setup ⏳ NEXT
-- [ ] Install react-scripts, concurrently
-- [ ] Create public/index.html, src/index.js
-- [ ] Configure dual-mode routing
-- [ ] Test localhost:3000 + localhost:3001
-- [ ] Verify dual-mode switching
-
-### Phase 5: Testing & Bug Fixes ⏳ PLANNED
-- [ ] Claude in Chrome systematic testing
-- [ ] Generate comprehensive bug report
-- [ ] Fix identified issues
-- [ ] Desktop regression testing
-- [ ] Web functionality verification
-
-### Phase 6: State Management & Performance (v48.7) ✅ COMPLETE
-- ✅ Context migration (AppContext, DataContext, CalendarContext, DialogContext)
-- ✅ 27 states moved from App.js (82% reduction)
-- ✅ On-demand loading (startup: 8 queries, per-module: 12 loaders)
-- ✅ useState: 33 → 6
-
----
-
-## Architecture
-
-### Backend (Electron Main Process)
-
-```
-electron/
-├── database.js          # Atomic writes, safe IDs, transactions, WAL mode
-├── logging.js           # File-based logging, crash handlers, IPC wrapper
-├── validation.js        # Input validation (22 entity schemas)
-├── migrations.js        # Versioned migrations (16 migrations)
-├── schema.js            # 27 tables + seed data
-└── ipc/                 # 21 handler modules (163 handlers total)
-    ├── clients.js       # 6 handlers
-    ├── matters.js       # 6 handlers
-    ├── lawyers.js       # 7 handlers
-    ├── hearings.js      # 4 handlers
-    ├── judgments.js     # 4 handlers
-    ├── deadlines.js     # 6 handlers
-    ├── tasks.js         # 4 handlers
-    ├── timesheets.js    # 5 handlers
-    ├── expenses.js      # 8 handlers
-    ├── advances.js      # 10 handlers
-    ├── invoices.js      # 8 handlers
-    ├── appointments.js  # 4 handlers
-    ├── diary.js         # 4 handlers
-    ├── lookups.js       # 9 handlers
-    ├── conflict-check.js # 2 handlers
-    ├── corporate.js     # 24 handlers
-    ├── trash.js         # 5 handlers
-    ├── settings.js      # ~22 handlers
-    ├── reports.js       # ~12 handlers
-    ├── client-imports.js # 2 handlers
-    └── license.js       # Fail-closed licensing
-```
-
-### REST API (Express Server)
-
-```
-server/
-├── api.js               # Express app setup
-├── database.js          # Database initialization
-└── routes/              # 11 route modules (137 endpoints)
-    ├── clients.js       # Client CRUD + search
-    ├── matters.js       # Matter CRUD + related data
-    ├── lawyers.js       # Lawyer CRUD
-    ├── hearings.js      # Hearing CRUD
-    ├── judgments.js     # Judgment CRUD
-    ├── deadlines.js     # Deadline CRUD + status updates
-    ├── tasks.js         # Task CRUD
-    ├── timesheets.js    # Timesheet CRUD + unbilled
-    ├── expenses.js      # Expense CRUD + unbilled
-    ├── advances.js      # Advance CRUD + deductions
-    ├── invoices.js      # Invoice CRUD + generation
-    ├── appointments.js  # Appointment CRUD
-    ├── lookups.js       # Lookup data (courts, regions, etc.)
-    ├── conflict-check.js # Conflict checking + logging
-    ├── corporate.js     # Corporate entities (13 entity types)
-    ├── trash.js         # Soft delete recovery
-    ├── settings.js      # Settings CRUD
-    └── reports.js       # Report generation
-```
-
-### Frontend (React)
-
-```
-src/
-├── api-client.js        # 200+ dual-mode methods (Electron IPC + REST)
-├── App.js               # Main app, routing, state
-├── constants/           # translations.js (basic, pre-i18n)
-├── utils/               # validators, formatDate, generateId
-└── components/
-    ├── common/          # Shared components (FormField, ErrorBoundary, etc.)
-    ├── forms/           # 13 form components (all migrated to apiClient)
-    ├── lists/           # 11 list components (all migrated to apiClient)
-    ├── modules/         # Full modules (Dashboard, Calendar, Reports, etc.)
-    ├── corporate/       # Corporate Secretary (EntitiesList, EntityForm)
-    └── reports/corporate/ # Corporate report modals
-```
-
----
-
-## Session History
-
-### Session 9: State Management & Performance ✅ COMPLETE
-**Date:** February 11, 2026
-**Duration:** ~2 hours
-**Tag:** v48.7-session9-complete
-
-**Context Migration (82% reduction):**
-- AppContext: currentModule, sidebarCollapsed + localStorage persistence
-- DataContext: 21 entity/lookup states (clients, matters, lawyers, hearings, etc.)
-- CalendarContext: calendarView, calendarDate
-- DialogContext: selectedMatter migrated
-- App.js useState: 33 → 6 (only app-level concerns remain)
-
-**Performance Optimization:**
-- Startup queries reduced from 20 to 8 (essentials only)
-- Per-module data loading: 12 module-specific loaders
-- Caching: length === 0 guard prevents redundant reloads
-- Faster startup, lower memory usage
-
-**Files changed:** 6 (App.js, AppContext.js, DataContext.js, CalendarContext.js, DialogContext.js, api-client.js)
-**Tests:** 117/117 passing, 0 regressions
-
-**See:** SESSION_8_SUCCESS_REPORT.md
-
-### Session 7: Manual UI Verification + Web Version ✅ COMPLETE
-**Date:** February 11, 2026
-**Duration:** 90 minutes
-**Tag:** v48.5-session7-complete
-
-**Part 1 - Manual UI Verification (Electron):**
-- Tested 3 core forms: Client, Matter, Timesheet
-- Found and fixed critical timesheet validation bug
-- Bug: validation.js expected `hours` but form sent `minutes`
-- Fix: Updated schema field, added result.success check, updated test data
-- Created test-timesheet-ui.mjs for database verification
-
-**Part 2 - Web Version (Phase 4):**
-- Web development environment operational
-- API Server (localhost:3001) + React Dev Server (localhost:3000)
-- Core CRUD operations proven functional in browser
-- Known non-critical gaps: expense categories, corporate compliance endpoints
-
-**Files changed:** 4 (validation.js, TimesheetForm.js, test-frontend.mjs, timesheets.js)
-**Bugs found:** 1 critical (timesheet validation mismatch)
-**Bugs fixed:** 1
-
-**See:** SESSION_7_SUCCESS_REPORT.md
-
-### Session 4: Phase 3 - Component Migration ✅ COMPLETE
-**Date:** February 11, 2026  
-**Duration:** ~3 hours  
-**Tag:** v48.4-phase3-complete
-
-**Achievements:**
-- Migrated 38 components from window.electronAPI to apiClient
-- Eliminated ~186 window.electronAPI calls
-- Added ~50 new methods/aliases to api-client.js
-- 7 batches executed (incremental, no manual testing)
-- Integration tests: 117/117 passing throughout
-- Zero regressions
-
-**Batches:**
-1. Core forms (4 files): ClientForm, MatterForm, HearingForm, JudgmentForm - 25 calls
-2. Financial forms (5 files): TaskForm, DeadlineForm, TimesheetForm, ExpenseForm, AdvanceForm - 20 calls
-3. Other forms (2 files): InvoiceForm, AppointmentForm - 10 calls
-4. Core lists (2 files): MattersList, HearingsList - 4 calls
-5. Calendar lists (5 files): TasksList, DeadlinesList, TimesheetsList, ExpensesList, AdvancesList - 14 calls
-6. Other lists/modules (3 files): InvoicesList, AppointmentsList, ConflictCheckTool - 7 calls
-7. Corporate/reports/modules (17 files): EntityForm, EntitiesList, reports, Dashboard, Settings, etc. - 106 calls
-
-**Key Methods Added:**
-- Financial: getClientExpenseAdvance, getLawyerAdvance, addExpenseWithDeduction
-- Invoice: getInvoiceItems, generateInvoiceNumber, getUnbilledTime, getUnbilledExpenses
-- Corporate: Multiple entity-specific methods
-- Exports: exportToExcel, exportToPdf, exportExpensesToPDF
-- Settings: Multiple settings-related methods
-- Aliases: addClient, addHearing, addJudgment, addDeadline, addTask, addTimesheet, addExpense, addAdvance
-
-**Files changed:** 39 files (38 components + api-client.js)  
-**Net lines:** +800 (new methods in api-client.js)
-
-**See:** SESSION_4_PHASE3_COMPLETE_CHECKPOINT.md
-
-### Session 3: API Client Infrastructure ✅ COMPLETE
-**Date:** February 11, 2026  
-**Duration:** ~2 hours  
-**Tag:** v48.2-session3-phase2-final
-
-**Phase 1 Achievements:**
-- Created src/api-client.js (856 lines, 156 methods)
-- 137 dual-mode methods (Electron + Web)
-- 19 Electron-only stubs
-- Environment detection (isElectron)
-
-**Phase 2 Achievements:**
-- Migrated App.js to apiClient (66 calls replaced)
-- Fixed 34 missing methods (Round 1)
-- Fixed 54 method name mismatches (Round 2)
-- All 117 electronAPI calls verified against preload.js
-- Integration tests: 117/117 passing
-- Desktop app fully functional
-
-**See:** SESSION_3_PHASE3_CHECKPOINT.md
-
-### Session 2: REST API Backend - Full Scale ✅ COMPLETE
-**Date:** February 10-11, 2026  
-**Duration:** ~6 hours  
-**Tag:** v48.2-session2-complete
-
-**Achievements:**
-- Refactored all 21 IPC modules to dual-mode
-- 137/163 REST endpoints operational (84%)
-- Express API server production-ready
-- server/routes/ organized (11 route modules)
-- API_ENDPOINTS.md documentation created
-- Integration tests: 117/117 (0 regressions)
-- Desktop app: Fully backward compatible
-
-**Files changed:** 44 files  
-**Net lines:** +4,500 (all new REST functionality)
-
-**Remaining endpoints (26):**
-- 19 Electron-only handlers (export, backup, license)
-- 7 report generation endpoints (complex, deferred)
-
-**Decision:** 137/163 is sufficient. Remaining 26 are Electron-specific operations that don't map to web REST API.
-
-**See:** SESSION_2_COMPLETE.md
-
-### Session 1: REST API Backend - Proof of Concept ✅ COMPLETE
-**Date:** February 10, 2026  
-**Duration:** ~5 hours  
-**Tag:** v48.2-session1-rest-api
-
-**Achievements:**
-- Clients module refactored to dual-mode
-- Pattern proven and validated
-- Desktop app backward compatible
-- 6 REST endpoints working
-- Integration tests: 117/117 passing
-
-**See:** SESSION_1_CHECKPOINT.md
-
----
-
-## Workflow: Claude Web Chat ↔ Claude Code Chat
-
-### Session Start
-1. State what to build or fix
-2. Upload relevant files to **Claude Web Chat** (checkpoint docs, specific components if needed)
-3. Use **Claude Code Chat** to verify baseline: `node test-integration.js`
-
-### During Development (TWO-CHAT WORKFLOW)
-
-**Claude Web Chat (this chat):**
-- Provides one step at a time (50-100 lines)
-- Waits for "done, next" confirmation
-- Never dumps multiple steps at once
-
-**You (Malek):**
-- Get step from Web Chat
-- Copy to Code Chat for execution
-- Return to Web Chat with "done, next"
-
-**Claude Code Chat:**
-- Executes the step
-- Creates/edits files
-- Runs commands
-
-### Session End
-1. **Claude Code Chat**: Run `node test-integration.js` - must pass
-2. **Claude Code Chat**: Git commit with descriptive message and version tag
-3. **Claude Web Chat**: Create checkpoint document if major feature/refactoring completed
-4. **Claude Web Chat**: Update CLAUDE.md with new status/version info
-
-### Rules
-- NEVER use PowerShell for file edits - use Node.js scripts, VS Code, or **Claude Code Chat**
-- ALWAYS run `node test-integration.js` before committing (delegate to Claude Code Chat)
-- ALWAYS commit before `npm run dist`
-- Check KNOWN_FIXES.md before refactoring components
-- For Arabic text changes: use Node.js scripts with `\uXXXX` Unicode escapes
-- Run `node arabic-scan.js` after any batch file operations (delegate to Claude Code Chat)
-- **OUTPUT FILES BEFORE HITTING CONTEXT LIMITS** - don't lose work
-- **Use Claude Code Chat for executing scripts** - faster than download/run/upload cycle
-- **Use Claude Web Chat for coordinating multi-step refactoring** - better context retention
-- **ONE STEP AT A TIME** - Web Chat provides incremental instructions
-
----
-
-## Testing
-
-### Integration Test Harness
-```powershell
-node test-integration.js    # Run all 117 tests (~2 seconds)
-```
-
-### Manual UI Verification (Session 7+)
-```powershell
-node test-timesheet-ui.mjs  # End-to-end database verification for timesheets
-node test-frontend.mjs      # 21 automated REST API tests (requires API server running)
-```
-
-The test harness validates all 163 IPC handlers without launching Electron:
-- Creates in-memory SQLite database
-- Loads schema.js (27 tables + seed data)
-- Loads all 21 IPC modules with mocked Electron APIs
-- Verifies all 161 preload channels have registered handlers
-- Runs CRUD tests for every entity type
-- Validates response shapes (arrays, IDs, joins)
-- Checks dialog/export channels are registered
-
-**Rule: Run `node test-integration.js` before every commit. All tests must pass.**
-
----
+**Error Handling:**
+- Backend validates all inputs
+- Returns `{ success: false, error: 'message' }` on failure
+- All handlers wrapped with logging (`logger.wrapHandler`)
+- Frontend checks `result.success` before proceeding
+
+## Production Infrastructure (Phase 4 - v48.9)
+
+### Migration System
+- **File:** `electron/migrations.js`
+- **Tracking:** schema_versions table records applied migrations
+- **Safety:** Only runs pending migrations, idempotent
+- **Logging:** All migration execution logged with timestamps
+
+### Crash Recovery
+- **File:** `electron/crash-recovery.js` (NEW in v48.9)
+- **Handlers:** uncaughtException, unhandledRejection, before-quit
+- **Actions:** Logs error → Force saves database → Generates crash report → Exits cleanly
+- **Reports:** Saved to `%APPDATA%/Qanuni/logs/crash-TIMESTAMP.txt` with full context
+
+### Logging System
+- **File:** `electron/logging.js`
+- **Location:** `%APPDATA%/Qanuni/logs/qanuni-YYYY-MM-DD.log`
+- **Retention:** 30 days (auto-cleanup on startup)
+- **Levels:** error, warn, info, debug
+- **Features:** IPC wrapper, structured JSON, daily rotation
+
+### Database Safety
+- **Atomic Writes:** Temp file + rename (prevents corruption)
+- **Integrity Checks:** PRAGMA integrity_check on startup
+- **Transactions:** Multi-step operations wrapped in BEGIN/COMMIT
+- **Crash Safety:** Force save before exit, WAL mode
 
 ## Build Commands
-
 ```powershell
-npm run dev          # Development (production DB)
-npm run dev:test     # Development (test DB via --test-db flag)
-npm run api          # Start REST API server only
-npm run dev:web      # Start API + React (web mode) - Phase 4+
-npm run dist:clean   # Build for testing
-npm run dist         # Build for release
+# Development
+npm run dev          # Production database
+npm run dev:test     # Test database (--test-db flag)
 
-# MANDATORY before commit:
-node test-integration.js  # Must show 0 failures
+# Testing
+node test-integration.js              # Run 117 integration tests
+node generate-test-data.js            # Generate 26K test records
+node benchmark-performance.js         # Performance benchmarks
+node test-ui-performance.js           # UI workflow tests
 
-# After dist builds:
-git checkout preload.js   # Restore if modified by build
+# Distribution
+npm run dist:clean   # Clean build for testing
+npm run dist         # Production build with obfuscation
+
+# Post-distribution cleanup
+git checkout preload.js   # Restore after dist (obfuscation modifies source)
 ```
 
----
+## Critical Development Rules
 
-## Version History (Recent)
+### Testing First
+```powershell
+# MANDATORY before every commit
+node test-integration.js    # Must show 117/117 passing
+```
 
-| Version | Date | Changes |
-|---------|------|---------|
-| **v48.8-session10-complete** | **Feb 11, 2026** | **Session 10: Scale Testing & Performance Validation complete.** Generated 26K test records across 11 tables. Benchmark tests: startup 5.9ms (target < 3s), module loading 86.8ms max (target < 1s), UI workflows 267ms sequential (target < 2s). All targets exceeded by 5-508x margins. Stress test: zero degradation. Memory: 12.6 MB total. Production-scale validated with massive headroom for 10x growth. Scripts created: generate-test-data.js (718 lines), benchmark-performance.js (459 lines), test-ui-performance.js (339 lines). Tests: 117/117 passing. |
-| **v48.7-session9-complete** | **Feb 11, 2026** | **Session 9: State Management & Performance complete.** Context migration: 27 states moved from App.js (82% reduction - exceeded target). AppContext: currentModule, sidebarCollapsed + localStorage. DataContext: 21 entity/lookup states. CalendarContext: calendarView, calendarDate. DialogContext: selectedMatter. On-demand loading: startup queries 20→8 (only essentials). Per-module loaders: 12 modules load data when navigated to. Caching: length === 0 guard prevents reloads. Performance: faster startup, lower memory. useState: 33→6. Tests: 117/117 passing. |
-| **v48.6-session8-complete** | **Feb 11, 2026** | **Session 8: Phase 1 Core Reliability complete.** Backend validation: 15 update handlers now validated (appointments, advances, expenses, tasks, timesheets, diary, lookups, 6 corporate, 2 settings). Fixed 3 schema field mismatches that would have caused data loss (shareholder, director, currency). Added 3 new corporate schemas (share_transfer, filing, meeting) - 22 total schemas. Error handling: wrapHandler returns structured { success, error } instead of re-throwing. Frontend: All 13 forms check result.success before showing success toast. Logging: Verified operational with 30-day retention. Tests: 117/117 passing, 0 regressions. |
-| **v48.5-session7-complete** | **Feb 11, 2026** | **Session 7 COMPLETE** - Manual UI verification (3 forms tested in Electron). Critical timesheet validation bug found and fixed (schema expected `hours`, form sent `minutes`). Web version operational (localhost:3000 + localhost:3001). Core CRUD proven in browser. test-timesheet-ui.mjs created for database verification. validation.js contains 19 complete schemas - all entity types covered. Integration tests: 117/117 passing. See SESSION_7_SUCCESS_REPORT.md. |
-| **v48.5-session6-testing** | **Feb 11, 2026** | **Session 6 COMPLETE** - Automated frontend testing created. test-frontend.mjs runs 21 tests (13 forms + 8 workflow steps) in 30 seconds via REST API. All forms validated. Dependencies: node-fetch@2. Zero code changes needed - REST API fully functional. See SESSION_6_SUCCESS_REPORT.md. |
-| **v48.4-phase3-complete** | **Feb 11, 2026** | **Session 4 Phase 3 COMPLETE** - All 38 components migrated to apiClient. 7 batches executed (forms, lists, modules, corporate, reports). ~186 window.electronAPI calls eliminated. api-client.js expanded to 200+ methods. Zero window.electronAPI calls remaining in src/components/. Integration tests: 117/117 passing. Zero regressions. Ready for Phase 4 (Web Setup). |
-| **v48.2-session3-phase2-final** | **Feb 11, 2026** | **Session 3 Phase 2 COMPLETE** - api-client.js infrastructure complete (156 methods fully aligned with preload.js). App.js migrated to apiClient (66 calls replaced). Fixed naming mismatches: create→add, getX→getAllX, corporate renames. All electronAPI calls verified (117 unique calls). Integration tests: 117/117 passing. Desktop app fully functional. |
-| **v48.2-session3-phase1** | **Feb 11, 2026** | **Session 3 Phase 1 COMPLETE** - Created src/api-client.js (856 lines, 156 methods). 137 dual-mode methods (Electron + Web). 19 Electron-only stubs. |
-| **v48.2-session3-planning** | **Feb 11, 2026** | **Session 3 Planning COMPLETE** - 6-phase execution strategy documented. Incremental instruction approach designed. Ready for Phase 1 execution (create api-client.js with 156 dual-mode methods). See SESSION_3_CHECKPOINT_READY.md. |
-| **v48.2-session2-complete** | **Feb 10-11, 2026** | **REST API Session 2 COMPLETE** - All 21/21 modules refactored. 137/163 REST endpoints operational (84%). 5 batches executed. server/routes/ organized (11 route modules). API_ENDPOINTS.md created. Integration tests: 117/117. Zero regressions. Desktop fully backward compatible. See SESSION_2_COMPLETE.md. 22 commits. |
-| **v48.2-session1-rest-api** | **Feb 10, 2026** | **REST API Session 1 COMPLETE** - Proof of concept successful. Clients module refactored to dual-mode (IPC + REST). Express API server operational with 6 endpoints. Database dual-mode init working. Integration tests: 117/117. Desktop app: fully backward compatible. Pattern proven, ready to scale. See SESSION_1_CHECKPOINT.md. |
-| **v48.2-option-c** | **Feb 10, 2026** | **STRATEGIC SHIFT** - Pausing Phase 3c.7a at Step 1 to build REST API foundation. Option C execution: web version infrastructure + comprehensive automated testing. Sessions 1-4 planned (10-12 hours total). Phase 3c.7a Steps 2-4 will resume in Session 5. See SESSION_1_REST_API_PLAN.md. |
-| **v48.2-phase3c.6** | **Feb 10, 2026** | Phase 3c.6 COMPLETE - ReportContext + DialogContext migration + 16 backend bugs fixed. App.js: 35 useState (-72% from baseline). Fixed 11 Client 360 bugs, 2 XLSX import bugs, 1 Invoice Aging bug, 2 frontend null safety bugs. See PHASE3C_CHECKPOINT_MODALS_COMPLETE.md. |
-| **v48.0** | **Feb 9, 2026** | **COMPLETE** - Bilingual UI removal. 42 files refactored across 8 commits, -1,913 net lines. translations.js deleted. 7 batches: Forms (13), Lists (10), Modules (7), Corporate (2), Common (4), Reports/Corporate (4), Final cleanup (9). Arabic data columns retained (user data, not UI). v48-verify.js: 60/61 clean, 0 errors. See v48_COMPLETION_CHECKPOINT.md. |
-| v47.1 | Feb 9, 2026 | PHASE 3 PARTIAL - ErrorBoundary added (prevents white screens), license fail-closed (was fail-open), API wrapper created (not yet adopted), MatterForm Arabic field reverted. Critical architectural decision: v48 will remove bilingual UI (~1,500 lines) and align with industry standards. |
-| v47.0 | Feb 9, 2026 | HARDENED BASELINE - Phase 2 complete. Old 6,791-line main.js replaced with 21 modular IPC modules. 163 handlers, 117 integration tests. Validation fix: lawyer schema `name` -> `full_name`. |
+### IPC Pattern (Frontend → Backend)
+```javascript
+// ✅ CORRECT
+const data = await window.electronAPI.functionName(param);
 
----
+// ❌ WRONG
+const data = await window.electron.invoke('channel-name', param);
+```
 
-## Known Issues / TODO
+### Database Column Naming (INCONSISTENT!)
+| Table | English | Arabic |
+|-------|---------|--------|
+| lawyers | name | name_arabic |
+| lookup_* | name_en | name_ar |
+| clients | client_name | client_name_arabic |
+| matters | matter_name | matter_name_arabic |
 
-### Session 10: Choose Next Priority (~2-4 hours)
+**⚠️ ALWAYS verify against `CREATE TABLE` in `electron/schema.js` before writing queries.**
 
-**Option A: Complete Web Version**
-- [ ] Add 26 missing REST endpoints (primarily lookups and dashboard features)
-- [ ] Fix `/api/expenses/categories` endpoint (expense lookups)
-- [ ] Fix `/api/corporate/upcoming-compliance` endpoint (dashboard widget)
-- [ ] Test all 13 forms in web browser
-- [ ] Server-side validation logging
-- [ ] Web functionality verification
+**Lawyers special case:** DB stores `name`/`name_arabic`, queries alias to `full_name`/`full_name_arabic`, frontend sends `full_name`/`full_name_arabic`, validation uses `full_name`.
 
-**Option B: Production Infrastructure**
-- [ ] Migration versioning with schema_versions table
-- [ ] Database integrity checks on startup
-- [ ] Crash recovery system
-- [ ] Performance monitoring
-- [ ] Timeline: 2-3 hours
+### React Hooks Rule
+ALL hooks must be called BEFORE any early return (`if (!isOpen) return null`).
 
-**Option C: Scale Testing**
-- [ ] Create test data generator (500 clients, 1000 matters, 5000 timesheets)
-- [ ] Verify startup time < 3 seconds
-- [ ] Test memory usage under load
-- [ ] Validate all operations with large datasets
-- [ ] Timeline: 1-2 hours
+### Bilingual Display (Current Approach)
+```javascript
+// Lawyers
+{language === 'ar' ? (l.full_name_arabic || l.full_name) : l.full_name}
 
-### Completed (Session 9) ✅
-- [x] Context-based state management (AppContext, DataContext, CalendarContext)
-- [x] App.js useState reduction: 33 → 6 (82% reduction)
-- [x] On-demand data loading (startup: 8 queries, per-module: 12 loaders)
-- [x] Performance optimization (faster startup, lower memory)
-- [x] Sidebar state persistence (localStorage)
+// Lookups
+{language === 'ar' ? item.name_ar : item.name_en}
+```
 
-### Completed (Session 8) ✅
-- [x] Backend validation (22 schemas)
-- [x] Structured error returns
-- [x] Frontend error handling
-- [x] Production logging
+### Form Locations
+ALL forms live in `src/components/forms/` (13 forms). The old `src/forms/` directory was removed in v46.56.
 
-### Future (Post-Hardening)
-- Proper i18n framework (react-i18next) IF expanding to Francophone markets
-- French language support (but keep single data fields!)
+### Encoding Safety
+- NEVER use PowerShell for file edits with Arabic content
+- Use Node.js scripts or VS Code only
+- After batch file modifications, run Arabic integrity scan
+- NEVER deliver full JS files containing Arabic text - use Node.js scripts with \uXXXX escapes
+
+## Before Writing New Code
+
+Always verify existing patterns:
+```powershell
+# Check IPC pattern
+Select-String -Path "preload.js" -Pattern "similarFunction"
+
+# Check table schema (MANDATORY)
+Select-String -Path "electron\schema.js" -Pattern "CREATE TABLE.*tablename" -Context 0,15
+
+# Check validation
+Select-String -Path "electron\validation.js" -Pattern "entityType" -Context 0,10
+
+# Check similar component
+Get-ChildItem "src\components" -Recurse -Filter "*.js" | Select-String -Pattern "lawyers.map"
+```
+
+## Session Workflow (Claude Web + Claude Code)
+
+### Claude Web Chat (Strategic Planning)
+- Creates implementation plans with specs
+- Designs data structures, schemas, function signatures
+- Reviews outputs from Claude Code Chat
+- Updates documentation (CLAUDE.md, KNOWN_FIXES.md)
+- Makes go/no-go decisions
+
+### Malek (Coordinator)
+- Runs commands and tests
+- Uploads files for review
+- Relays between Claude Web and Claude Code
+- Executes git commits when approved
+- Makes final decisions on approach
+
+### Claude Code Chat (Code Execution)
+- Executes file operations
+- Creates/modifies files per specs
+- Runs encoding-safe operations
+- Tests implementations locally
+
+## Version History
+
+- **v48.9** (Feb 11, 2026) - Phase 4 complete: Production infrastructure
+- **v48.8** (Feb 11, 2026) - Phase 6: Scale testing (26K records validated)
+- **v48.2** - Session 9: Context migration, on-demand loading
+- **v47.0** - Phase 2 complete: Backend modularization (21 IPC modules)
+- **v46.56** - Forms consolidated to src/components/forms/
+- Earlier versions - Feature development, initial hardening
+
+## Known Issues & Decisions
+
+### Data Model Discussion Needed
+- Multiple clients can be on same matter (needs discussion on data model)
+- Currently matters have single client_id FK
+
+### i18n Status
+- Currently using inline ternaries for bilingual display
+- Full Arabic UI deferred to post-distribution
+- translations.js exists but incomplete/unused
+
+### Deferred Features
+- French language support (planned for MENA expansion)
 - Document management integration
-- AI integration (Qanuni AI - Arabic legal document processing)
-- Web version deployment (after completing REST endpoints)
-- Auto-update mechanism for distribution
-- Advanced conflict checking
+- Legal AI integration with Arabic law databases
+- Cloud deployment (after desktop proves market)
+
+## Next Steps
+
+**Immediate (Phase 5 - Code Cleanup):**
+- Remove console.log statements
+- Delete dead code (TimeDropdown.js, old comments)
+- Clean up unused imports
+- Professional production build
+
+**Short-term (Phase 3 - Frontend Hardening):**
+- Context-based state management (replace 70+ useState)
+- On-demand data loading per module
+- React error boundaries
+- Performance improvements
+
+**Medium-term (Distribution):**
+- Production build testing
+- Installer creation
+- User documentation
+- Distribution checklist
+
+## Success Metrics
+
+**Scale Testing (Session 10):**
+- 26,268 records generated
+- Startup: 5.9ms (target: 3000ms) - 508x faster
+- Module loading: 86.8ms max (target: 1000ms) - 11.5x faster
+- All operations < 100ms
+- Zero degradation under stress
+
+**Integration Tests:**
+- 117/117 passing (100% pass rate)
+- Cover all 21 IPC modules
+- Test database operations, validation, error handling
+
+**Production Readiness:**
+- ✅ No data loss on crash
+- ✅ Database corruption detected
+- ✅ All errors logged with context
+- ✅ Crash reports generated
+- ✅ Handles 10x current scale
+- ✅ Sub-second response times
+
+## Resources
+
+- **QANUNI_HARDENING_STRATEGY.md** - 6-phase improvement plan
+- **PATTERNS.md** - Code standards and conventions
+- **KNOWN_FIXES.md** - Bug fixes and solutions
+- **SESSION_XX_SUCCESS_REPORT.md** - Session completion reports
+- Lebanese court system documentation - Legal compliance reference
 
 ---
 
-*Last updated: February 11, 2026 - v48.8-session10-complete. Session 10 COMPLETE (Scale Testing). Performance validated: startup 5.9ms, modules 86.8ms max, workflows 267ms - all targets exceeded by 5-508x. Tests: 117/117. Ready for Session 11.*
+*For detailed session reports, see SESSION_XX_SUCCESS_REPORT.md files in project root.*

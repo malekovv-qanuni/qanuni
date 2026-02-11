@@ -573,7 +573,6 @@ const App = () => {
         const deadlinesData = await apiClient.getAllDeadlines();
         setDeadlines(deadlinesData || []);
       } catch (e) {
-        console.log('Deadlines API not available yet');
         setDeadlines([]);
       }
 
@@ -582,7 +581,6 @@ const App = () => {
         const corporateData = await apiClient.getAllCorporateEntities();
         setCorporateEntities(corporateData || []);
       } catch (e) {
-        console.log('Corporate entities API not available yet');
         setCorporateEntities([]);
       }
     } catch (error) {

@@ -187,18 +187,9 @@ const HearingForm = React.memo(({
       
       // TRIGGER: When purpose is "Judgment Pronouncement" - auto create pending judgment
       // Works for both add and edit (in case user changes purpose to Judgment Pronouncement)
-      console.log('DEBUG Judgment Pronouncement:', {
-        isJudgmentPronouncement,
-        judgment_date: formData.judgment_date,
-        hearingId,
-        purpose_id: formData.purpose_id,
-        purposeName: hearingPurposes.find(p => p.purpose_id == formData.purpose_id)?.name_en
-      });
-      
       if (isJudgmentPronouncement && formData.judgment_date) {
         // Check if judgment already exists for this hearing
         const existingJudgment = judgments.find(j => j.hearing_id == hearingId);
-        console.log('DEBUG: Creating judgment?', { existingJudgment, willCreate: !existingJudgment });
         if (!existingJudgment) {
           // Create pending judgment linked to this hearing
           const newJudgment = await electronAPI.addJudgment({
@@ -208,7 +199,6 @@ const HearingForm = React.memo(({
             expected_date: formData.judgment_date,
             status: 'pending'
           });
-          console.log('DEBUG: Judgment created:', newJudgment);
         }
       }
       
