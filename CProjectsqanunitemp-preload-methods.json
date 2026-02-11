@@ -1,0 +1,807 @@
+[
+  {
+    "name": "getDashboardStats",
+    "params": "",
+    "line": 5
+  },
+  {
+    "name": "getPendingInvoices",
+    "params": "",
+    "line": 6
+  },
+  {
+    "name": "getAllClients",
+    "params": "",
+    "line": 9
+  },
+  {
+    "name": "addClient",
+    "params": "data",
+    "line": 10
+  },
+  {
+    "name": "updateClient",
+    "params": "data",
+    "line": 11
+  },
+  {
+    "name": "deleteClient",
+    "params": "id",
+    "line": 12
+  },
+  {
+    "name": "importClientsExcel",
+    "params": "",
+    "line": 13
+  },
+  {
+    "name": "exportClientTemplate",
+    "params": "",
+    "line": 14
+  },
+  {
+    "name": "getLawyers",
+    "params": "",
+    "line": 17
+  },
+  {
+    "name": "getAllLawyers",
+    "params": "",
+    "line": 18
+  },
+  {
+    "name": "addLawyer",
+    "params": "data",
+    "line": 19
+  },
+  {
+    "name": "updateLawyer",
+    "params": "data",
+    "line": 20
+  },
+  {
+    "name": "deleteLawyer",
+    "params": "id",
+    "line": 21
+  },
+  {
+    "name": "checkLawyerUsage",
+    "params": "id",
+    "line": 22
+  },
+  {
+    "name": "reactivateLawyer",
+    "params": "id",
+    "line": 23
+  },
+  {
+    "name": "getAllMatters",
+    "params": "",
+    "line": 26
+  },
+  {
+    "name": "addMatter",
+    "params": "data",
+    "line": 27
+  },
+  {
+    "name": "updateMatter",
+    "params": "data",
+    "line": 28
+  },
+  {
+    "name": "deleteMatter",
+    "params": "id",
+    "line": 29
+  },
+  {
+    "name": "getRelatedMatters",
+    "params": "matterId",
+    "line": 30
+  },
+  {
+    "name": "checkFileNumberUnique",
+    "params": "fileNumber, matterId",
+    "line": 31
+  },
+  {
+    "name": "getMatterTimeline",
+    "params": "matterId",
+    "line": 34
+  },
+  {
+    "name": "addDiaryEntry",
+    "params": "data",
+    "line": 35
+  },
+  {
+    "name": "updateDiaryEntry",
+    "params": "data",
+    "line": 36
+  },
+  {
+    "name": "deleteDiaryEntry",
+    "params": "id",
+    "line": 37
+  },
+  {
+    "name": "getAllHearings",
+    "params": "",
+    "line": 40
+  },
+  {
+    "name": "addHearing",
+    "params": "data",
+    "line": 41
+  },
+  {
+    "name": "updateHearing",
+    "params": "data",
+    "line": 42
+  },
+  {
+    "name": "deleteHearing",
+    "params": "id",
+    "line": 43
+  },
+  {
+    "name": "getAllJudgments",
+    "params": "",
+    "line": 46
+  },
+  {
+    "name": "addJudgment",
+    "params": "data",
+    "line": 47
+  },
+  {
+    "name": "updateJudgment",
+    "params": "data",
+    "line": 48
+  },
+  {
+    "name": "deleteJudgment",
+    "params": "id",
+    "line": 49
+  },
+  {
+    "name": "getAllDeadlines",
+    "params": "",
+    "line": 52
+  },
+  {
+    "name": "addDeadline",
+    "params": "data",
+    "line": 53
+  },
+  {
+    "name": "updateDeadline",
+    "params": "data",
+    "line": 54
+  },
+  {
+    "name": "updateDeadlineStatus",
+    "params": "id, status",
+    "line": 55
+  },
+  {
+    "name": "deleteDeadline",
+    "params": "id",
+    "line": 56
+  },
+  {
+    "name": "getDeadlinesByJudgment",
+    "params": "judgmentId",
+    "line": 57
+  },
+  {
+    "name": "getAllTasks",
+    "params": "",
+    "line": 60
+  },
+  {
+    "name": "addTask",
+    "params": "data",
+    "line": 61
+  },
+  {
+    "name": "updateTask",
+    "params": "data",
+    "line": 62
+  },
+  {
+    "name": "deleteTask",
+    "params": "id",
+    "line": 63
+  },
+  {
+    "name": "getAllTimesheets",
+    "params": "",
+    "line": 66
+  },
+  {
+    "name": "addTimesheet",
+    "params": "data",
+    "line": 67
+  },
+  {
+    "name": "updateTimesheet",
+    "params": "data",
+    "line": 68
+  },
+  {
+    "name": "deleteTimesheet",
+    "params": "id",
+    "line": 69
+  },
+  {
+    "name": "getUnbilledTime",
+    "params": "clientId, matterId",
+    "line": 70
+  },
+  {
+    "name": "getAllExpenses",
+    "params": "",
+    "line": 73
+  },
+  {
+    "name": "addExpense",
+    "params": "data",
+    "line": 74
+  },
+  {
+    "name": "addExpenseWithDeduction",
+    "params": "data",
+    "line": 75
+  },
+  {
+    "name": "addExpensesBatch",
+    "params": "expenses",
+    "line": 76
+  },
+  {
+    "name": "updateExpense",
+    "params": "data",
+    "line": 77
+  },
+  {
+    "name": "deleteExpense",
+    "params": "id",
+    "line": 78
+  },
+  {
+    "name": "getUnbilledExpenses",
+    "params": "clientId, matterId",
+    "line": 79
+  },
+  {
+    "name": "exportExpensesToExcel",
+    "params": "data, options",
+    "line": 80
+  },
+  {
+    "name": "exportExpensesToPDF",
+    "params": "data, options",
+    "line": 81
+  },
+  {
+    "name": "getAllAdvances",
+    "params": "",
+    "line": 84
+  },
+  {
+    "name": "addAdvance",
+    "params": "data",
+    "line": 85
+  },
+  {
+    "name": "updateAdvance",
+    "params": "data",
+    "line": 86
+  },
+  {
+    "name": "deleteAdvance",
+    "params": "id",
+    "line": 87
+  },
+  {
+    "name": "getClientExpenseAdvance",
+    "params": "clientId, matterId",
+    "line": 88
+  },
+  {
+    "name": "getClientRetainer",
+    "params": "clientId, matterId",
+    "line": 89
+  },
+  {
+    "name": "getLawyerAdvance",
+    "params": "lawyerId",
+    "line": 90
+  },
+  {
+    "name": "deductFromAdvance",
+    "params": "advanceId, amount",
+    "line": 91
+  },
+  {
+    "name": "deductRetainer",
+    "params": "clientId, matterId, advanceType, amount",
+    "line": 92
+  },
+  {
+    "name": "getAllInvoices",
+    "params": "",
+    "line": 95
+  },
+  {
+    "name": "getInvoice",
+    "params": "id",
+    "line": 96
+  },
+  {
+    "name": "getInvoiceItems",
+    "params": "invoiceId",
+    "line": 97
+  },
+  {
+    "name": "createInvoice",
+    "params": "invoice, items",
+    "line": 98
+  },
+  {
+    "name": "updateInvoiceStatus",
+    "params": "id, status",
+    "line": 99
+  },
+  {
+    "name": "deleteInvoice",
+    "params": "id",
+    "line": 100
+  },
+  {
+    "name": "generateInvoiceNumber",
+    "params": "",
+    "line": 101
+  },
+  {
+    "name": "generateInvoicePdfs",
+    "params": "invoiceId, options",
+    "line": 102
+  },
+  {
+    "name": "getAllAppointments",
+    "params": "",
+    "line": 105
+  },
+  {
+    "name": "addAppointment",
+    "params": "data",
+    "line": 106
+  },
+  {
+    "name": "updateAppointment",
+    "params": "data",
+    "line": 107
+  },
+  {
+    "name": "deleteAppointment",
+    "params": "id",
+    "line": 108
+  },
+  {
+    "name": "getCourtTypes",
+    "params": "",
+    "line": 111
+  },
+  {
+    "name": "getRegions",
+    "params": "",
+    "line": 112
+  },
+  {
+    "name": "getHearingPurposes",
+    "params": "",
+    "line": 113
+  },
+  {
+    "name": "getTaskTypes",
+    "params": "",
+    "line": 114
+  },
+  {
+    "name": "getExpenseCategories",
+    "params": "",
+    "line": 115
+  },
+  {
+    "name": "addLookupItem",
+    "params": "type, data",
+    "line": 116
+  },
+  {
+    "name": "updateLookupItem",
+    "params": "type, data",
+    "line": 117
+  },
+  {
+    "name": "deleteLookupItem",
+    "params": "type, id",
+    "line": 118
+  },
+  {
+    "name": "getEntityTypes",
+    "params": "",
+    "line": 121
+  },
+  {
+    "name": "getAllCorporateEntities",
+    "params": "",
+    "line": 124
+  },
+  {
+    "name": "getCorporateEntity",
+    "params": "clientId",
+    "line": 125
+  },
+  {
+    "name": "addCorporateEntity",
+    "params": "data",
+    "line": 126
+  },
+  {
+    "name": "updateCorporateEntity",
+    "params": "data",
+    "line": 127
+  },
+  {
+    "name": "deleteCorporateEntity",
+    "params": "clientId",
+    "line": 128
+  },
+  {
+    "name": "getCompanyClientsWithoutEntity",
+    "params": "",
+    "line": 129
+  },
+  {
+    "name": "getCorporateClients",
+    "params": "",
+    "line": 130
+  },
+  {
+    "name": "getShareholders",
+    "params": "clientId",
+    "line": 133
+  },
+  {
+    "name": "addShareholder",
+    "params": "data",
+    "line": 134
+  },
+  {
+    "name": "updateShareholder",
+    "params": "data",
+    "line": 135
+  },
+  {
+    "name": "deleteShareholder",
+    "params": "id",
+    "line": 136
+  },
+  {
+    "name": "getTotalShares",
+    "params": "clientId",
+    "line": 137
+  },
+  {
+    "name": "getShareTransfers",
+    "params": "clientId",
+    "line": 140
+  },
+  {
+    "name": "addShareTransfer",
+    "params": "data",
+    "line": 141
+  },
+  {
+    "name": "updateShareTransfer",
+    "params": "data",
+    "line": 142
+  },
+  {
+    "name": "deleteShareTransfer",
+    "params": "id",
+    "line": 143
+  },
+  {
+    "name": "getDirectors",
+    "params": "clientId",
+    "line": 146
+  },
+  {
+    "name": "addDirector",
+    "params": "data",
+    "line": 147
+  },
+  {
+    "name": "updateDirector",
+    "params": "data",
+    "line": 148
+  },
+  {
+    "name": "deleteDirector",
+    "params": "id",
+    "line": 149
+  },
+  {
+    "name": "getFilings",
+    "params": "clientId",
+    "line": 152
+  },
+  {
+    "name": "addFiling",
+    "params": "data",
+    "line": 153
+  },
+  {
+    "name": "updateFiling",
+    "params": "data",
+    "line": 154
+  },
+  {
+    "name": "deleteFiling",
+    "params": "id",
+    "line": 155
+  },
+  {
+    "name": "getMeetings",
+    "params": "clientId",
+    "line": 158
+  },
+  {
+    "name": "addMeeting",
+    "params": "data",
+    "line": 159
+  },
+  {
+    "name": "updateMeeting",
+    "params": "data",
+    "line": 160
+  },
+  {
+    "name": "deleteMeeting",
+    "params": "id",
+    "line": 161
+  },
+  {
+    "name": "getUpcomingCompliance",
+    "params": "daysAhead",
+    "line": 164
+  },
+  {
+    "name": "conflictCheck",
+    "params": "searchTerms",
+    "line": 167
+  },
+  {
+    "name": "logConflictCheck",
+    "params": "data",
+    "line": 168
+  },
+  {
+    "name": "generateReport",
+    "params": "reportType, filters",
+    "line": 171
+  },
+  {
+    "name": "getSettings",
+    "params": "",
+    "line": 174
+  },
+  {
+    "name": "getSetting",
+    "params": "key",
+    "line": 175
+  },
+  {
+    "name": "saveSetting",
+    "params": "key, value, type, category",
+    "line": 176
+  },
+  {
+    "name": "getFirmInfo",
+    "params": "",
+    "line": 177
+  },
+  {
+    "name": "saveFirmInfo",
+    "params": "data",
+    "line": 178
+  },
+  {
+    "name": "getCurrencies",
+    "params": "",
+    "line": 181
+  },
+  {
+    "name": "addCurrency",
+    "params": "data",
+    "line": 182
+  },
+  {
+    "name": "updateCurrency",
+    "params": "data",
+    "line": 183
+  },
+  {
+    "name": "deleteCurrency",
+    "params": "id",
+    "line": 184
+  },
+  {
+    "name": "getExchangeRates",
+    "params": "",
+    "line": 187
+  },
+  {
+    "name": "addExchangeRate",
+    "params": "data",
+    "line": 188
+  },
+  {
+    "name": "updateExchangeRate",
+    "params": "data",
+    "line": 189
+  },
+  {
+    "name": "deleteExchangeRate",
+    "params": "id",
+    "line": 190
+  },
+  {
+    "name": "getExchangeRateForDate",
+    "params": "from, to, date",
+    "line": 191
+  },
+  {
+    "name": "backupDatabase",
+    "params": "",
+    "line": 194
+  },
+  {
+    "name": "restoreDatabase",
+    "params": "filePath",
+    "line": 195
+  },
+  {
+    "name": "exportAllData",
+    "params": "",
+    "line": 196
+  },
+  {
+    "name": "getAutoBackupStatus",
+    "params": "",
+    "line": 199
+  },
+  {
+    "name": "saveAutoBackupSettings",
+    "params": "settings",
+    "line": 200
+  },
+  {
+    "name": "runAutoBackup",
+    "params": "",
+    "line": 201
+  },
+  {
+    "name": "selectBackupFolder",
+    "params": "",
+    "line": 202
+  },
+  {
+    "name": "getBackupHistory",
+    "params": "",
+    "line": 203
+  },
+  {
+    "name": "openBackupFolder",
+    "params": "",
+    "line": 204
+  },
+  {
+    "name": "getTrashItems",
+    "params": "",
+    "line": 207
+  },
+  {
+    "name": "getTrashCount",
+    "params": "",
+    "line": 208
+  },
+  {
+    "name": "restoreTrashItem",
+    "params": "type, id",
+    "line": 209
+  },
+  {
+    "name": "permanentDeleteItem",
+    "params": "type, id",
+    "line": 210
+  },
+  {
+    "name": "emptyTrash",
+    "params": "",
+    "line": 211
+  },
+  {
+    "name": "exportToExcel",
+    "params": "data, filename",
+    "line": 214
+  },
+  {
+    "name": "exportToCsv",
+    "params": "data, filename",
+    "line": 215
+  },
+  {
+    "name": "exportToPdf",
+    "params": "reportType, data, filename",
+    "line": 216
+  },
+  {
+    "name": "openFile",
+    "params": "filePath",
+    "line": 217
+  },
+  {
+    "name": "exportClientStatementPdf",
+    "params": "statementData, firmInfo",
+    "line": 220
+  },
+  {
+    "name": "exportClientStatementExcel",
+    "params": "statementData",
+    "line": 221
+  },
+  {
+    "name": "exportCaseStatusPdf",
+    "params": "reportData, firmInfo",
+    "line": 224
+  },
+  {
+    "name": "exportCaseStatusExcel",
+    "params": "reportData",
+    "line": 225
+  },
+  {
+    "name": "exportClient360Pdf",
+    "params": "reportData, firmInfo",
+    "line": 228
+  },
+  {
+    "name": "exportClient360Excel",
+    "params": "reportData",
+    "line": 229
+  },
+  {
+    "name": "getMachineId",
+    "params": "",
+    "line": 232
+  },
+  {
+    "name": "getLicenseStatus",
+    "params": "",
+    "line": 233
+  },
+  {
+    "name": "validateLicense",
+    "params": "licenseKey",
+    "line": 234
+  },
+  {
+    "name": "clearLicense",
+    "params": "",
+    "line": 235
+  }
+]

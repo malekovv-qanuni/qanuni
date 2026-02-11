@@ -19,7 +19,7 @@ const generateID = (prefix) => {
   return `${prefix}-${year}-${random}`;
 };
 
-const ClientForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refreshClients, refreshCorporateEntities, entityTypes}) => {
+const ClientForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refreshClients, refreshCorporateEntities, entityTypes, electronAPI}) => {
   const { forms, closeForm } = useUI();
   const { editing: editingClient, formData: clientFormData, setFormData: setClientFormData } = forms.client;
 
@@ -113,7 +113,7 @@ const ClientForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refre
     
     setChecking(true);
     try {
-      const results = await window.electronAPI.conflictCheck({
+      const results = await electronAPI.conflictCheck({
         name: formData.client_name,
         registration_number: formData.registration_number,
         vat_number: formData.vat_number,
@@ -148,7 +148,7 @@ const ClientForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refre
     setSaving(true);
     
     try {
-      if (!window.electronAPI) {
+      if (!electronAPI) {
         alert('Error: App must run in Electron, not browser. Close browser and use the Electron window.');
         setSaving(false);
         return;
@@ -161,11 +161,11 @@ const ClientForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refre
 
       let result;
       if (editingClient) {
-        result = await window.electronAPI.updateClient(clientData);
+        result = await electronAPI.updateClient(clientData);
       } else {
-        result = await window.electronAPI.addClient(clientData);
-        if (window.electronAPI.logConflictCheck) {
-          await window.electronAPI.logConflictCheck({
+        result = await electronAPI.addClient(clientData);
+        if (electronAPI.logConflictCheck) {
+          await electronAPI.logConflictCheck({
             check_type: 'new_client',
             search_terms: { name: formData.client_name },
             results_found: conflicts,

@@ -29,7 +29,7 @@ const WeekendWarning = ({ show }) => {
   );
 };
 
-const JudgmentForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refreshJudgments, refreshDeadlines, refreshHearings, clients, matters, hearings, hearingPurposes, onJudgmentAppealed}) => {
+const JudgmentForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refreshJudgments, refreshDeadlines, refreshHearings, clients, matters, hearings, hearingPurposes, onJudgmentAppealed, electronAPI}) => {
   const { forms, closeForm } = useUI();
   const { editing: editingJudgment } = forms.judgment;
   const [formData, setFormData] = useState(editingJudgment ? {
@@ -161,14 +161,14 @@ const JudgmentForm = React.memo(({ showToast, markFormDirty, clearFormDirty, ref
       
       let judgmentId;
       if (editingJudgment) {
-        const updateResult = await window.electronAPI.updateJudgment({ ...judgmentData, judgment_id: editingJudgment.judgment_id });
+        const updateResult = await electronAPI.updateJudgment({ ...judgmentData, judgment_id: editingJudgment.judgment_id });
         if (updateResult && updateResult.success === false) {
           showToast(updateResult.error || 'Failed to update judgment', 'error');
           return;
         }
         judgmentId = editingJudgment.judgment_id;
       } else {
-        const result = await window.electronAPI.addJudgment(judgmentData);
+        const result = await electronAPI.addJudgment(judgmentData);
         if (!result || result.success === false) {
           showToast(result?.error || 'Failed to add judgment', 'error');
           return;
@@ -188,7 +188,7 @@ const JudgmentForm = React.memo(({ showToast, markFormDirty, clearFormDirty, ref
           judge: '',
           notes: 'Hearing created from non-final judgment'
         };
-        await window.electronAPI.addHearing(nextHearingData);
+        await electronAPI.addHearing(nextHearingData);
       }
       
       // Auto-create appeal deadline if checkbox is checked and appeal_deadline date is set
@@ -204,7 +204,7 @@ const JudgmentForm = React.memo(({ showToast, markFormDirty, clearFormDirty, ref
           status: 'pending',
           notes: 'Deadline auto-created from judgment'
         };
-        const dlResult = await window.electronAPI.addDeadline(deadlineData);
+        const dlResult = await electronAPI.addDeadline(deadlineData);
         if (dlResult && dlResult.success === false) {
           showToast('Judgment saved but deadline creation failed: ' + (dlResult.error || ''), 'warning');
         }

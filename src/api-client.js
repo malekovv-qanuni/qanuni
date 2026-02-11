@@ -96,6 +96,17 @@ const apiClient = {
     });
   },
 
+  // Alias: preload.js uses addClient
+  addClient: async (clientData) => {
+    if (isElectron()) {
+      return await window.electronAPI.addClient(clientData);
+    }
+    return await fetchAPI('/clients', {
+      method: 'POST',
+      body: JSON.stringify(clientData),
+    });
+  },
+
   updateClient: async (clientData) => {
     if (isElectron()) {
       return await window.electronAPI.updateClient(clientData);
@@ -208,6 +219,23 @@ const apiClient = {
     return await fetchAPI(`/matters/${matterId}/financials`);
   },
 
+  getRelatedMatters: async (matterId) => {
+    if (isElectron()) {
+      return await window.electronAPI.getRelatedMatters(matterId);
+    }
+    return await fetchAPI(`/matters/${matterId}/related`);
+  },
+
+  checkFileNumberUnique: async (fileNumber, excludeMatterId) => {
+    if (isElectron()) {
+      return await window.electronAPI.checkFileNumberUnique(fileNumber, excludeMatterId);
+    }
+    return await fetchAPI('/matters/check-file-number', {
+      method: 'POST',
+      body: JSON.stringify({ file_number: fileNumber, exclude_matter_id: excludeMatterId }),
+    });
+  },
+
   // ============================================
   // HEARING METHODS (4)
   // ============================================
@@ -227,6 +255,17 @@ const apiClient = {
   },
 
   createHearing: async (hearingData) => {
+    if (isElectron()) {
+      return await window.electronAPI.addHearing(hearingData);
+    }
+    return await fetchAPI('/hearings', {
+      method: 'POST',
+      body: JSON.stringify(hearingData),
+    });
+  },
+
+  // Alias: preload.js uses addHearing
+  addHearing: async (hearingData) => {
     if (isElectron()) {
       return await window.electronAPI.addHearing(hearingData);
     }
@@ -655,6 +694,17 @@ const apiClient = {
     });
   },
 
+  // Alias: preload.js uses addJudgment
+  addJudgment: async (judgmentData) => {
+    if (isElectron()) {
+      return await window.electronAPI.addJudgment(judgmentData);
+    }
+    return await fetchAPI('/judgments', {
+      method: 'POST',
+      body: JSON.stringify(judgmentData),
+    });
+  },
+
   updateJudgment: async (judgmentData) => {
     if (isElectron()) {
       return await window.electronAPI.updateJudgment(judgmentData);
@@ -693,6 +743,17 @@ const apiClient = {
   },
 
   createDeadline: async (deadlineData) => {
+    if (isElectron()) {
+      return await window.electronAPI.addDeadline(deadlineData);
+    }
+    return await fetchAPI('/deadlines', {
+      method: 'POST',
+      body: JSON.stringify(deadlineData),
+    });
+  },
+
+  // Alias: preload.js uses addDeadline
+  addDeadline: async (deadlineData) => {
     if (isElectron()) {
       return await window.electronAPI.addDeadline(deadlineData);
     }
@@ -1306,6 +1367,16 @@ const apiClient = {
     });
   },
 
+  logConflictCheck: async (data) => {
+    if (isElectron()) {
+      return await window.electronAPI.logConflictCheck(data);
+    }
+    return await fetchAPI('/conflict-check/log', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
   getConflictHistory: async () => {
     if (isElectron()) {
       // No dedicated handler for conflict history retrieval
@@ -1324,6 +1395,13 @@ const apiClient = {
       return await window.electronAPI.getFirmInfo();
     }
     return await fetchAPI('/settings/firm-info');
+  },
+
+  getCurrencies: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getCurrencies();
+    }
+    return await fetchAPI('/settings/currencies');
   },
 
   getSettings: async () => {

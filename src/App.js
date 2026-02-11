@@ -1113,6 +1113,7 @@ const App = () => {
           refreshClients={refreshClients}
           refreshCorporateEntities={refreshCorporateEntities}
           entityTypes={entityTypes}
+          electronAPI={apiClient}
         />}
       {forms.matter.isOpen && <MatterForm
           showToast={showToast}
@@ -1126,6 +1127,7 @@ const App = () => {
           regions={regions}
           lawyers={lawyers}
           onViewMatter={(matter) => openForm('matter', matter)}
+          electronAPI={apiClient}
         />}
       {forms.hearing.isOpen && <HearingForm
           showToast={showToast}
@@ -1174,6 +1176,7 @@ const App = () => {
           hearings={hearings}
           hearingPurposes={hearingPurposes}
           onJudgmentAppealed={handleJudgmentAppealed}
+          electronAPI={apiClient}
         />}
       {forms.appointment.isOpen && <AppointmentForm
           showToast={showToast}
