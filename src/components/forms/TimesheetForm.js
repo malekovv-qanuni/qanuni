@@ -90,15 +90,24 @@ const TimesheetForm = React.memo(({ showToast, markFormDirty, clearFormDirty, re
         minutes: parseInt(formData.minutes),
         rate_per_hour: parseFloat(formData.rate_per_hour) || 0
       };
-      
+
+      let result;
       if (editingTimesheet) {
-        await apiClient.updateTimesheet(data);
+        result = await apiClient.updateTimesheet(data);
       } else {
-        await apiClient.addTimesheet(data);
+        result = await apiClient.addTimesheet(data);
       }
+
+      // Check if save actually succeeded
+      if (!result || !result.success) {
+        const errorMsg = result?.error || 'Failed to save timesheet';
+        showToast(errorMsg, 'error');
+        return;
+      }
+
       clearFormDirty();
       await refreshTimesheets();
-      showToast(editingTimesheet 
+      showToast(editingTimesheet
         ? ('Timesheet updated successfully')
         : ('Timesheet added successfully'));
       closeForm('timesheet');

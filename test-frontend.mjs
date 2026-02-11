@@ -181,8 +181,8 @@ async function testTimesheetForm() {
       matter_id: matter.matterId,
       lawyer_id: lawyer.lawyerId,
       date: '2026-02-11',
-      hours: 2.5,
-      rate: 200,
+      minutes: 150,  // 2.5 hours * 60
+      rate_per_hour: 200,
       narrative: 'Test timesheet entry'  // Fixed: use narrative
     });
 
@@ -384,8 +384,8 @@ async function testCriticalWorkflow() {
       matter_id: matter.matterId,
       lawyer_id: lawyer.lawyerId,
       date: '2026-02-11',
-      hours: 5.5,
-      rate: 250,
+      minutes: 330,  // 5.5 hours * 60
+      rate_per_hour: 250,
       narrative: 'Legal research and case preparation'
     });
     assert(timesheet.success === true, 'Workflow - create timesheet', timesheet.error);

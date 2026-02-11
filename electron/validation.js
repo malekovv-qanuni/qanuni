@@ -227,12 +227,12 @@ const schemas = {
       type: 'date',
       label: 'Date'
     },
-    hours: {
+    minutes: {
       required: true,
       type: 'number',
-      min: 0.01,
-      max: 24,
-      label: 'Hours'
+      min: 1,
+      max: 1440,
+      label: 'Minutes'
     },
     rate: {
       type: 'number',
