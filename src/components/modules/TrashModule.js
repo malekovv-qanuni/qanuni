@@ -3,6 +3,7 @@ import {
   Trash2, RefreshCw, RotateCcw, AlertTriangle, Search, Filter, X
 } from 'lucide-react';
 import { tf } from '../../utils';
+import apiClient from '../../api-client';
 
 // ============================================
 // TRASH MODULE COMPONENT (v46.23)
@@ -43,9 +44,9 @@ const TrashModule = ({
   const loadTrashItems = async () => {
     setLoading(true);
     try {
-      const items = await window.electronAPI.getTrashItems();
+      const items = await apiClient.getTrashItems();
       setTrashItems(items || {});
-      const countData = await window.electronAPI.getTrashCount();
+      const countData = await apiClient.getTrashCount();
       setCounts(countData || { total: 0 });
     } catch (error) {
       console.error('Error loading trash:', error);
@@ -61,7 +62,7 @@ const TrashModule = ({
       tf('Do you want to restore "{name}"?', { name }),
       async () => {
         try {
-          await window.electronAPI.restoreTrashItem(type, id);
+          await apiClient.restoreTrashItem(type, id);
           showToast('Item restored');
           await loadTrashItems();
           // Trigger refresh of main data
@@ -82,7 +83,7 @@ const TrashModule = ({
       tf('Are you sure you want to permanently delete "{name}"? This cannot be undone.', { name }),
       async () => {
         try {
-          await window.electronAPI.permanentDeleteItem(type, id);
+          await apiClient.permanentDeleteItem(type, id);
           showToast('Permanently deleted');
           await loadTrashItems();
           hideConfirm();
@@ -106,7 +107,7 @@ const TrashModule = ({
       tf('Are you sure you want to permanently delete {count} items? This cannot be undone.', { count: counts.total }),
       async () => {
         try {
-          await window.electronAPI.emptyTrash();
+          await apiClient.emptyTrash();
           showToast('Trash emptied');
           await loadTrashItems();
           hideConfirm();

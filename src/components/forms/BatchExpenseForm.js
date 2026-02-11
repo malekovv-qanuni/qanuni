@@ -4,6 +4,7 @@
 // ============================================
 import React, { useState } from 'react';
 import { Plus, Trash2, AlertCircle } from 'lucide-react';
+import apiClient from '../../api-client';
 
 const BatchExpenseForm = React.memo(({ 
   setShowBatchExpenseForm, 
@@ -149,7 +150,7 @@ const BatchExpenseForm = React.memo(({
       }));
 
       // Call batch API
-      await window.electronAPI.addExpensesBatch(expenses);
+      await apiClient.addExpensesBatch(expenses);
       
       await Promise.all([refreshExpenses(), refreshAdvances()]);
       

@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { Search, AlertTriangle, CheckCircle, Loader2, UserX, Users, Briefcase, Building2, Phone, Mail, FileText, X } from 'lucide-react';
 import { tf } from '../../utils';
+import apiClient from '../../api-client';
 
 const ConflictCheckTool = ({ showToast}) => {
   const [searchTerms, setSearchTerms] = useState({
@@ -42,13 +43,13 @@ const ConflictCheckTool = ({ showToast}) => {
       if (searchTerms.email?.trim()) terms.email = searchTerms.email.trim();
       if (searchTerms.phone?.trim()) terms.phone = searchTerms.phone.trim();
 
-      const searchResults = await window.electronAPI.conflictCheck(terms);
+      const searchResults = await apiClient.conflictCheck(terms);
       setResults(searchResults || []);
       setSearchPerformed(true);
 
       // Log the search
-      if (window.electronAPI.logConflictCheck) {
-        await window.electronAPI.logConflictCheck({
+      if (apiClient.logConflictCheck) {
+        await apiClient.logConflictCheck({
           check_type: 'standalone_search',
           search_terms: terms,
           results_found: searchResults || [],

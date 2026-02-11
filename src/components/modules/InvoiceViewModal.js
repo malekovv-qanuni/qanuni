@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Download, FileText, ChevronDown } from 'lucide-react';
 import { useDialog } from '../../contexts';
+import apiClient from '../../api-client';
 
 // Print styles - only show invoice modal when printing
 const printStyles = `
@@ -66,7 +67,7 @@ const InvoiceViewModal = ({
       if (invoice) {
         setLoading(true);
         try {
-          const items = await window.electronAPI.getInvoiceItems(invoice.invoice_id);
+          const items = await apiClient.getInvoiceItems(invoice.invoice_id);
           setInvoiceItems(items || []);
         } catch (error) {
           console.error('Error loading invoice items:', error);
@@ -112,7 +113,7 @@ const InvoiceViewModal = ({
     setExporting(true);
     setShowExportMenu(false);
     try {
-      const result = await window.electronAPI.generateInvoicePdfs(invoice.invoice_id, {
+      const result = await apiClient.generateInvoicePdfs(invoice.invoice_id, {
         generateTimesheet: includeAttachments && timeItems.length > 0,
         generateExpenses: includeAttachments && expenseItems.length > 0
       });

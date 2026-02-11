@@ -4,6 +4,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { X, Building2, Users, UserCheck, FileText, Calendar, Printer, DollarSign, AlertTriangle, Download } from 'lucide-react';
+import apiClient from '../../../api-client';
 
 const Company360ReportModal = ({ show, onClose}) => {
   const [companies, setCompanies] = useState([]);
@@ -19,7 +20,7 @@ const Company360ReportModal = ({ show, onClose}) => {
   const loadCompanies = async () => {
     setLoading(true);
     try {
-      const data = await window.electronAPI.getAllCorporateEntities();
+      const data = await apiClient.getAllCorporateEntities();
       // Filter to only show companies with corporate details
       setCompanies((data || []).filter(c => c.has_corporate_details));
     } catch (error) {
@@ -35,10 +36,10 @@ const Company360ReportModal = ({ show, onClose}) => {
     try {
       // Load all related data
       const [shareholders, directors, filings, meetings] = await Promise.all([
-        window.electronAPI.getShareholders(company.client_id),
-        window.electronAPI.getDirectors(company.client_id),
-        window.electronAPI.getFilings(company.client_id),
-        window.electronAPI.getMeetings(company.client_id)
+        apiClient.getShareholders(company.client_id),
+        apiClient.getDirectors(company.client_id),
+        apiClient.getFilings(company.client_id),
+        apiClient.getMeetings(company.client_id)
       ]);
 
       setReportData({
@@ -119,12 +120,12 @@ const Company360ReportModal = ({ show, onClose}) => {
     try {
       let result;
       if (format === 'excel') {
-        result = await window.electronAPI.exportToExcel(exportData, reportName);
+        result = await apiClient.exportToExcel(exportData, reportName);
       } else if (format === 'csv') {
-        result = await window.electronAPI.exportToCsv(exportData, reportName);
+        result = await apiClient.exportToCsv(exportData, reportName);
       } else if (format === 'pdf') {
         const columns = ['section', 'field', 'value'];
-        result = await window.electronAPI.exportToPdf(exportData, reportName, columns);
+        result = await apiClient.exportToPdf(exportData, reportName, columns);
       }
       
       if (result?.success) {
@@ -132,7 +133,7 @@ const Company360ReportModal = ({ show, onClose}) => {
           `Export successful!\n\nFile saved to:\n${result.filePath}\n\nWould you like to open it?`
         );
         if (openFile) {
-          await window.electronAPI.openFile(result.filePath);
+          await apiClient.openFile(result.filePath);
         }
       } else if (!result?.canceled) {
         alert(('Export failed: ') + (result?.error || 'Unknown error'));

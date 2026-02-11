@@ -3,6 +3,7 @@ import { Plus, Search, X, ChevronDown, Paperclip } from 'lucide-react';
 import ExportButtons from '../common/ExportButtons';
 import { useUI } from '../../contexts';
 import { useFilters } from '../../hooks/useFilters';
+import apiClient from '../../api-client';
 
 /**
  * ExpensesList Component - v46.46
@@ -153,7 +154,7 @@ const ExpensesList = ({
     const next = typeof updaterOrValue === 'function' ? updaterOrValue(expenseFilters) : updaterOrValue;
     Object.keys(next).forEach(k => _expSetFilter(k, next[k]));
   };
-  const electronAPI = window.electronAPI;
+
   const [openDropdown, setOpenDropdown] = useState(null);
   const [datePreset, setDatePreset] = useState('all');
 
@@ -407,13 +408,13 @@ const ExpensesList = ({
       });
 
       if (format === 'excel') {
-        await electronAPI.exportExpensesToExcel(exportData, {
+        await apiClient.exportExpensesToExcel(exportData, {
           totals: expenseTotals,
           filters: hasActiveFilters ? activeFilters.map(f => f.label).join(', ') : 'None'
         });
         showToast('Excel exported successfully');
       } else if (format === 'pdf') {
-        await electronAPI.exportExpensesToPDF(exportData, {
+        await apiClient.exportExpensesToPDF(exportData, {
           totals: expenseTotals,
           filters: hasActiveFilters ? activeFilters.map(f => f.label).join(', ') : 'None'
         });
@@ -619,7 +620,7 @@ const ExpensesList = ({
                           'Delete Expense',
                           'Are you sure you want to delete this expense?',
                           async () => {
-                            await electronAPI.deleteExpense(exp.expense_id);
+                            await apiClient.deleteExpense(exp.expense_id);
                             await refreshExpenses();
                             showToast('Expense deleted');
                             hideConfirm();

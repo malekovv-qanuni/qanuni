@@ -5,6 +5,7 @@ import ExportButtons from '../common/ExportButtons';
 import { tf } from '../../utils';
 import { useUI } from '../../contexts';
 import { useFilters } from '../../hooks/useFilters';
+import apiClient from '../../api-client';
 
 /**
  * MattersList Component - v46.38
@@ -339,7 +340,7 @@ const MattersList = ({
   const handleExportExcel = async () => {
     const data = prepareExportData();
     if (!data.length) return showToast('No data to export', 'info');
-    const result = await window.electronAPI.exportToExcel(data, 'Matters');
+    const result = await apiClient.exportToExcel(data, 'Matters');
     if (result?.success) showToast('Exported successfully', 'success');
   };
 
@@ -347,7 +348,7 @@ const MattersList = ({
     const data = prepareExportData();
     if (!data.length) return showToast('No data to export', 'info');
     const columns = ['Client', 'Matter Name', 'File No.', 'Case No.', 'Court', 'Lawyer', 'Status'];
-    const result = await window.electronAPI.exportToPdf(data, 'Matters', columns);
+    const result = await apiClient.exportToPdf(data, 'Matters', columns);
     if (result?.success) showToast('Exported successfully', 'success');
   };
 

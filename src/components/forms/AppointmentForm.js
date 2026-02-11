@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { FormField } from '../common';
 import { useUI } from '../../contexts';
+import apiClient from '../../api-client';
 
 
 const AppointmentForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refreshAppointments, clients, matters, lawyers}) => {
@@ -60,9 +61,9 @@ const AppointmentForm = React.memo(({ showToast, markFormDirty, clearFormDirty, 
     }
     try {
       if (editingAppointment) {
-        await window.electronAPI.updateAppointment({ ...formData, appointment_id: editingAppointment.appointment_id });
+        await apiClient.updateAppointment({ ...formData, appointment_id: editingAppointment.appointment_id });
       } else {
-        await window.electronAPI.addAppointment(formData);
+        await apiClient.addAppointment(formData);
       }
       clearFormDirty();
       await refreshAppointments();

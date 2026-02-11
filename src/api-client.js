@@ -322,6 +322,11 @@ const apiClient = {
     });
   },
 
+  // Alias: preload.js uses addTask
+  addTask: async (taskData) => {
+    return await apiClient.createTask(taskData);
+  },
+
   updateTask: async (taskData) => {
     if (isElectron()) {
       return await window.electronAPI.updateTask(taskData);
@@ -367,6 +372,11 @@ const apiClient = {
       method: 'POST',
       body: JSON.stringify(timesheetData),
     });
+  },
+
+  // Alias: preload.js uses addTimesheet
+  addTimesheet: async (timesheetData) => {
+    return await apiClient.createTimesheet(timesheetData);
   },
 
   updateTimesheet: async (timesheetData) => {
@@ -422,6 +432,11 @@ const apiClient = {
       method: 'POST',
       body: JSON.stringify(expenseData),
     });
+  },
+
+  // Alias: preload.js uses addExpense
+  addExpense: async (expenseData) => {
+    return await apiClient.createExpense(expenseData);
   },
 
   updateExpense: async (expenseData) => {
@@ -505,6 +520,11 @@ const apiClient = {
     });
   },
 
+  // Alias: preload.js uses addAdvance
+  addAdvance: async (advanceData) => {
+    return await apiClient.createAdvance(advanceData);
+  },
+
   updateAdvance: async (advanceData) => {
     if (isElectron()) {
       return await window.electronAPI.updateAdvance(advanceData);
@@ -580,6 +600,32 @@ const apiClient = {
     return await fetchAPI(`/advances/client/${clientId}/balance`);
   },
 
+  getClientExpenseAdvance: async (clientId, matterId) => {
+    if (isElectron()) {
+      return await window.electronAPI.getClientExpenseAdvance(clientId, matterId);
+    }
+    const params = new URLSearchParams({ client_id: clientId });
+    if (matterId) params.append('matter_id', matterId);
+    return await fetchAPI(`/advances/client-expense-advance?${params}`);
+  },
+
+  getLawyerAdvance: async (lawyerId) => {
+    if (isElectron()) {
+      return await window.electronAPI.getLawyerAdvance(lawyerId);
+    }
+    return await fetchAPI(`/advances/lawyer-advance?lawyer_id=${lawyerId}`);
+  },
+
+  addExpenseWithDeduction: async (expenseData) => {
+    if (isElectron()) {
+      return await window.electronAPI.addExpenseWithDeduction(expenseData);
+    }
+    return await fetchAPI('/advances/expense-with-deduction', {
+      method: 'POST',
+      body: JSON.stringify(expenseData),
+    });
+  },
+
   // ============================================
   // INVOICE METHODS (8)
   // ============================================
@@ -598,13 +644,13 @@ const apiClient = {
     return await fetchAPI('/invoices');
   },
 
-  createInvoice: async (invoiceData) => {
+  createInvoice: async (invoiceData, items) => {
     if (isElectron()) {
-      return await window.electronAPI.createInvoice(invoiceData);
+      return await window.electronAPI.createInvoice(invoiceData, items);
     }
     return await fetchAPI('/invoices', {
       method: 'POST',
-      body: JSON.stringify(invoiceData),
+      body: JSON.stringify({ ...invoiceData, items }),
     });
   },
 
@@ -615,6 +661,16 @@ const apiClient = {
     return await fetchAPI(`/invoices/${invoiceData.invoice_id}`, {
       method: 'PUT',
       body: JSON.stringify(invoiceData),
+    });
+  },
+
+  updateInvoiceStatus: async (invoiceId, status) => {
+    if (isElectron()) {
+      return await window.electronAPI.updateInvoiceStatus(invoiceId, status);
+    }
+    return await fetchAPI(`/invoices/${invoiceId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ invoice_id: invoiceId, status }),
     });
   },
 
@@ -663,6 +719,67 @@ const apiClient = {
     }
     return await fetchAPI(`/invoices/payments/${paymentId}`, {
       method: 'DELETE',
+    });
+  },
+
+  getInvoiceItems: async (invoiceId) => {
+    if (isElectron()) {
+      return await window.electronAPI.getInvoiceItems(invoiceId);
+    }
+    return await fetchAPI(`/invoices/${invoiceId}/items`);
+  },
+
+  generateInvoiceNumber: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.generateInvoiceNumber();
+    }
+    return await fetchAPI('/invoices/generate-number');
+  },
+
+  generateInvoicePdfs: async (invoiceId, options) => {
+    if (isElectron()) {
+      return await window.electronAPI.generateInvoicePdfs(invoiceId, options);
+    }
+    electronOnlyError('generateInvoicePdfs');
+  },
+
+  getUnbilledTime: async (clientId, matterId) => {
+    if (isElectron()) {
+      return await window.electronAPI.getUnbilledTime(clientId, matterId);
+    }
+    const params = new URLSearchParams();
+    if (clientId) params.append('client_id', clientId);
+    if (matterId) params.append('matter_id', matterId);
+    return await fetchAPI(`/timesheets/unbilled?${params.toString()}`);
+  },
+
+  getUnbilledExpenses: async (clientId, matterId) => {
+    if (isElectron()) {
+      return await window.electronAPI.getUnbilledExpenses(clientId, matterId);
+    }
+    const params = new URLSearchParams();
+    if (clientId) params.append('client_id', clientId);
+    if (matterId) params.append('matter_id', matterId);
+    return await fetchAPI(`/expenses/unbilled?${params.toString()}`);
+  },
+
+  getClientRetainer: async (clientId, matterId) => {
+    if (isElectron()) {
+      return await window.electronAPI.getClientRetainer(clientId, matterId);
+    }
+    const params = new URLSearchParams();
+    if (clientId) params.append('client_id', clientId);
+    if (matterId) params.append('matter_id', matterId);
+    return await fetchAPI(`/advances/client-retainer?${params.toString()}`);
+  },
+
+  deductRetainer: async (clientId, matterId, advanceType, amount) => {
+    if (isElectron()) {
+      return await window.electronAPI.deductRetainer(clientId, matterId, advanceType, amount);
+    }
+    return await fetchAPI('/advances/deduct-retainer', {
+      method: 'POST',
+      body: JSON.stringify({ client_id: clientId, matter_id: matterId, advance_type: advanceType, amount }),
     });
   },
 
@@ -1650,7 +1767,22 @@ const apiClient = {
     electronOnlyError('exportClient360Excel');
   },
 
-  // Export operations
+  // Generic export operations (used by list components)
+  exportToExcel: async (data, entityName) => {
+    if (isElectron()) {
+      return await window.electronAPI.exportToExcel(data, entityName);
+    }
+    electronOnlyError('exportToExcel');
+  },
+
+  exportToPdf: async (data, entityName, columns) => {
+    if (isElectron()) {
+      return await window.electronAPI.exportToPdf(data, entityName, columns);
+    }
+    electronOnlyError('exportToPdf');
+  },
+
+  // Entity-specific export operations
   exportMattersToExcel: async (matters) => {
     if (isElectron()) {
       return await window.electronAPI.exportToExcel(matters, 'matters');
@@ -1670,6 +1802,13 @@ const apiClient = {
       return await window.electronAPI.exportExpensesToExcel(expenses);
     }
     electronOnlyError('exportExpensesToExcel');
+  },
+
+  exportExpensesToPDF: async (data, options) => {
+    if (isElectron()) {
+      return await window.electronAPI.exportExpensesToPDF(data, options);
+    }
+    electronOnlyError('exportExpensesToPDF');
   },
 
   exportInvoicesToExcel: async (invoices) => {
@@ -1741,8 +1880,11 @@ const apiClient = {
     electronOnlyError('getLicenseStatus');
   },
 
-  validateLicense: async () => {
+  validateLicense: async (licenseKey) => {
     if (isElectron()) {
+      if (licenseKey) {
+        return await window.electronAPI.validateLicense(licenseKey);
+      }
       return await window.electronAPI.validateLicense();
     }
     electronOnlyError('validateLicense');
@@ -1800,6 +1942,265 @@ const apiClient = {
       return;
     }
     electronOnlyError('openExternal');
+  },
+
+  // ============================================
+  // ALIASES - Component compatibility layer
+  // Maps component-facing names to api-client methods
+  // Added in Phase 3 Batch 7 for final migration
+  // ============================================
+
+  // Corporate aliases (EntityForm.js uses preload names directly)
+  addCorporateEntity: async (data) => apiClient.createEntity(data),
+  updateCorporateEntity: async (data) => apiClient.updateEntity(data),
+  deleteCorporateEntity: async (id) => apiClient.deleteEntity(id),
+  addShareholder: async (data) => apiClient.createShareholder(data),
+  addDirector: async (data) => apiClient.createDirector(data),
+  getFilings: async (clientId) => apiClient.getCorporateDocuments(clientId),
+  addFiling: async (data) => apiClient.createCorporateDocument(data),
+  updateFiling: async (data) => apiClient.updateCorporateDocument(data),
+  deleteFiling: async (id) => apiClient.deleteCorporateDocument(id),
+  getMeetings: async (clientId) => apiClient.getBoardMeetings(clientId),
+  addMeeting: async (data) => apiClient.createBoardMeeting(data),
+  updateMeeting: async (data) => apiClient.updateBoardMeeting(data),
+  deleteMeeting: async (id) => apiClient.deleteBoardMeeting(id),
+  addShareTransfer: async (data) => apiClient.createShareTransfer(data),
+  getCompanyClientsWithoutEntity: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getCompanyClientsWithoutEntity();
+    }
+    return await fetchAPI('/corporate/clients-without-entity');
+  },
+
+  // Trash aliases (TrashModule.js uses preload names directly)
+  getTrashItems: async () => apiClient.getTrash(),
+  restoreTrashItem: async (type, id) => apiClient.restoreItem({ type, id }),
+  getTrashCount: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getTrashCount();
+    }
+    return await fetchAPI('/trash/count');
+  },
+  permanentDeleteItem: async (type, id) => {
+    if (isElectron()) {
+      return await window.electronAPI.permanentDeleteItem(type, id);
+    }
+    return await fetchAPI('/trash/permanent-delete', {
+      method: 'POST',
+      body: JSON.stringify({ type, id }),
+    });
+  },
+  emptyTrash: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.emptyTrash();
+    }
+    return await fetchAPI('/trash/empty', { method: 'POST' });
+  },
+
+  // Lawyer aliases (SettingsModule.js)
+  getAllLawyers: async () => apiClient.getLawyers(),
+  deactivateLawyer: async (lawyerId) => {
+    if (isElectron()) {
+      return await window.electronAPI.deactivateLawyer(lawyerId);
+    }
+    return await fetchAPI(`/lawyers/${lawyerId}/deactivate`, { method: 'POST' });
+  },
+  activateLawyer: async (lawyerId) => {
+    if (isElectron()) {
+      return await window.electronAPI.activateLawyer(lawyerId);
+    }
+    return await fetchAPI(`/lawyers/${lawyerId}/activate`, { method: 'POST' });
+  },
+
+  // Settings aliases (SettingsModule.js)
+  updateFirmInfo: async (data) => {
+    if (isElectron()) {
+      return await window.electronAPI.updateFirmInfo(data);
+    }
+    return await fetchAPI('/settings/firm-info', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+  getExchangeRates: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getExchangeRates();
+    }
+    return await fetchAPI('/settings/exchange-rates');
+  },
+  addCurrency: async (data) => {
+    if (isElectron()) {
+      return await window.electronAPI.addCurrency(data);
+    }
+    return await fetchAPI('/settings/currencies', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  updateCurrency: async (data) => {
+    if (isElectron()) {
+      return await window.electronAPI.updateCurrency(data);
+    }
+    return await fetchAPI(`/settings/currencies/${data.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+  deleteCurrency: async (id) => {
+    if (isElectron()) {
+      return await window.electronAPI.deleteCurrency(id);
+    }
+    return await fetchAPI(`/settings/currencies/${id}`, { method: 'DELETE' });
+  },
+  addExchangeRate: async (data) => {
+    if (isElectron()) {
+      return await window.electronAPI.addExchangeRate(data);
+    }
+    return await fetchAPI('/settings/exchange-rates', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  updateExchangeRate: async (data) => {
+    if (isElectron()) {
+      return await window.electronAPI.updateExchangeRate(data);
+    }
+    return await fetchAPI(`/settings/exchange-rates/${data.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+  deleteExchangeRate: async (id) => {
+    if (isElectron()) {
+      return await window.electronAPI.deleteExchangeRate(id);
+    }
+    return await fetchAPI(`/settings/exchange-rates/${id}`, { method: 'DELETE' });
+  },
+
+  // Backup aliases (SettingsModule.js - Electron-only)
+  getAutoBackupStatus: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getAutoBackupStatus();
+    }
+    electronOnlyError('getAutoBackupStatus');
+  },
+  saveAutoBackupSettings: async (settings) => {
+    if (isElectron()) {
+      return await window.electronAPI.saveAutoBackupSettings(settings);
+    }
+    electronOnlyError('saveAutoBackupSettings');
+  },
+  selectBackupFolder: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.selectBackupFolder();
+    }
+    electronOnlyError('selectBackupFolder');
+  },
+  openBackupFolder: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.openBackupFolder();
+    }
+    electronOnlyError('openBackupFolder');
+  },
+  runBackupNow: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.runBackupNow();
+    }
+    electronOnlyError('runBackupNow');
+  },
+
+  // Lookup aliases (LookupForm.js, SettingsModule.js)
+  addLookupItem: async (lookupType, data) => {
+    if (isElectron()) {
+      return await window.electronAPI.addLookupItem(lookupType, data);
+    }
+    return await fetchAPI('/lookups', {
+      method: 'POST',
+      body: JSON.stringify({ type: lookupType, ...data }),
+    });
+  },
+  updateLookupItem: async (lookupType, data) => {
+    if (isElectron()) {
+      return await window.electronAPI.updateLookupItem(lookupType, data);
+    }
+    return await fetchAPI(`/lookups/${data.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ type: lookupType, ...data }),
+    });
+  },
+  deleteLookupEntry: async (lookupType, id) => {
+    if (isElectron()) {
+      return await window.electronAPI.deleteLookupItem(lookupType, id);
+    }
+    return await fetchAPI(`/lookups/${lookupType}/${id}`, { method: 'DELETE' });
+  },
+
+  // Dashboard aliases
+  getPendingInvoices: async () => {
+    if (isElectron()) {
+      if (window.electronAPI.getPendingInvoices) {
+        return await window.electronAPI.getPendingInvoices();
+      }
+      return [];
+    }
+    return await fetchAPI('/invoices?status=pending');
+  },
+  getUpcomingCompliance: async () => {
+    if (isElectron()) {
+      if (window.electronAPI.getUpcomingCompliance) {
+        return await window.electronAPI.getUpcomingCompliance();
+      }
+      return [];
+    }
+    return await fetchAPI('/corporate/upcoming-compliance');
+  },
+
+  // Diary/Timeline alias (MatterTimeline.js)
+  getMatterTimeline: async (matterId) => apiClient.getDiaryEntries(matterId),
+  addDiaryEntry: async (data) => apiClient.createDiaryEntry(data),
+
+  // Batch expense (BatchExpenseForm.js)
+  addExpensesBatch: async (expenses) => {
+    if (isElectron()) {
+      return await window.electronAPI.addExpensesBatch(expenses);
+    }
+    return await fetchAPI('/expenses/batch', {
+      method: 'POST',
+      body: JSON.stringify(expenses),
+    });
+  },
+
+  // Export aliases (reports)
+  exportToCsv: async (data, name) => {
+    if (isElectron()) {
+      return await window.electronAPI.exportToCsv(data, name);
+    }
+    electronOnlyError('exportToCsv');
+  },
+  openFile: async (filePath) => {
+    if (isElectron()) {
+      return await window.electronAPI.openFile(filePath);
+    }
+    electronOnlyError('openFile');
+  },
+
+  // Export all data (SettingsModule.js - Electron-only)
+  exportAllData: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.exportAllData();
+    }
+    electronOnlyError('exportAllData');
+  },
+
+  // Error logging (ErrorBoundary.js)
+  logError: async (errorData) => {
+    if (isElectron()) {
+      if (window.electronAPI.logError) {
+        return await window.electronAPI.logError(errorData);
+      }
+    }
+    // In web mode, just console.error
+    console.error('App error:', errorData);
   },
 };
 

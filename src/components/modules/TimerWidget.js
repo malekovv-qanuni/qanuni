@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { useTimer } from '../../contexts';
 import { useNotification } from '../../contexts';
+import apiClient from '../../api-client';
 
 // ============================================
 // TIME TRACKING TIMER WIDGET
@@ -112,7 +113,7 @@ const TimerWidget = ({
         rate_per_hour: lawyer?.hourly_rate || 0
       };
 
-      await window.electronAPI.addTimesheet(timesheetData);
+      await apiClient.addTimesheet(timesheetData);
       await refreshTimesheets();
       
       // Reset timer

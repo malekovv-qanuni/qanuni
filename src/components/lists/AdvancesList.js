@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Plus, Search, X, ChevronDown, DollarSign, Receipt, UserCircle } from 'lucide-react';
 import { useUI } from '../../contexts';
+import apiClient from '../../api-client';
 
 /**
  * AdvancesList Component - v46.42 Global Min Balance Setting
@@ -428,7 +429,7 @@ const AdvancesList = ({
                     <td className="px-6 py-4"><span className={`px-2 py-1 text-xs rounded-full ${adv.status === 'active' ? 'bg-green-100 text-green-800' : adv.status === 'depleted' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>{isFeePmt ? 'Received' : adv.status}</span></td>
                     <td className="px-6 py-4 text-sm">
                       <button onClick={() => openForm('advance', adv)} className="text-blue-600 hover:text-blue-900 mr-3">{'Edit'}</button>
-                      <button onClick={() => { showConfirm('Delete Payment', 'Are you sure you want to delete this payment?', async () => { await window.electronAPI.deleteAdvance(adv.advance_id); await refreshAdvances(); showToast('Payment deleted'); hideConfirm(); }); }} className="text-red-600 hover:text-red-900">{'Delete'}</button>
+                      <button onClick={() => { showConfirm('Delete Payment', 'Are you sure you want to delete this payment?', async () => { await apiClient.deleteAdvance(adv.advance_id); await refreshAdvances(); showToast('Payment deleted'); hideConfirm(); }); }} className="text-red-600 hover:text-red-900">{'Delete'}</button>
                     </td>
                   </tr>
                 );

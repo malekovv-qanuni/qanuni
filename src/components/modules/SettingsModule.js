@@ -3,6 +3,7 @@ import {
   Plus, Edit3, Trash2, Download, Upload, FileText, FolderOpen, Clock, CheckCircle, AlertCircle, RefreshCw, HardDrive, UserX, UserCheck, DollarSign, ArrowRightLeft, X, Save
 } from 'lucide-react';
 import { useUI } from '../../contexts';
+import apiClient from '../../api-client';
 
 // ============================================
 // SETTINGS MODULE COMPONENT
@@ -97,7 +98,7 @@ const SettingsModule = ({
   const loadAllLawyers = async () => {
     setLoadingLawyers(true);
     try {
-      const data = await window.electronAPI.getAllLawyers();
+      const data = await apiClient.getAllLawyers();
       setAllLawyers(data || []);
     } catch (error) {
       console.error('Error loading all lawyers:', error);
@@ -110,7 +111,7 @@ const SettingsModule = ({
   const loadCurrencies = async () => {
     setLoadingCurrencies(true);
     try {
-      const data = await window.electronAPI.getCurrencies();
+      const data = await apiClient.getCurrencies();
       setCurrencies(data || []);
     } catch (error) {
       console.error('Error loading currencies:', error);
@@ -121,7 +122,7 @@ const SettingsModule = ({
 
   const loadExchangeRates = async () => {
     try {
-      const data = await window.electronAPI.getExchangeRates();
+      const data = await apiClient.getExchangeRates();
       setExchangeRates(data || []);
     } catch (error) {
       console.error('Error loading exchange rates:', error);
@@ -137,10 +138,10 @@ const SettingsModule = ({
     const data = { ...currencyForm, code: currencyForm.code.toUpperCase().trim() };
     try {
       if (editingCurrency) {
-        await window.electronAPI.updateCurrency({ ...data, id: editingCurrency.id });
+        await apiClient.updateCurrency({ ...data, id: editingCurrency.id });
         showToast('Currency updated');
       } else {
-        await window.electronAPI.addCurrency(data);
+        await apiClient.addCurrency(data);
         showToast('Currency added');
       }
       setShowCurrencyForm(false);
@@ -164,7 +165,7 @@ const SettingsModule = ({
       `Are you sure you want to delete currency ${currency.code}?`,
       async () => {
         try {
-          await window.electronAPI.deleteCurrency(currency.id);
+          await apiClient.deleteCurrency(currency.id);
           showToast('Currency deleted');
           await loadCurrencies();
           hideConfirm();
@@ -198,10 +199,10 @@ const SettingsModule = ({
     }
     try {
       if (editingRate) {
-        await window.electronAPI.updateExchangeRate({ ...rateForm, id: editingRate.id });
+        await apiClient.updateExchangeRate({ ...rateForm, id: editingRate.id });
         showToast('Exchange rate updated');
       } else {
-        await window.electronAPI.addExchangeRate(rateForm);
+        await apiClient.addExchangeRate(rateForm);
         showToast('Exchange rate added');
       }
       setShowRateForm(false);
@@ -220,7 +221,7 @@ const SettingsModule = ({
       `Delete exchange rate ${rate.from_currency} → ${rate.to_currency}?`,
       async () => {
         try {
-          await window.electronAPI.deleteExchangeRate(rate.id);
+          await apiClient.deleteExchangeRate(rate.id);
           showToast('Exchange rate deleted');
           await loadExchangeRates();
           hideConfirm();
@@ -253,10 +254,10 @@ const SettingsModule = ({
       async () => {
         try {
           if (isActive) {
-            await window.electronAPI.deactivateLawyer(lawyer.lawyer_id);
+            await apiClient.deactivateLawyer(lawyer.lawyer_id);
             showToast(`${lawyer.full_name} deactivated`);
           } else {
-            await window.electronAPI.activateLawyer(lawyer.lawyer_id);
+            await apiClient.activateLawyer(lawyer.lawyer_id);
             showToast(`${lawyer.full_name} reactivated`);
           }
           await loadAllLawyers();
@@ -273,7 +274,7 @@ const SettingsModule = ({
   const handleSaveFirmInfo = async () => {
     setFirmSaving(true);
     try {
-      await window.electronAPI.updateFirmInfo(firmInfo);
+      await apiClient.updateFirmInfo(firmInfo);
       showToast('Firm information saved');
     } catch (error) {
       console.error('Error saving firm info:', error);
@@ -286,7 +287,7 @@ const SettingsModule = ({
   const loadAutoBackupStatus = async () => {
     setLoadingBackup(true);
     try {
-      const status = await window.electronAPI.getAutoBackupStatus();
+      const status = await apiClient.getAutoBackupStatus();
       if (status) {
         setAutoBackupStatus(status);
         setAutoBackupSettings(status.settings || {
@@ -306,7 +307,7 @@ const SettingsModule = ({
 
   const handleSaveAutoBackupSettings = async () => {
     try {
-      await window.electronAPI.saveAutoBackupSettings(autoBackupSettings);
+      await apiClient.saveAutoBackupSettings(autoBackupSettings);
       showToast('Auto-backup settings saved');
       await loadAutoBackupStatus();
     } catch (error) {
@@ -317,7 +318,7 @@ const SettingsModule = ({
 
   const handleSelectBackupFolder = async () => {
     try {
-      const result = await window.electronAPI.selectBackupFolder();
+      const result = await apiClient.selectBackupFolder();
       if (result?.path) {
         setAutoBackupSettings(prev => ({ ...prev, location: result.path }));
       }
@@ -328,7 +329,7 @@ const SettingsModule = ({
 
   const handleOpenBackupFolder = async () => {
     try {
-      await window.electronAPI.openBackupFolder();
+      await apiClient.openBackupFolder();
     } catch (error) {
       console.error('Error opening folder:', error);
       showToast('Error opening backup folder', 'error');
@@ -338,7 +339,7 @@ const SettingsModule = ({
   const handleRunBackupNow = async () => {
     setRunningBackup(true);
     try {
-      const result = await window.electronAPI.runBackupNow();
+      const result = await apiClient.runBackupNow();
       if (result?.success) {
         showToast(`Backup created: ${result.filename}`);
         await loadAutoBackupStatus();
@@ -372,7 +373,7 @@ const SettingsModule = ({
       `Are you sure you want to delete this ${typeNames[currentLookupType]}?`,
       async () => {
         try {
-          await window.electronAPI.deleteLookupEntry(currentLookupType, lookupItem.id);
+          await apiClient.deleteLookupEntry(currentLookupType, lookupItem.id);
           showToast('Item deleted successfully');
           await refreshLookups();
           hideConfirm();
@@ -1239,7 +1240,7 @@ const SettingsModule = ({
                 <button
                   onClick={async () => {
                     try {
-                      const result = await window.electronAPI.backupDatabase();
+                      const result = await apiClient.backupDatabase();
                       if (result?.success) {
                         showToast(`Backup saved to: ${result.filePath}`);
                       } else if (!result?.canceled) {
@@ -1268,7 +1269,7 @@ const SettingsModule = ({
                 <button
                   onClick={async () => {
                     try {
-                      const result = await window.electronAPI.restoreDatabase();
+                      const result = await apiClient.restoreDatabase();
                       if (result?.success) {
                         showToast(result.message || 'Restore successful. Please restart the application.');
                       } else if (!result?.canceled) {
@@ -1294,7 +1295,7 @@ const SettingsModule = ({
                 <button
                   onClick={async () => {
                     try {
-                      const result = await window.electronAPI.exportAllData();
+                      const result = await apiClient.exportAllData();
                       if (result?.success) {
                         showToast(`Exported to: ${result.filePath}`);
                       } else if (!result?.canceled) {

@@ -7,6 +7,7 @@ import {
 import { EmptyState } from '../common';
 import ExportButtons from '../common/ExportButtons';
 import { useFilters } from '../../hooks/useFilters';
+import apiClient from '../../api-client';
 /**
  * DeadlinesList Component - v46.33
  * 
@@ -649,8 +650,8 @@ const DeadlinesList = ({
   const exportToExcel = async (data) => {
     try {
       // Use electronAPI if available, otherwise fallback to CSV
-      if (window.electronAPI?.exportToExcel) {
-        await window.electronAPI.exportToExcel({
+      if (apiClient?.exportToExcel) {
+        await apiClient.exportToExcel({
           filename: `Deadlines_${new Date().toISOString().split('T')[0]}.xlsx`,
           sheetName: 'Deadlines',
           columns: [
@@ -693,8 +694,8 @@ const DeadlinesList = ({
 
   const exportToPDF = async (data) => {
     try {
-      if (window.electronAPI?.exportToPDF) {
-        await window.electronAPI.exportToPDF({
+      if (apiClient?.exportToPDF) {
+        await apiClient.exportToPDF({
           filename: `Deadlines_${new Date().toISOString().split('T')[0]}.pdf`,
           title: 'Deadlines Report - Qanuni',
           subtitle: `${'Generated'}: ${formatDateLong(new Date().toISOString())}`,

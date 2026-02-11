@@ -3,6 +3,7 @@ import { Plus, Search, X, ChevronDown, Calendar, Clock, History, CalendarDays } 
 import ExportButtons from '../common/ExportButtons';
 import { tf } from '../../utils';
 import { useUI } from '../../contexts';
+import apiClient from '../../api-client';
 
 /**
  * HearingsList Component - v46.38
@@ -459,7 +460,7 @@ const HearingsList = ({
   const handleExportExcel = async () => {
     const data = prepareExportData();
     if (!data.length) return showToast('No data to export', 'info');
-    const result = await window.electronAPI.exportToExcel(data, 'Hearings');
+    const result = await apiClient.exportToExcel(data, 'Hearings');
     if (result?.success) showToast('Exported successfully', 'success');
   };
 
@@ -467,7 +468,7 @@ const HearingsList = ({
     const data = prepareExportData();
     if (!data.length) return showToast('No data to export', 'info');
     const columns = ['Client', 'Matter', 'File No.', 'Hearing Date', 'Time', 'Court', 'Region', 'Purpose'];
-    const result = await window.electronAPI.exportToPdf(data, 'Hearings', columns);
+    const result = await apiClient.exportToPdf(data, 'Hearings', columns);
     if (result?.success) showToast('Exported successfully', 'success');
   };
 

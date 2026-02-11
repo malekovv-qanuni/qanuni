@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Plus, Search, X, ChevronDown, ChevronLeft, ChevronRight, Calendar, CalendarDays, Clock, History, List } from 'lucide-react';
 import { tf } from '../../utils';
 import { useUI } from '../../contexts';
+import apiClient from '../../api-client';
 
 // ============================================================================
 // REUSABLE FILTER COMPONENTS
@@ -698,7 +699,7 @@ const AppointmentsList = ({
                             'Delete Appointment',
                             'Are you sure you want to delete this appointment?',
                             async () => {
-                              await window.electronAPI.deleteAppointment(a.appointment_id);
+                              await apiClient.deleteAppointment(a.appointment_id);
                               await refreshAppointments();
                               showToast('Appointment deleted');
                               hideConfirm();

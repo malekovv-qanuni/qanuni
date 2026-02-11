@@ -6,6 +6,7 @@
  */
 
 import React, { useState } from 'react';
+import apiClient from '../../api-client';
 
 const LicenseScreen = ({ 
   machineId, 
@@ -63,7 +64,7 @@ const LicenseScreen = ({
 
     try {
       // Call the electron API to validate and save license
-      const result = await window.electronAPI.validateLicense(licenseKey.trim());
+      const result = await apiClient.validateLicense(licenseKey.trim());
       
       if (result.valid) {
         onActivate(result);

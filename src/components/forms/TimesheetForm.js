@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { FormField } from '../common';
 import { useUI } from '../../contexts';
+import apiClient from '../../api-client';
 
 const TimesheetForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refreshTimesheets, clients, matters, lawyers}) => {
   const { forms, closeForm } = useUI();
@@ -91,9 +92,9 @@ const TimesheetForm = React.memo(({ showToast, markFormDirty, clearFormDirty, re
       };
       
       if (editingTimesheet) {
-        await window.electronAPI.updateTimesheet(data);
+        await apiClient.updateTimesheet(data);
       } else {
-        await window.electronAPI.addTimesheet(data);
+        await apiClient.addTimesheet(data);
       }
       clearFormDirty();
       await refreshTimesheets();

@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { FormField } from '../common';
 import { useUI } from '../../contexts';
+import apiClient from '../../api-client';
 
 const TaskForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refreshTasks, clients, matters, taskTypes, lawyers}) => {
   const { forms, closeForm } = useUI();
@@ -94,9 +95,9 @@ const TaskForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refresh
       };
       
       if (editingTask) {
-        await window.electronAPI.updateTask({ ...taskData, task_id: editingTask.task_id });
+        await apiClient.updateTask({ ...taskData, task_id: editingTask.task_id });
       } else {
-        await window.electronAPI.addTask(taskData);
+        await apiClient.addTask(taskData);
       }
       clearFormDirty();
       await refreshTasks();

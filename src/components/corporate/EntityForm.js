@@ -10,6 +10,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Pencil, Trash2, Plus, X, Building2, Users, UserCheck, FileText, Calendar, Printer, Download, ChevronRight, AlertTriangle, DollarSign } from 'lucide-react';
 import { useUI } from '../../contexts';
+import apiClient from '../../api-client';
 
 const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityTypes }) => {
   const { forms, closeForm } = useUI();
@@ -87,8 +88,8 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
   useEffect(() => {
     const loadCurrencies = async () => {
       try {
-        if (window.electronAPI.getCurrencies) {
-          const data = await window.electronAPI.getCurrencies();
+        if (apiClient.getCurrencies) {
+          const data = await apiClient.getCurrencies();
           setAvailableCurrencies(data || []);
         }
       } catch (error) {
@@ -179,7 +180,7 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
 
   const loadCompanyClients = async () => {
     try {
-      const clients = await window.electronAPI.getCompanyClientsWithoutEntity();
+      const clients = await apiClient.getCompanyClientsWithoutEntity();
       setCompanyClients(clients || []);
     } catch (error) {
       console.error('Error loading company clients:', error);
@@ -192,7 +193,7 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
     if (!clientId) return;
     setLoadingShareholders(true);
     try {
-      const data = await window.electronAPI.getShareholders(clientId);
+      const data = await apiClient.getShareholders(clientId);
       setShareholders(data || []);
     } catch (error) {
       console.error('Error loading shareholders:', error);
@@ -220,14 +221,14 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
     try {
       const clientId = editingEntity?.client_id || formData.client_id;
       if (editingShareholder) {
-        await window.electronAPI.updateShareholder({
+        await apiClient.updateShareholder({
           ...shareholderForm,
           id: editingShareholder.id,
           shares_owned: parseInt(shareholderForm.shares_owned) || 0
         });
         showToast('Shareholder updated', 'success');
       } else {
-        await window.electronAPI.addShareholder({
+        await apiClient.addShareholder({
           ...shareholderForm,
           client_id: clientId,
           shares_owned: parseInt(shareholderForm.shares_owned) || 0
@@ -246,7 +247,7 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
   const handleDeleteShareholder = async (id) => {
     if (!confirm('Are you sure you want to delete this shareholder?')) return;
     try {
-      await window.electronAPI.deleteShareholder(id);
+      await apiClient.deleteShareholder(id);
       showToast('Shareholder deleted', 'success');
       loadShareholders(editingEntity?.client_id || formData.client_id);
     } catch (error) {
@@ -272,7 +273,7 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
     if (!clientId) return;
     setLoadingDirectors(true);
     try {
-      const data = await window.electronAPI.getDirectors(clientId);
+      const data = await apiClient.getDirectors(clientId);
       setDirectors(data || []);
     } catch (error) {
       console.error('Error loading directors:', error);
@@ -291,13 +292,13 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
 
     try {
       if (editingDirector) {
-        await window.electronAPI.updateDirector({
+        await apiClient.updateDirector({
           ...directorForm,
           id: editingDirector.id
         });
         showToast('Director updated', 'success');
       } else {
-        await window.electronAPI.addDirector({
+        await apiClient.addDirector({
           ...directorForm,
           client_id: clientId
         });
@@ -315,7 +316,7 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
   const handleDeleteDirector = async (id) => {
     if (!confirm('Are you sure you want to delete this director?')) return;
     try {
-      await window.electronAPI.deleteDirector(id);
+      await apiClient.deleteDirector(id);
       showToast('Director deleted', 'success');
       loadDirectors(editingEntity?.client_id || formData.client_id);
     } catch (error) {
@@ -346,7 +347,7 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
     if (!clientId) return;
     setLoadingFilings(true);
     try {
-      const data = await window.electronAPI.getFilings(clientId);
+      const data = await apiClient.getFilings(clientId);
       setFilings(data || []);
     } catch (error) {
       console.error('Error loading filings:', error);
@@ -367,10 +368,10 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
 
     try {
       if (editingFiling) {
-        await window.electronAPI.updateFiling({ ...filingForm, id: editingFiling.id });
+        await apiClient.updateFiling({ ...filingForm, id: editingFiling.id });
         showToast('Filing updated', 'success');
       } else {
-        await window.electronAPI.addFiling({ ...filingForm, client_id: clientId });
+        await apiClient.addFiling({ ...filingForm, client_id: clientId });
         showToast('Filing added', 'success');
       }
       loadFilings(clientId);
@@ -385,7 +386,7 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
   const handleDeleteFiling = async (id) => {
     if (!confirm('Are you sure you want to delete this filing?')) return;
     try {
-      await window.electronAPI.deleteFiling(id);
+      await apiClient.deleteFiling(id);
       showToast('Filing deleted', 'success');
       loadFilings(editingEntity?.client_id || formData.client_id);
     } catch (error) {
@@ -413,7 +414,7 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
     if (!clientId) return;
     setLoadingMeetings(true);
     try {
-      const data = await window.electronAPI.getMeetings(clientId);
+      const data = await apiClient.getMeetings(clientId);
       setMeetings(data || []);
     } catch (error) {
       console.error('Error loading meetings:', error);
@@ -434,10 +435,10 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
 
     try {
       if (editingMeeting) {
-        await window.electronAPI.updateMeeting({ ...meetingForm, id: editingMeeting.id });
+        await apiClient.updateMeeting({ ...meetingForm, id: editingMeeting.id });
         showToast('Meeting updated', 'success');
       } else {
-        await window.electronAPI.addMeeting({ ...meetingForm, client_id: clientId });
+        await apiClient.addMeeting({ ...meetingForm, client_id: clientId });
         showToast('Meeting added', 'success');
       }
       loadMeetings(clientId);
@@ -452,7 +453,7 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
   const handleDeleteMeeting = async (id) => {
     if (!confirm('Are you sure you want to delete this meeting?')) return;
     try {
-      await window.electronAPI.deleteMeeting(id);
+      await apiClient.deleteMeeting(id);
       showToast('Meeting deleted', 'success');
       loadMeetings(editingEntity?.client_id || formData.client_id);
     } catch (error) {
@@ -481,7 +482,7 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
     if (!clientId) return;
     setLoadingTransfers(true);
     try {
-      const data = await window.electronAPI.getShareTransfers(clientId);
+      const data = await apiClient.getShareTransfers(clientId);
       setShareTransfers(data || []);
     } catch (error) {
       console.error('Error loading transfers:', error);
@@ -569,10 +570,10 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
       };
 
       if (editingTransfer) {
-        await window.electronAPI.updateShareTransfer({ ...transferData, id: editingTransfer.id });
+        await apiClient.updateShareTransfer({ ...transferData, id: editingTransfer.id });
         showToast('Transfer updated', 'success');
       } else {
-        await window.electronAPI.addShareTransfer(transferData);
+        await apiClient.addShareTransfer(transferData);
         showToast('Transfer recorded', 'success');
       }
       
@@ -595,7 +596,7 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
   const handleDeleteTransfer = async (id) => {
     if (!confirm('Are you sure you want to delete this record? Note: Balance changes will NOT be reversed automatically')) return;
     try {
-      await window.electronAPI.deleteShareTransfer(id);
+      await apiClient.deleteShareTransfer(id);
       showToast('Record deleted', 'success');
       loadTransfers(editingEntity?.client_id || formData.client_id);
     } catch (error) {
@@ -718,10 +719,10 @@ const EntityForm = React.memo(({ showToast, refreshCorporateEntities, entityType
       const hasExistingRecord = editingEntity?.entity_id;
 
       if (hasExistingRecord) {
-        await window.electronAPI.updateCorporateEntity(dataToSave);
+        await apiClient.updateCorporateEntity(dataToSave);
         showToast('Corporate details updated', 'success');
       } else {
-        await window.electronAPI.addCorporateEntity(dataToSave);
+        await apiClient.addCorporateEntity(dataToSave);
         showToast('Corporate details added', 'success');
       }
       refreshCorporateEntities();

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   FileText, Briefcase, DollarSign, PieChart, Download, Building2, Users, UserCheck, Calendar
 } from 'lucide-react';
+import apiClient from '../../api-client';
 
 // ============================================
 // REPORTS MODULE COMPONENT
@@ -87,7 +88,7 @@ const ReportsModule = ({
       const filters = dateFilterableReports.includes(reportId) 
         ? { dateFrom, dateTo } 
         : {};
-      const data = await window.electronAPI.generateReport(reportId, filters);
+      const data = await apiClient.generateReport(reportId, filters);
       setReportData(data || []);
     } catch (error) {
       console.error('Error loading report:', error);
@@ -120,20 +121,20 @@ const ReportsModule = ({
     try {
       let result;
       if (format === 'excel') {
-        result = await window.electronAPI.exportToExcel(reportData, reportName);
+        result = await apiClient.exportToExcel(reportData, reportName);
       } else if (format === 'csv') {
-        result = await window.electronAPI.exportToCsv(reportData, reportName);
+        result = await apiClient.exportToCsv(reportData, reportName);
       } else if (format === 'pdf') {
         // Get column headers based on report type
         const columns = Object.keys(reportData[0] || {});
-        result = await window.electronAPI.exportToPdf(reportData, reportName, columns);
+        result = await apiClient.exportToPdf(reportData, reportName, columns);
       }
       
       if (result?.success) {
         // Optionally open the file
         const openFile = window.confirm(`Export successful!\n\nFile saved to:\n${result.filePath}\n\nWould you like to open it?`);
         if (openFile) {
-          await window.electronAPI.openFile(result.filePath);
+          await apiClient.openFile(result.filePath);
         }
       } else if (!result?.canceled) {
         alert('Export failed: ' + (result?.error || 'Unknown error'));

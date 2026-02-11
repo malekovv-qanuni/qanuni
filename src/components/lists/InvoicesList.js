@@ -3,6 +3,7 @@ import { Plus, Search, X, ChevronDown, Calendar } from 'lucide-react';
 import { EmptyState } from '../common';
 import { useUI } from '../../contexts';
 import { useFilters } from '../../hooks/useFilters';
+import apiClient from '../../api-client';
 
 /**
  * InvoicesList Component - v44.3
@@ -696,7 +697,7 @@ const InvoicesList = ({
                           <button onClick={() => openForm('invoice', inv)}
                             className="text-blue-600 hover:text-blue-900 mr-3">{'Edit'}</button>
                           <button onClick={async () => {
-                            await window.electronAPI.updateInvoiceStatus(inv.invoice_id, 'sent');
+                            await apiClient.updateInvoiceStatus(inv.invoice_id, 'sent');
                             await refreshInvoices();
                             showToast('Invoice marked as sent');
                           }} className="text-green-600 hover:text-green-900 mr-3">{'Mark as Sent'}</button>
@@ -704,7 +705,7 @@ const InvoicesList = ({
                       )}
                       {(inv.status === 'sent' || inv.status === 'viewed' || inv.status === 'partial') && (
                         <button onClick={async () => {
-                          await window.electronAPI.updateInvoiceStatus(inv.invoice_id, 'paid');
+                          await apiClient.updateInvoiceStatus(inv.invoice_id, 'paid');
                           await refreshInvoices();
                           showToast('Invoice marked as paid');
                         }} className="text-green-600 hover:text-green-900 mr-3">{'Mark as Paid'}</button>
@@ -714,7 +715,7 @@ const InvoicesList = ({
                           'Delete Invoice',
                           'Are you sure you want to delete this invoice?',
                           async () => {
-                            await window.electronAPI.deleteInvoice(inv.invoice_id);
+                            await apiClient.deleteInvoice(inv.invoice_id);
                             await refreshInvoices();
                             showToast('Invoice deleted');
                             hideConfirm();

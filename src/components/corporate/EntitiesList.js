@@ -8,6 +8,7 @@
 import React, { useState, useMemo } from 'react';
 import { Building2, Edit3, Plus, Trash2, Filter } from 'lucide-react';
 import { useUI } from '../../contexts';
+import apiClient from '../../api-client';
 
 const EntitiesList = React.memo(({ corporateEntities, showToast, refreshCorporateEntities }) => {
   const { openForm } = useUI();
@@ -121,7 +122,7 @@ const EntitiesList = React.memo(({ corporateEntities, showToast, refreshCorporat
   const handleDelete = async (clientId) => {
     if (window.confirm('Are you sure you want to delete this corporate record?')) {
       try {
-        await window.electronAPI.deleteCorporateEntity(clientId);
+        await apiClient.deleteCorporateEntity(clientId);
         showToast('Corporate record deleted', 'success');
         refreshCorporateEntities();
       } catch (error) {

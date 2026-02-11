@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { FormField, LoadingButton } from '../common';
 import { useUI } from '../../contexts';
+import apiClient from '../../api-client';
 
 const DeadlineForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refreshDeadlines, clients, matters, judgments}) => {
   const { forms, closeForm } = useUI();
@@ -118,9 +119,9 @@ const DeadlineForm = React.memo(({ showToast, markFormDirty, clearFormDirty, ref
       // Check for deadline_id to determine if updating or creating
       let result;
       if (editingDeadline?.deadline_id) {
-        result = await window.electronAPI.updateDeadline(data);
+        result = await apiClient.updateDeadline(data);
       } else {
-        result = await window.electronAPI.addDeadline(data);
+        result = await apiClient.addDeadline(data);
       }
 
       if (result && result.success === false) {

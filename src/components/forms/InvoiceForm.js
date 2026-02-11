@@ -7,6 +7,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { FormField } from '../common';
 import { useUI } from '../../contexts';
+import apiClient from '../../api-client';
 
 const InvoiceForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refreshInvoices, refreshTimesheets, refreshExpenses, refreshAdvances, clients, matters, timesheets, expenses, advances, firmInfo}) => {
   const { forms, closeForm } = useUI();
@@ -86,7 +87,7 @@ const InvoiceForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refr
   // Load existing invoice items when editing
   const loadExistingInvoiceItems = async (invoiceId) => {
     try {
-      const items = await window.electronAPI.getInvoiceItems(invoiceId);
+      const items = await apiClient.getInvoiceItems(invoiceId);
       if (items && items.length > 0) {
         // Separate by type
         const timeItems = items.filter(i => i.item_type === 'time');
@@ -229,7 +230,7 @@ const InvoiceForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refr
   const loadRetainerBalance = async () => {
     if (formData.client_id) {
       try {
-        const retainer = await window.electronAPI.getClientRetainer(formData.client_id, formData.matter_id || null);
+        const retainer = await apiClient.getClientRetainer(formData.client_id, formData.matter_id || null);
         if (retainer && retainer.balance_remaining) {
           setRetainerBalance(parseFloat(retainer.balance_remaining));
         } else {
@@ -244,8 +245,8 @@ const InvoiceForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refr
 
   const loadUnbilledItems = async () => {
     if (formData.client_id) {
-      const time = await window.electronAPI.getUnbilledTime(formData.client_id, formData.matter_id || null);
-      const exp = await window.electronAPI.getUnbilledExpenses(formData.client_id, formData.matter_id || null);
+      const time = await apiClient.getUnbilledTime(formData.client_id, formData.matter_id || null);
+      const exp = await apiClient.getUnbilledExpenses(formData.client_id, formData.matter_id || null);
       setUnbilledTimeItems(time);
       setUnbilledExpenseItems(exp);
       setSelectedTimeIds(time.map(t => t.timesheet_id));
@@ -308,7 +309,7 @@ const InvoiceForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refr
     if (!validateStep3()) return;
     
     try {
-      const invoiceNumber = await window.electronAPI.generateInvoiceNumber();
+      const invoiceNumber = await apiClient.generateInvoiceNumber();
       const totals = calculateTotals();
       
       const items = [];
@@ -394,7 +395,7 @@ const InvoiceForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refr
           });
       }
 
-      const result = await window.electronAPI.createInvoice({
+      const result = await apiClient.createInvoice({
         invoice_number: invoiceNumber,
         client_id: formData.client_id,
         matter_id: formData.matter_id || null,
@@ -421,7 +422,7 @@ const InvoiceForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refr
       // Deduct retainer from advance if applied
       if (totals.retainerApplied > 0) {
         try {
-          await window.electronAPI.deductRetainer(formData.client_id, formData.matter_id || null, 'client_retainer', totals.retainerApplied);
+          await apiClient.deductRetainer(formData.client_id, formData.matter_id || null, 'client_retainer', totals.retainerApplied);
         } catch (error) {
           console.error('Error deducting retainer:', error);
         }
@@ -430,7 +431,7 @@ const InvoiceForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refr
       // Generate supporting documents if requested
       if (generateSupportingDocs && result?.invoice_id) {
         try {
-          const pdfResult = await window.electronAPI.generateInvoicePdfs(result.invoice_id, {
+          const pdfResult = await apiClient.generateInvoicePdfs(result.invoice_id, {
             generateTimesheet: formData.invoice_content_type !== 'expenses_only' && items.some(i => i.item_type === 'time'),
             generateExpenses: formData.invoice_content_type !== 'fees_only' && items.some(i => i.item_type === 'expense')
           });

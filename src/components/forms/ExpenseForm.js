@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { tf } from '../../utils';
 import { Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { useUI } from '../../contexts';
+import apiClient from '../../api-client';
 
 const ExpenseForm = React.memo(({
   showToast,
@@ -74,7 +75,7 @@ const ExpenseForm = React.memo(({
     
     // Check client expense advance
     try {
-      const clientAdv = await window.electronAPI.getClientExpenseAdvance(sharedData.client_id, sharedData.matter_id);
+      const clientAdv = await apiClient.getClientExpenseAdvance(sharedData.client_id, sharedData.matter_id);
       if (clientAdv) {
         const newBalance = parseFloat(clientAdv.balance_remaining) - totalAmount;
         if (newBalance < 0) {
@@ -86,7 +87,7 @@ const ExpenseForm = React.memo(({
     // Check lawyer advance if paid by lawyer
     if (sharedData.paid_by_lawyer_id) {
       try {
-        const lawyerAdv = await window.electronAPI.getLawyerAdvance(sharedData.paid_by_lawyer_id);
+        const lawyerAdv = await apiClient.getLawyerAdvance(sharedData.paid_by_lawyer_id);
         if (lawyerAdv) {
           const newBalance = parseFloat(lawyerAdv.balance_remaining) - totalAmount;
           if (newBalance < 0) {
@@ -198,7 +199,7 @@ const ExpenseForm = React.memo(({
       if (editingExpense) {
         // Update single expense
         const item = lineItems[0];
-        await window.electronAPI.updateExpense({
+        await apiClient.updateExpense({
           expense_id: editingExpense.expense_id,
           expense_type: editingExpense.expense_type || 'client',
           client_id: sharedData.client_id,
@@ -222,7 +223,7 @@ const ExpenseForm = React.memo(({
         );
 
         for (const item of validItems) {
-          await window.electronAPI.addExpenseWithDeduction({
+          await apiClient.addExpenseWithDeduction({
             expense_type: 'client',
             client_id: sharedData.client_id,
             matter_id: sharedData.matter_id || null,

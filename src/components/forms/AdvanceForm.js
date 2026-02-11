@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { FormField } from '../common';
 import { useUI } from '../../contexts';
+import apiClient from '../../api-client';
 
 const AdvanceForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refreshAdvances, clients, matters, lawyers}) => {
   const { forms, closeForm } = useUI();
@@ -98,9 +99,9 @@ const AdvanceForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refr
       };
       let result;
       if (editingAdvance) {
-        result = await window.electronAPI.updateAdvance(advanceData);
+        result = await apiClient.updateAdvance(advanceData);
       } else {
-        result = await window.electronAPI.addAdvance(advanceData);
+        result = await apiClient.addAdvance(advanceData);
       }
       if (result && result.success === false) {
         showToast('Save failed: ' + (result.error || 'Unknown error'), 'error');

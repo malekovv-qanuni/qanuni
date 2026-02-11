@@ -3,6 +3,7 @@ import { Plus, X, ChevronDown, Search } from 'lucide-react';
 import ExportButtons from '../common/ExportButtons';
 import { useUI } from '../../contexts';
 import { useFilters } from '../../hooks/useFilters';
+import apiClient from '../../api-client';
 /**
  * TasksList Component - v46.7
  * 
@@ -195,7 +196,7 @@ const TasksList = ({
     const next = typeof updaterOrValue === 'function' ? updaterOrValue(taskFilters) : updaterOrValue;
     Object.keys(next).forEach(k => _taskSetFilter(k, next[k]));
   };
-  const electronAPI = window.electronAPI;
+
   const today = new Date().toISOString().split('T')[0];
   
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -354,7 +355,7 @@ const TasksList = ({
   const handleExportExcel = async () => {
     const data = prepareExportData();
     if (!data.length) return showToast('No data to export', 'info');
-    const result = await window.electronAPI.exportToExcel(data, 'Tasks');
+    const result = await apiClient.exportToExcel(data, 'Tasks');
     if (result?.success) showToast('Exported successfully', 'success');
   };
 
@@ -362,7 +363,7 @@ const TasksList = ({
     const data = prepareExportData();
     if (!data.length) return showToast('No data to export', 'info');
     const columns = ['Client', 'Matter', 'File No.', 'Title', 'Assigned To', 'Due Date', 'Priority', 'Status'];
-    const result = await window.electronAPI.exportToPdf(data, 'Tasks', columns);
+    const result = await apiClient.exportToPdf(data, 'Tasks', columns);
     if (result?.success) showToast('Exported successfully', 'success');
   };
 
@@ -749,7 +750,7 @@ const TasksList = ({
                         className="text-blue-600 hover:text-blue-900 mr-2">Edit</button>
                       <button onClick={() => {
                         showConfirm('Delete Task', 'Are you sure you want to delete this task?', async () => {
-                          await electronAPI.deleteTask(task.task_id);
+                          await apiClient.deleteTask(task.task_id);
                           await refreshTasks();
                           showToast('Task deleted');
                           hideConfirm();

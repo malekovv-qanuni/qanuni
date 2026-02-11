@@ -5,6 +5,7 @@ import {
   Gavel, FileSpreadsheet, Printer
 } from 'lucide-react';
 import { useDialog } from '../../contexts';
+import apiClient from '../../api-client';
 
 /**
  * MatterTimeline.js
@@ -372,7 +373,7 @@ const MatterTimeline = ({
   const loadTimeline = async () => {
     setLoading(true);
     try {
-      const data = await window.electronAPI.getMatterTimeline(matter.matter_id);
+      const data = await apiClient.getMatterTimeline(matter.matter_id);
       setTimeline(data || []);
     } catch (error) {
       console.error('Error loading timeline:', error);
@@ -409,13 +410,13 @@ const MatterTimeline = ({
   const handleSaveDiary = async (formData) => {
     try {
       if (editingEntry) {
-        await window.electronAPI.updateDiaryEntry({
+        await apiClient.updateDiaryEntry({
           entry_id: editingEntry.id,
           ...formData
         });
         showToast('Entry updated', 'success');
       } else {
-        await window.electronAPI.addDiaryEntry({
+        await apiClient.addDiaryEntry({
           matter_id: matter.matter_id,
           ...formData
         });
@@ -434,7 +435,7 @@ const MatterTimeline = ({
   const handleDeleteDiary = async (entry) => {
     if (!window.confirm('Delete this entry?')) return;
     try {
-      await window.electronAPI.deleteDiaryEntry(entry.id);
+      await apiClient.deleteDiaryEntry(entry.id);
       showToast('Entry deleted', 'success');
       loadTimeline();
     } catch (error) {

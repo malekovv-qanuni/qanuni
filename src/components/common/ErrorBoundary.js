@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import apiClient from '../../api-client';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -17,8 +18,8 @@ class ErrorBoundary extends React.Component {
     
     // If electron logging is available, log there too
     try {
-      if (window.electronAPI && window.electronAPI.logError) {
-        window.electronAPI.logError({
+      if (apiClient && apiClient.logError) {
+        apiClient.logError({
           message: error.message,
           stack: error.stack,
           componentStack: errorInfo?.componentStack

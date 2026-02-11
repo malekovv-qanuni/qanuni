@@ -3,6 +3,7 @@ import { Plus, Search, X, ChevronDown } from 'lucide-react';
 import ExportButtons from '../common/ExportButtons';
 import { useUI } from '../../contexts';
 import { useFilters } from '../../hooks/useFilters';
+import apiClient from '../../api-client';
 /**
  * TimesheetsList Component - v46.46
  * 
@@ -147,7 +148,7 @@ const TimesheetsList = ({
     const next = typeof updaterOrValue === 'function' ? updaterOrValue(timesheetFilters) : updaterOrValue;
     Object.keys(next).forEach(k => _tsSetFilter(k, next[k]));
   };
-  const electronAPI = window.electronAPI;
+
   const [openDropdown, setOpenDropdown] = useState(null);
   const [datePreset, setDatePreset] = useState('all');
 
@@ -280,7 +281,7 @@ const TimesheetsList = ({
   const handleExportExcel = async () => {
     const data = prepareExportData();
     if (!data.length) return showToast('No data to export', 'info');
-    const result = await window.electronAPI.exportToExcel(data, 'Timesheets');
+    const result = await apiClient.exportToExcel(data, 'Timesheets');
     if (result?.success) showToast('Exported successfully', 'success');
   };
 
@@ -288,7 +289,7 @@ const TimesheetsList = ({
     const data = prepareExportData();
     if (!data.length) return showToast('No data to export', 'info');
     const columns = ['Date', 'Lawyer', 'Client', 'Matter', 'File No.', 'Hours', 'Billable', 'Amount'];
-    const result = await window.electronAPI.exportToPdf(data, 'Timesheets', columns);
+    const result = await apiClient.exportToPdf(data, 'Timesheets', columns);
     if (result?.success) showToast('Exported successfully', 'success');
   };
 
@@ -542,7 +543,7 @@ const TimesheetsList = ({
                               'Delete Timesheet',
                               'Are you sure you want to delete this timesheet?',
                               async () => {
-                                await electronAPI.deleteTimesheet(ts.timesheet_id);
+                                await apiClient.deleteTimesheet(ts.timesheet_id);
                                 await refreshTimesheets();
                                 showToast('Timesheet deleted');
                                 hideConfirm();

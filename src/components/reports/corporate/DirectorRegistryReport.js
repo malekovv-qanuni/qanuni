@@ -4,6 +4,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { X, UserCheck, Building2, Printer, Filter, Download } from 'lucide-react';
+import apiClient from '../../../api-client';
 
 const DirectorRegistryReport = ({ show, onClose}) => {
   const [loading, setLoading] = useState(true);
@@ -22,7 +23,7 @@ const DirectorRegistryReport = ({ show, onClose}) => {
     setLoading(true);
     try {
       // Get all corporate entities
-      const entitiesData = await window.electronAPI.getAllCorporateEntities();
+      const entitiesData = await apiClient.getAllCorporateEntities();
       const corporateEntities = (entitiesData || []).filter(c => c.has_corporate_details);
       setCompanies(corporateEntities);
 
@@ -30,7 +31,7 @@ const DirectorRegistryReport = ({ show, onClose}) => {
 
       // Load directors for each company
       for (const company of corporateEntities) {
-        const directorsData = await window.electronAPI.getDirectors(company.client_id);
+        const directorsData = await apiClient.getDirectors(company.client_id);
         
         (directorsData || []).forEach(d => {
           allDirectors.push({
@@ -77,12 +78,12 @@ const DirectorRegistryReport = ({ show, onClose}) => {
     try {
       let result;
       if (format === 'excel') {
-        result = await window.electronAPI.exportToExcel(exportData, reportName);
+        result = await apiClient.exportToExcel(exportData, reportName);
       } else if (format === 'csv') {
-        result = await window.electronAPI.exportToCsv(exportData, reportName);
+        result = await apiClient.exportToCsv(exportData, reportName);
       } else if (format === 'pdf') {
         const columns = Object.keys(exportData[0] || {});
-        result = await window.electronAPI.exportToPdf(exportData, reportName, columns);
+        result = await apiClient.exportToPdf(exportData, reportName, columns);
       }
       
       if (result?.success) {
@@ -90,7 +91,7 @@ const DirectorRegistryReport = ({ show, onClose}) => {
           `Export successful!\n\nFile saved to:\n${result.filePath}\n\nWould you like to open it?`
         );
         if (openFile) {
-          await window.electronAPI.openFile(result.filePath);
+          await apiClient.openFile(result.filePath);
         }
       } else if (!result?.canceled) {
         alert(('Export failed: ') + (result?.error || 'Unknown error'));

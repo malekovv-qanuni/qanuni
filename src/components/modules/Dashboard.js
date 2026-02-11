@@ -4,6 +4,7 @@ import {
   DollarSign, Wallet, Calendar, AlertTriangle, X, Settings, Menu,
   Building, FileText, Users2, Receipt
 } from 'lucide-react';
+import apiClient from '../../api-client';
 
 /**
  * Dashboard Component - v46.37
@@ -70,13 +71,13 @@ const Dashboard = ({
     const loadDashboardData = async () => {
       try {
         // Load pending invoices
-        if (window.electronAPI.getPendingInvoices) {
-          const invoices = await window.electronAPI.getPendingInvoices();
+        if (apiClient.getPendingInvoices) {
+          const invoices = await apiClient.getPendingInvoices();
           setPendingInvoices(invoices || []);
         }
         // Load compliance items (existing API returns { filings, meetings })
-        if (window.electronAPI.getUpcomingCompliance) {
-          const compliance = await window.electronAPI.getUpcomingCompliance();
+        if (apiClient.getUpcomingCompliance) {
+          const compliance = await apiClient.getUpcomingCompliance();
           // Combine filings and meetings into single array
           const combined = [
             ...(compliance?.filings || []).map(f => ({ ...f, item_type: 'filing' })),

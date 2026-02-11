@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { FormField } from '../common';
 import { useUI } from '../../contexts';
+import apiClient from '../../api-client';
 
 const LookupForm = React.memo(({ showToast, refreshLookups }) => {
   const { forms, closeForm } = useUI();
@@ -64,9 +65,9 @@ const LookupForm = React.memo(({ showToast, refreshLookups }) => {
     }
     try {
       if (editingLookup) {
-        await window.electronAPI.updateLookupItem(lookupType, formData);
+        await apiClient.updateLookupItem(lookupType, formData);
       } else {
-        await window.electronAPI.addLookupItem(lookupType, formData);
+        await apiClient.addLookupItem(lookupType, formData);
       }
       await refreshLookups();
       showToast(editingLookup 
