@@ -3,9 +3,9 @@
 ## Project Overview
 Desktop-first legal ERP application for Lebanese law firms and MENA region. Built with Electron, React, SQLite, and Tailwind CSS. English UI with full Unicode support for Arabic data entry.
 
-**Current Version:** v48.6-session8-complete
+**Current Version:** v48.7-session9-complete
 **Last Updated:** February 11, 2026
-**Status:** Session 8 COMPLETE - Phase 1 Core Reliability
+**Status:** Session 9 COMPLETE - State Management & Performance
 
 **REST API COMPLETE (Feb 10, 2026):** 21/21 modules refactored, 137/163 REST endpoints operational.
 Dual-mode architecture (Electron + Web) proven and scaled. Desktop app fully backward compatible.
@@ -49,19 +49,40 @@ Dual-mode architecture (Electron + Web) proven and scaled. Desktop app fully bac
 - ✅ Desktop app: Zero regressions
 - ✅ Tag: v48.2-session2-complete
 
-**Immediate Work:** Next session planning (Phase 4 completion or Phase 5)
+**Session 9 Complete (Feb 11, 2026):**
+- ✅ Context migration: 27 states moved from App.js to contexts (82% reduction)
+- ✅ AppContext: currentModule, sidebarCollapsed with localStorage persistence
+- ✅ DataContext: 21 entity/lookup states (clients, matters, lawyers, etc.)
+- ✅ CalendarContext: calendarView, calendarDate
+- ✅ DialogContext: selectedMatter migrated
+- ✅ On-demand loading: Startup queries reduced from 20 to 8
+- ✅ Per-module data loading: 12 module-specific loaders with caching
+- ✅ Performance: Faster startup, lower memory usage
+- ✅ useState in App.js: 33 → 6 (only app-level concerns remain)
+- ✅ Tests: 117/117 passing, 0 regressions
+- ✅ Tag: v48.7-session9-complete
+
+**Session 8 Complete (Feb 11, 2026):**
+- ✅ Backend validation: 15 update handlers validated
+- ✅ 22 validation schemas (3 new: share_transfer, filing, meeting)
+- ✅ Fixed 3 schema field mismatches preventing data loss
+- ✅ Structured error returns: All handlers return { success, error }
+- ✅ Frontend error handling: All 13 forms check result.success
+- ✅ Logging: Operational with 30-day retention
+- ✅ Tests: 117/117 passing
+- ✅ Tag: v48.6-session8-complete
+
+**Immediate Work:** Session 10 planning
 
 **Next Session Options:**
-- Option A: Complete Phase 4 (add 26 missing REST endpoints, test all 13 forms in web browser)
-- Option B: Begin Phase 5 (apply result.success pattern to all forms, end-to-end testing)
-- Option C: Skip to Production Packaging (distribution build, installation testing)
-
-**Session 7 Key Insight:** Database verification scripts are essential - UI feedback (success toasts) cannot be trusted without confirming actual data persistence. The timesheet validation bug silently failed because the form showed 'success' while validation rejected the data. Created test-timesheet-ui.mjs pattern for end-to-end verification of save operations.
+- Option A: Complete Web Version (add 26 REST endpoints, test all forms in browser)
+- Option B: Production Infrastructure (migration versioning, DB integrity checks, crash recovery)
+- Option C: Scale Testing (generate test data, verify performance under load)
 
 **Context tracking:** Alert at 75% to create checkpoint
 
-**App.js Lines:** ~1,690 (cleaned in v48)
-**App.js useState:** 33 (Phase 3c.7a Step 1 complete, target: 10)
+**App.js Lines:** ~1,650
+**App.js useState:** 6 (Session 9 complete - 82% reduction, exceeded 71% target)
 
 > **Architectural Pattern (v48):** English UI with Unicode data support. Arabic data columns (`client_name_arabic`, `name_arabic`, `matter_name_arabic`) are retained for bilingual data entry – these store real user data, not UI translations. The UI translation layer (`translations.js`, `t[language]`, `language === 'ar'` ternaries, `isRTL` conditionals) has been fully removed.
 
@@ -276,9 +297,11 @@ Every new chat should start with this workflow understanding.
 - [ ] Desktop regression testing
 - [ ] Web functionality verification
 
-### Phase 6: Complete Phase 3c (Context Extraction) ⏳ DEFERRED
-- [ ] Phase 3c.7a Steps 2-4 (CalendarContext, DataContext, EntityDataContext)
-- [ ] Target: 10 useState in App.js (92% reduction from baseline)
+### Phase 6: State Management & Performance (v48.7) ✅ COMPLETE
+- ✅ Context migration (AppContext, DataContext, CalendarContext, DialogContext)
+- ✅ 27 states moved from App.js (82% reduction)
+- ✅ On-demand loading (startup: 8 queries, per-module: 12 loaders)
+- ✅ useState: 33 → 6
 
 ---
 
@@ -364,6 +387,29 @@ src/
 ---
 
 ## Session History
+
+### Session 9: State Management & Performance ✅ COMPLETE
+**Date:** February 11, 2026
+**Duration:** ~2 hours
+**Tag:** v48.7-session9-complete
+
+**Context Migration (82% reduction):**
+- AppContext: currentModule, sidebarCollapsed + localStorage persistence
+- DataContext: 21 entity/lookup states (clients, matters, lawyers, hearings, etc.)
+- CalendarContext: calendarView, calendarDate
+- DialogContext: selectedMatter migrated
+- App.js useState: 33 → 6 (only app-level concerns remain)
+
+**Performance Optimization:**
+- Startup queries reduced from 20 to 8 (essentials only)
+- Per-module data loading: 12 module-specific loaders
+- Caching: length === 0 guard prevents redundant reloads
+- Faster startup, lower memory usage
+
+**Files changed:** 6 (App.js, AppContext.js, DataContext.js, CalendarContext.js, DialogContext.js, api-client.js)
+**Tests:** 117/117 passing, 0 regressions
+
+**See:** SESSION_8_SUCCESS_REPORT.md
 
 ### Session 7: Manual UI Verification + Web Version ✅ COMPLETE
 **Date:** February 11, 2026
@@ -579,6 +625,7 @@ git checkout preload.js   # Restore if modified by build
 
 | Version | Date | Changes |
 |---------|------|---------|
+| **v48.7-session9-complete** | **Feb 11, 2026** | **Session 9: State Management & Performance complete.** Context migration: 27 states moved from App.js (82% reduction - exceeded target). AppContext: currentModule, sidebarCollapsed + localStorage. DataContext: 21 entity/lookup states. CalendarContext: calendarView, calendarDate. DialogContext: selectedMatter. On-demand loading: startup queries 20→8 (only essentials). Per-module loaders: 12 modules load data when navigated to. Caching: length === 0 guard prevents reloads. Performance: faster startup, lower memory. useState: 33→6. Tests: 117/117 passing. |
 | **v48.6-session8-complete** | **Feb 11, 2026** | **Session 8: Phase 1 Core Reliability complete.** Backend validation: 15 update handlers now validated (appointments, advances, expenses, tasks, timesheets, diary, lookups, 6 corporate, 2 settings). Fixed 3 schema field mismatches that would have caused data loss (shareholder, director, currency). Added 3 new corporate schemas (share_transfer, filing, meeting) - 22 total schemas. Error handling: wrapHandler returns structured { success, error } instead of re-throwing. Frontend: All 13 forms check result.success before showing success toast. Logging: Verified operational with 30-day retention. Tests: 117/117 passing, 0 regressions. |
 | **v48.5-session7-complete** | **Feb 11, 2026** | **Session 7 COMPLETE** - Manual UI verification (3 forms tested in Electron). Critical timesheet validation bug found and fixed (schema expected `hours`, form sent `minutes`). Web version operational (localhost:3000 + localhost:3001). Core CRUD proven in browser. test-timesheet-ui.mjs created for database verification. validation.js contains 19 complete schemas - all entity types covered. Integration tests: 117/117 passing. See SESSION_7_SUCCESS_REPORT.md. |
 | **v48.5-session6-testing** | **Feb 11, 2026** | **Session 6 COMPLETE** - Automated frontend testing created. test-frontend.mjs runs 21 tests (13 forms + 8 workflow steps) in 30 seconds via REST API. All forms validated. Dependencies: node-fetch@2. Zero code changes needed - REST API fully functional. See SESSION_6_SUCCESS_REPORT.md. |
@@ -598,58 +645,52 @@ git checkout preload.js   # Restore if modified by build
 
 ## Known Issues / TODO
 
-### Session 8: Complete Phase 4 Web Version (NEXT - ~2-3 hours)
+### Session 10: Choose Next Priority (~2-4 hours)
 
-**Phase 4 Remaining Work:**
+**Option A: Complete Web Version**
 - [ ] Add 26 missing REST endpoints (primarily lookups and dashboard features)
 - [ ] Fix `/api/expenses/categories` endpoint (expense lookups)
 - [ ] Fix `/api/corporate/upcoming-compliance` endpoint (dashboard widget)
 - [ ] Test all 13 forms in web browser
-- [ ] Apply result.success pattern to all forms (defense in depth)
-- [ ] Add server-side validation logging
-
-**Web Version Proven (Session 7):**
-- [x] API server running (localhost:3001)
-- [x] React dev server running (localhost:3000)
-- [x] Core CRUD operations functional in browser
-- [x] Database separation (web vs desktop)
-
-### Session 9: Testing & Polish (~4-6 hours)
-
-**Phase 5: End-to-End Testing**
-- [ ] Create end-to-end test suite (Playwright/Puppeteer)
-- [ ] Comprehensive browser testing of all forms
-- [ ] Fix remaining UI inconsistencies
-- [ ] Desktop regression testing
+- [ ] Server-side validation logging
 - [ ] Web functionality verification
 
-### Session 10: Complete Phase 3c (~2-3 hours)
+**Option B: Production Infrastructure**
+- [ ] Migration versioning with schema_versions table
+- [ ] Database integrity checks on startup
+- [ ] Crash recovery system
+- [ ] Performance monitoring
+- [ ] Timeline: 2-3 hours
 
-**Phase 3c.7a Steps 2-4: Context Extraction**
-- [ ] CalendarContext (2 states)
-- [ ] DataContext (8 states)
-- [ ] EntityDataContext (13 states)
-- [ ] Target: 10 useState in App.js (92% reduction from baseline)
+**Option C: Scale Testing**
+- [ ] Create test data generator (500 clients, 1000 matters, 5000 timesheets)
+- [ ] Verify startup time < 3 seconds
+- [ ] Test memory usage under load
+- [ ] Validate all operations with large datasets
+- [ ] Timeline: 1-2 hours
 
-### Phase 4-6 (Infrastructure + Polish) - After Testing
+### Completed (Session 9) ✅
+- [x] Context-based state management (AppContext, DataContext, CalendarContext)
+- [x] App.js useState reduction: 33 → 6 (82% reduction)
+- [x] On-demand data loading (startup: 8 queries, per-module: 12 loaders)
+- [x] Performance optimization (faster startup, lower memory)
+- [x] Sidebar state persistence (localStorage)
 
-- Migration versioning with schema_versions table
-- DB integrity checks on startup
-- Crash recovery
-- Remove dead code, console.log
-- Scale testing (500 clients, 1000 matters, 5000 timesheets)
-- Delete unused TimeDropdown.js
+### Completed (Session 8) ✅
+- [x] Backend validation (22 schemas)
+- [x] Structured error returns
+- [x] Frontend error handling
+- [x] Production logging
 
 ### Future (Post-Hardening)
-
 - Proper i18n framework (react-i18next) IF expanding to Francophone markets
 - French language support (but keep single data fields!)
 - Document management integration
 - AI integration (Qanuni AI - Arabic legal document processing)
-- Web version deployment (after Sessions 5-7)
+- Web version deployment (after completing REST endpoints)
 - Auto-update mechanism for distribution
 - Advanced conflict checking
 
 ---
 
-*Last updated: February 11, 2026 - v48.6-session8-complete. Session 8 COMPLETE (Phase 1 Core Reliability). 15 update handlers validated, 3 schema mismatches fixed, 3 new corporate schemas added (22 total), wrapHandler structured errors, all 13 forms check result.success, logging verified. Tests: 117/117 passing. Ready for Session 9.*
+*Last updated: February 11, 2026 - v48.7-session9-complete. Session 9 COMPLETE (State Management & Performance). Context migration: 27 states moved (82% reduction), on-demand loading: startup 20→8 queries, per-module: 12 loaders with caching, useState: 33→6. Tests: 117/117 passing. Ready for Session 10.*
