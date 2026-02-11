@@ -618,6 +618,14 @@ function createTables(database) {
       entity_type TEXT,
       entity_id TEXT,
       created_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS schema_versions (
+      version INTEGER PRIMARY KEY,
+      description TEXT NOT NULL,
+      applied_at TEXT NOT NULL,
+      success INTEGER NOT NULL DEFAULT 1,
+      error_message TEXT
     )
   `);
 

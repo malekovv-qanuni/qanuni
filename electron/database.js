@@ -80,6 +80,11 @@ async function init(options = {}) {
     logger.warn('Could not set WAL mode (sql.js limitation)', { error: e.message });
   }
 
+  // Apply pending migrations
+  const migrations = require('./migrations');
+  const migrationResult = migrations.runAll(module.exports);
+  logger.info('Migration system initialized', migrationResult);
+
   return db;
 }
 

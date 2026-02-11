@@ -24,6 +24,7 @@ const database = require('./electron/database');
 const migrations = require('./electron/migrations');
 const { createTables, seedLookupData } = require('./electron/schema');
 const licenseManager = require('./license/license-manager');
+const crashRecovery = require('./electron/crash-recovery');
 
 let mainWindow = null;
 
@@ -32,7 +33,6 @@ let mainWindow = null;
 app.whenReady().then(async () => {
   // 1. Initialize logging FIRST (everything else depends on it)
   logger.init({ level: isDev ? 'debug' : 'info' });
-  logger.installCrashHandlers(database);
   logger.info('Qanuni starting', { version: app.getVersion(), isDev, pid: process.pid });
 
   // 2. Check license — FAIL CLOSED
@@ -75,7 +75,10 @@ app.whenReady().then(async () => {
     return;
   }
 
-  // 4. Check auto-backup
+  // 4. Install crash recovery (after database is ready)
+  crashRecovery.init();
+
+  // 5. Check auto-backup
   try {
     const { checkBackupOnStartup } = require('./electron/ipc/settings');
     checkBackupOnStartup(database);
@@ -84,10 +87,10 @@ app.whenReady().then(async () => {
     // Non-fatal — continue startup
   }
 
-  // 5. Register all IPC handlers
+  // 6. Register all IPC handlers
   registerAllHandlers();
 
-  // 6. Create window
+  // 7. Create window
   createWindow();
 
   app.on('activate', () => {
@@ -165,12 +168,8 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
-  logger.info('App shutting down');
-
-  // Force save database (no debounce, no async)
-  database.forceSave();
-
-  // Run auto-backup if configured for on_close
+  // Note: crash-recovery.js handles force save and shutdown logging.
+  // This handler only runs auto-backup if configured for on_close.
   try {
     const { performAutoBackup, getAutoBackupSettings } = require('./electron/ipc/settings');
     const settings = getAutoBackupSettings(database);
@@ -180,6 +179,4 @@ app.on('before-quit', () => {
   } catch (error) {
     logger.error('Auto-backup on close failed', { error: error.message });
   }
-
-  logger.info('Shutdown complete');
 });

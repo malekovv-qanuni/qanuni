@@ -27,6 +27,7 @@ const migrations = require('./electron/migrations');
 const validation = require('./electron/validation');
 const { createTables, seedLookupData } = require('./electron/schema');
 const licenseManager = require('./license/license-manager');
+const crashRecovery = require('./electron/crash-recovery');
 
 let mainWindow = null;
 
@@ -35,7 +36,8 @@ let mainWindow = null;
 app.whenReady().then(async () => {
   // 1. Initialize logging FIRST (everything else depends on it)
   logger.init({ level: isDev ? 'debug' : 'info' });
-  logger.installCrashHandlers(database);
+  // Note: crashRecovery.init() is called after database initialization
+  // It installs uncaughtException, unhandledRejection, and before-quit handlers
   logger.info('Qanuni starting', { version: app.getVersion(), isDev, pid: process.pid });
 
   // 2. Check license — FAIL CLOSED
@@ -77,7 +79,10 @@ app.whenReady().then(async () => {
     return;
   }
 
-  // 4. Check auto-backup
+  // 4. Install crash recovery handlers (after database is ready)
+  crashRecovery.init();
+
+  // 5. Check auto-backup
   try {
     const settingsModule = require('./electron/ipc/settings');
     if (typeof settingsModule.checkBackupOnStartup === 'function') {
@@ -88,10 +93,10 @@ app.whenReady().then(async () => {
     // Non-fatal — continue startup
   }
 
-  // 5. Register all IPC handlers
+  // 6. Register all IPC handlers
   registerAllHandlers();
 
-  // 6. Create window
+  // 7. Create window
   createWindow();
 
   app.on('activate', () => {
@@ -208,12 +213,8 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
-  logger.info('App shutting down');
-
-  // Force save database (no debounce, no async)
-  database.forceSave();
-
-  // Run auto-backup if configured for on_close
+  // Note: crash-recovery.js handles force save and shutdown logging
+  // This handler only runs auto-backup if configured for on_close
   try {
     const settingsModule = require('./electron/ipc/settings');
     if (typeof settingsModule.getAutoBackupSettings === 'function' &&
@@ -226,6 +227,4 @@ app.on('before-quit', () => {
   } catch (error) {
     logger.error('Auto-backup on close failed', { error: error.message });
   }
-
-  logger.info('Shutdown complete');
 });

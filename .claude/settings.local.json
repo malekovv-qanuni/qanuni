@@ -9,7 +9,19 @@
       "Bash(lsof:*)",
       "Bash(xargs kill -9)",
       "Bash(powershell -Command:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout /t 15 /nobreak)",
+      "Bash(npm install:*)",
+      "Bash(npm run api:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nSession 6: Automated frontend testing complete - 21 tests passing in 30 seconds\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\ndocs: Update CLAUDE.md for Session 6 completion\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(git tag:*)",
+      "Bash(test:*)",
+      "Bash(git status:*)",
+      "Bash(Remove-Item \"C:\\\\Projects\\\\qanuni\\\\qanuni-test.db\" -ErrorAction SilentlyContinue)",
+      "Bash(ren:*)"
     ]
   }
 }

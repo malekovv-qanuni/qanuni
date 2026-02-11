@@ -214,33 +214,10 @@ function getRecentEntries(count = 100) {
   }
 }
 
-// ==================== CRASH HANDLER ====================
-
-/**
- * Install global crash handlers.
- * Call this early in app startup.
- */
-function installCrashHandlers(database) {
-  process.on('uncaughtException', (err) => {
-    error('UNCAUGHT EXCEPTION', { message: err.message, stack: err.stack });
-    // Force save database before crash
-    if (database && database.forceSave) {
-      database.forceSave();
-    }
-    // Give the log a moment to flush, then exit
-    setTimeout(() => process.exit(1), 100);
-  });
-
-  process.on('unhandledRejection', (reason) => {
-    error('UNHANDLED REJECTION', {
-      message: reason?.message || String(reason),
-      stack: reason?.stack?.split('\n').slice(0, 5).join(' | ')
-    });
-  });
-}
-
 // ==================== EXPORTS ====================
 
+// Note: Crash handling is now managed by electron/crash-recovery.js
+// This module focuses on logging only
 module.exports = {
   init,
   error,
@@ -249,6 +226,5 @@ module.exports = {
   debug,
   wrapHandler,
   getLogDir,
-  getRecentEntries,
-  installCrashHandlers
+  getRecentEntries
 };
