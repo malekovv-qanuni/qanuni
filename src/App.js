@@ -17,7 +17,7 @@ import FormField from './components/common/FormField';
 import LicenseScreen from './components/common/LicenseScreen';
 import LicenseWarningBanner from './components/common/LicenseWarningBanner';
 import ErrorBoundary from './components/common/ErrorBoundary';
-import { useNotification, useTimer, useUI, useReport, useDialog } from './contexts';
+import { useNotification, useTimer, useUI, useReport, useDialog, useApp, useData, useCalendar } from './contexts';
 import { useUIModal } from './hooks/useUIModal';
 
 // Extracted corporate components (v42.0.3)
@@ -44,9 +44,24 @@ import PrintStyles from './components/common/PrintStyles';
 import GuidedTourSystem from './components/common/GuidedTour';
 
 const App = () => {
-  // Language state removed (v48)
-  const [currentModule, setCurrentModule] = useState('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Navigation & sidebar (migrated to AppContext)
+  const { currentModule, setCurrentModule, sidebarCollapsed, setSidebarCollapsed } = useApp();
+  // Data state (migrated to DataContext)
+  const {
+    clients, setClients, matters, setMatters, lawyers, setLawyers,
+    hearings, setHearings, judgments, setJudgments, tasks, setTasks,
+    timesheets, setTimesheets, appointments, setAppointments,
+    expenses, setExpenses, advances, setAdvances, invoices, setInvoices,
+    deadlines, setDeadlines, corporateEntities, setCorporateEntities,
+    courtTypes, setCourtTypes, regions, setRegions,
+    hearingPurposes, setHearingPurposes, taskTypes, setTaskTypes,
+    expenseCategories, setExpenseCategories, entityTypes, setEntityTypes,
+    dashboardStats, setDashboardStats, firmInfo, setFirmInfo
+  } = useData();
+  // Calendar state (migrated to CalendarContext)
+  const { calendarView, setCalendarView, calendarDate, setCalendarDate } = useCalendar();
+  // Selected matter (migrated to DialogContext)
+  const { selectedMatter, setSelectedMatter } = useDialog('selectedMatter');
   const [loading, setLoading] = useState(true);
   
   // Notification state (migrated to NotificationContext in v48.1)
@@ -97,33 +112,10 @@ const App = () => {
     }
   }, [hasUnsavedChanges, showConfirm, hideConfirm]);
   
-  // Data state
-  const [clients, setClients] = useState([]);
-  const [matters, setMatters] = useState([]);
-  const [hearings, setHearings] = useState([]);
-  const [judgments, setJudgments] = useState([]);
-  const [tasks, setTasks] = useState([]);
-  const [timesheets, setTimesheets] = useState([]);
-  const [appointments, setAppointments] = useState([]);
-  const [expenses, setExpenses] = useState([]);
-  const [advances, setAdvances] = useState([]);
-  const [invoices, setInvoices] = useState([]);
-  const [deadlines, setDeadlines] = useState([]);
-  const [corporateEntities, setCorporateEntities] = useState([]);
-  const [dashboardStats, setDashboardStats] = useState({});
+  // Data state — migrated to DataContext
+  // Lookup data — migrated to DataContext
   
-  // Lookup data
-  const [courtTypes, setCourtTypes] = useState([]);
-  const [regions, setRegions] = useState([]);
-  const [hearingPurposes, setHearingPurposes] = useState([]);
-  const [taskTypes, setTaskTypes] = useState([]);
-  const [expenseCategories, setExpenseCategories] = useState([]);
-  const [entityTypes, setEntityTypes] = useState([]);
-  const [lawyers, setLawyers] = useState([]);
-  
-  // Calendar state
-  const [calendarView, setCalendarView] = useState('weekly'); // daily, weekly, monthly
-  const [calendarDate, setCalendarDate] = useState(new Date());
+  // Calendar state — migrated to CalendarContext
   
   // Form visibility
   // showClientForm, editingClient, clientFormData — migrated to UIContext (v48.1 Phase 3c.4b)
@@ -160,17 +152,12 @@ const App = () => {
   // Form data (lifted to App level to prevent state loss on re-render)
   // hearingFormData, matterFormData — migrated to UIContext (v48.1 Phase 3c.4c)
   // taskFormData, deadlineFormData, editingDeadline — migrated to UIContext (v48.1 Phase 3c.4c Batch 3)
-  const [selectedMatter, setSelectedMatter] = useState(null);
+  // selectedMatter — migrated to DialogContext
   // conflictResults, viewingInvoice — migrated to DialogContext (Phase 3c.6)
   // editingLookup, currentLookupType — migrated to UIContext (v48.1 Phase 3c.4c Batch 4)
   // settingsTab — migrated to SettingsModule (Phase 3c.7a)
   
-  // Firm Info (needed for Invoices and Settings)
-  const [firmInfo, setFirmInfo] = useState({
-    firm_name: '', firm_name_arabic: '', firm_address: '', firm_phone: '', firm_email: '',
-    firm_website: '', firm_vat_number: '', default_currency: 'USD', default_vat_rate: '11',
-    lawyer_advance_min_balance: '500'
-  });
+  // Firm Info — migrated to DataContext
   
   
   // dashboardWidgets, draggedWidget — migrated to Dashboard (Phase 3c.7a)
@@ -233,8 +220,81 @@ const App = () => {
   // DATA LOADING
 
   useEffect(() => {
-    loadAllData();
+    loadEssentialData();
   }, []);
+
+  // Load data on-demand when navigating to each module
+  useEffect(() => {
+    if (currentModule === 'clients' && clients.length === 0) {
+      loadClientsData();
+    }
+  }, [currentModule]);
+
+  useEffect(() => {
+    if (currentModule === 'matters' && matters.length === 0) {
+      loadMattersData();
+    }
+  }, [currentModule]);
+
+  useEffect(() => {
+    if (currentModule === 'hearings' && hearings.length === 0) {
+      loadHearingsData();
+    }
+  }, [currentModule]);
+
+  useEffect(() => {
+    if (currentModule === 'judgments' && judgments.length === 0) {
+      loadJudgmentsData();
+    }
+  }, [currentModule]);
+
+  useEffect(() => {
+    if (currentModule === 'tasks' && tasks.length === 0) {
+      loadTasksData();
+    }
+  }, [currentModule]);
+
+  useEffect(() => {
+    if (currentModule === 'timesheets' && timesheets.length === 0) {
+      loadTimesheetsData();
+    }
+  }, [currentModule]);
+
+  useEffect(() => {
+    if (currentModule === 'calendar' && appointments.length === 0) {
+      loadAppointmentsData();
+    }
+  }, [currentModule]);
+
+  useEffect(() => {
+    if (currentModule === 'expenses' && expenses.length === 0) {
+      loadExpensesData();
+    }
+  }, [currentModule]);
+
+  useEffect(() => {
+    if (currentModule === 'advances' && advances.length === 0) {
+      loadAdvancesData();
+    }
+  }, [currentModule]);
+
+  useEffect(() => {
+    if (currentModule === 'invoices' && invoices.length === 0) {
+      loadInvoicesData();
+    }
+  }, [currentModule]);
+
+  useEffect(() => {
+    if (currentModule === 'deadlines' && deadlines.length === 0) {
+      loadDeadlinesData();
+    }
+  }, [currentModule]);
+
+  useEffect(() => {
+    if (currentModule === 'corporate' && corporateEntities.length === 0) {
+      loadCorporateData();
+    }
+  }, [currentModule]);
 
   // Load firm info on mount (needed for Invoices)
   useEffect(() => {
@@ -302,6 +362,163 @@ const App = () => {
       forms.task.isOpen, forms.appointment.isOpen, forms.deadline.isOpen,
       invoiceViewerDialog.isOpen, invoiceViewerDialog.closeDialog, forms.lookup.isOpen, confirmDialog.isOpen, currentModule, hideConfirm, timerExpanded,
       closeForm, openForm]);
+
+  // Load only essential data needed at startup (lookups + lawyers + dashboard)
+  const loadEssentialData = async () => {
+    setLoading(true);
+    try {
+      const [
+        courtsData,
+        regionsData,
+        purposesData,
+        taskTypesData,
+        expenseCatsData,
+        entityTypesData,
+        lawyersData,
+        statsData
+      ] = await Promise.all([
+        apiClient.getCourtTypes(),
+        apiClient.getRegions(),
+        apiClient.getHearingPurposes(),
+        apiClient.getTaskTypes(),
+        apiClient.getExpenseCategories(),
+        apiClient.getEntityTypes(),
+        apiClient.getLawyers(),
+        apiClient.getDashboardStats()
+      ]);
+
+      setCourtTypes(courtsData);
+      setRegions(regionsData);
+      setHearingPurposes(purposesData);
+      setTaskTypes(taskTypesData);
+      setExpenseCategories(expenseCatsData);
+      setEntityTypes(entityTypesData);
+      setLawyers(lawyersData);
+      setDashboardStats(statsData);
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading essential data:', error);
+      setLoading(false);
+    }
+  };
+
+  // Module-specific data loaders (called when navigating to each module)
+  const loadClientsData = async () => {
+    try {
+      const data = await apiClient.getAllClients();
+      setClients(data);
+    } catch (error) {
+      console.error('Error loading clients:', error);
+    }
+  };
+
+  const loadMattersData = async () => {
+    try {
+      const data = await apiClient.getAllMatters();
+      setMatters(data);
+    } catch (error) {
+      console.error('Error loading matters:', error);
+    }
+  };
+
+  const loadHearingsData = async () => {
+    try {
+      const data = await apiClient.getAllHearings();
+      setHearings(data);
+    } catch (error) {
+      console.error('Error loading hearings:', error);
+    }
+  };
+
+  const loadJudgmentsData = async () => {
+    try {
+      const data = await apiClient.getAllJudgments();
+      setJudgments(data);
+    } catch (error) {
+      console.error('Error loading judgments:', error);
+    }
+  };
+
+  const loadTasksData = async () => {
+    try {
+      const data = await apiClient.getAllTasks();
+      setTasks(data);
+    } catch (error) {
+      console.error('Error loading tasks:', error);
+    }
+  };
+
+  const loadTimesheetsData = async () => {
+    try {
+      const rawData = await apiClient.getAllTimesheets();
+      const mappedData = rawData.map(t => ({
+        ...t,
+        billable: t.billable === 1
+      }));
+      setTimesheets(mappedData);
+    } catch (error) {
+      console.error('Error loading timesheets:', error);
+    }
+  };
+
+  const loadAppointmentsData = async () => {
+    try {
+      const data = await apiClient.getAllAppointments();
+      setAppointments(data);
+    } catch (error) {
+      console.error('Error loading appointments:', error);
+    }
+  };
+
+  const loadExpensesData = async () => {
+    try {
+      const rawData = await apiClient.getAllExpenses();
+      const mappedData = rawData.map(e => ({
+        ...e,
+        billable: e.billable === 1
+      }));
+      setExpenses(mappedData);
+    } catch (error) {
+      console.error('Error loading expenses:', error);
+    }
+  };
+
+  const loadAdvancesData = async () => {
+    try {
+      const data = await apiClient.getAllAdvances();
+      setAdvances(data);
+    } catch (error) {
+      console.error('Error loading advances:', error);
+    }
+  };
+
+  const loadInvoicesData = async () => {
+    try {
+      const data = await apiClient.getAllInvoices();
+      setInvoices(data);
+    } catch (error) {
+      console.error('Error loading invoices:', error);
+    }
+  };
+
+  const loadDeadlinesData = async () => {
+    try {
+      const data = await apiClient.getAllDeadlines();
+      setDeadlines(data);
+    } catch (error) {
+      console.error('Error loading deadlines:', error);
+    }
+  };
+
+  const loadCorporateData = async () => {
+    try {
+      const data = await apiClient.getAllCorporateEntities();
+      setCorporateEntities(data);
+    } catch (error) {
+      console.error('Error loading corporate entities:', error);
+    }
+  };
 
   const loadAllData = async () => {
     try {
@@ -816,9 +1033,9 @@ const App = () => {
       <div className="bg-white shadow-sm">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)}
+            <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="p-2 hover:bg-gray-100 rounded-md lg:hidden">
-              {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {!sidebarCollapsed ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
             <h1 className="text-2xl font-bold text-blue-600">Qanuni</h1>
           </div>
@@ -827,7 +1044,7 @@ const App = () => {
 
       <div className="flex">
         {/* Sidebar */}
-        <div data-tour="sidebar" className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-64 bg-white shadow-sm min-h-screen`}>
+        <div data-tour="sidebar" className={`${!sidebarCollapsed ? 'block' : 'hidden'} lg:block w-64 bg-white shadow-sm min-h-screen`}>
           <nav className="p-4 space-y-1">
             {[
               { id: 'dashboard', icon: BarChart3, label: 'Dashboard' },

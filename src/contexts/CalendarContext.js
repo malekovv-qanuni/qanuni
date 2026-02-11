@@ -1,22 +1,7 @@
-import React, { createContext, useContext } from 'react';
+// src/contexts/CalendarContext.js
+import React, { createContext, useContext, useState } from 'react';
 
-const CalendarContext = createContext(null);
-
-export const CalendarProvider = ({ children }) => {
-  // TODO Phase 3c.7: Extract from App.js (defer to later)
-  // - calendarView, setCalendarView
-  // - calendarDate, setCalendarDate
-
-  const value = {
-    // Placeholder - will be populated in Phase 3c.7
-  };
-
-  return (
-    <CalendarContext.Provider value={value}>
-      {children}
-    </CalendarContext.Provider>
-  );
-};
+const CalendarContext = createContext();
 
 export const useCalendar = () => {
   const context = useContext(CalendarContext);
@@ -24,4 +9,22 @@ export const useCalendar = () => {
     throw new Error('useCalendar must be used within CalendarProvider');
   }
   return context;
+};
+
+export const CalendarProvider = ({ children }) => {
+  const [calendarView, setCalendarView] = useState('weekly');
+  const [calendarDate, setCalendarDate] = useState(new Date());
+
+  const value = {
+    calendarView,
+    setCalendarView,
+    calendarDate,
+    setCalendarDate
+  };
+
+  return (
+    <CalendarContext.Provider value={value}>
+      {children}
+    </CalendarContext.Provider>
+  );
 };

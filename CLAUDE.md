@@ -3,9 +3,9 @@
 ## Project Overview
 Desktop-first legal ERP application for Lebanese law firms and MENA region. Built with Electron, React, SQLite, and Tailwind CSS. English UI with full Unicode support for Arabic data entry.
 
-**Current Version:** v48.5-session7-complete
+**Current Version:** v48.6-session8-complete
 **Last Updated:** February 11, 2026
-**Status:** Session 7 COMPLETE - Manual UI verification + Web version operational
+**Status:** Session 8 COMPLETE - Phase 1 Core Reliability
 
 **REST API COMPLETE (Feb 10, 2026):** 21/21 modules refactored, 137/163 REST endpoints operational.
 Dual-mode architecture (Electron + Web) proven and scaled. Desktop app fully backward compatible.
@@ -228,7 +228,7 @@ Every new chat should start with this workflow understanding.
 ### Phase 1: Backend Hardening (v47.0) ✅ COMPLETE
 - ✅ Database integrity (atomic operations, transactions, WAL mode)
 - ✅ Logging infrastructure (file-based, crash handlers)
-- ✅ Input validation (19 entity schemas)
+- ✅ Input validation (22 entity schemas)
   - client, matter, lawyer, hearing, judgment, deadline, task
   - timesheet, expense, advance, invoice, appointment
   - diary_entry, lookup_item, corporate_entity
@@ -290,7 +290,7 @@ Every new chat should start with this workflow understanding.
 electron/
 ├── database.js          # Atomic writes, safe IDs, transactions, WAL mode
 ├── logging.js           # File-based logging, crash handlers, IPC wrapper
-├── validation.js        # Input validation (19 entity schemas)
+├── validation.js        # Input validation (22 entity schemas)
 ├── migrations.js        # Versioned migrations (16 migrations)
 ├── schema.js            # 27 tables + seed data
 └── ipc/                 # 21 handler modules (163 handlers total)
@@ -579,6 +579,7 @@ git checkout preload.js   # Restore if modified by build
 
 | Version | Date | Changes |
 |---------|------|---------|
+| **v48.6-session8-complete** | **Feb 11, 2026** | **Session 8: Phase 1 Core Reliability complete.** Backend validation: 15 update handlers now validated (appointments, advances, expenses, tasks, timesheets, diary, lookups, 6 corporate, 2 settings). Fixed 3 schema field mismatches that would have caused data loss (shareholder, director, currency). Added 3 new corporate schemas (share_transfer, filing, meeting) - 22 total schemas. Error handling: wrapHandler returns structured { success, error } instead of re-throwing. Frontend: All 13 forms check result.success before showing success toast. Logging: Verified operational with 30-day retention. Tests: 117/117 passing, 0 regressions. |
 | **v48.5-session7-complete** | **Feb 11, 2026** | **Session 7 COMPLETE** - Manual UI verification (3 forms tested in Electron). Critical timesheet validation bug found and fixed (schema expected `hours`, form sent `minutes`). Web version operational (localhost:3000 + localhost:3001). Core CRUD proven in browser. test-timesheet-ui.mjs created for database verification. validation.js contains 19 complete schemas - all entity types covered. Integration tests: 117/117 passing. See SESSION_7_SUCCESS_REPORT.md. |
 | **v48.5-session6-testing** | **Feb 11, 2026** | **Session 6 COMPLETE** - Automated frontend testing created. test-frontend.mjs runs 21 tests (13 forms + 8 workflow steps) in 30 seconds via REST API. All forms validated. Dependencies: node-fetch@2. Zero code changes needed - REST API fully functional. See SESSION_6_SUCCESS_REPORT.md. |
 | **v48.4-phase3-complete** | **Feb 11, 2026** | **Session 4 Phase 3 COMPLETE** - All 38 components migrated to apiClient. 7 batches executed (forms, lists, modules, corporate, reports). ~186 window.electronAPI calls eliminated. api-client.js expanded to 200+ methods. Zero window.electronAPI calls remaining in src/components/. Integration tests: 117/117 passing. Zero regressions. Ready for Phase 4 (Web Setup). |
@@ -651,4 +652,4 @@ git checkout preload.js   # Restore if modified by build
 
 ---
 
-*Last updated: February 11, 2026 - v48.5-session7-complete. Session 7 COMPLETE (manual UI verification + web version operational). Critical timesheet validation bug fixed. Web dev environment proven (localhost:3000 + localhost:3001). Ready for Session 8 (complete Phase 4 web version).*
+*Last updated: February 11, 2026 - v48.6-session8-complete. Session 8 COMPLETE (Phase 1 Core Reliability). 15 update handlers validated, 3 schema mismatches fixed, 3 new corporate schemas added (22 total), wrapHandler structured errors, all 13 forms check result.success, logging verified. Tests: 117/117 passing. Ready for Session 9.*
