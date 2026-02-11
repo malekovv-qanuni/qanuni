@@ -6,6 +6,7 @@ import {
   DollarSign, Receipt, Wallet, CreditCard, PieChart, Download, Upload, Loader2,
   Play, Pause, Square, Timer, Minimize2, Maximize2, Save, FileSpreadsheet
 } from 'lucide-react';
+import apiClient from './api-client';
 
 // Extracted common components
 import Toast from './components/common/Toast';
@@ -195,16 +196,16 @@ const App = () => {
     const checkLicense = async () => {
       try {
         // Check if running in Electron
-        if (window.electronAPI && window.electronAPI.getLicenseStatus) {
+        if (apiClient.isElectron) {
           const [status, id] = await Promise.all([
-            window.electronAPI.getLicenseStatus(),
-            window.electronAPI.getMachineId()
+            apiClient.getLicenseStatus(),
+            apiClient.getMachineId()
           ]);
           setLicenseStatus(status);
           setMachineId(id);
         } else {
-          // Development mode without Electron - skip license check
-          setLicenseStatus({ isValid: true, status: 'DEV_MODE' });
+          // Web mode - skip license check
+          setLicenseStatus({ isValid: true, status: 'WEB_MODE' });
         }
       } catch (error) {
         console.error('License check error:', error);
@@ -219,8 +220,8 @@ const App = () => {
 
   // Handle license activation
   const handleLicenseActivated = useCallback(async () => {
-    if (window.electronAPI && window.electronAPI.getLicenseStatus) {
-      const status = await window.electronAPI.getLicenseStatus();
+    if (apiClient.isElectron) {
+      const status = await apiClient.getLicenseStatus();
       setLicenseStatus(status);
     }
   }, []);
@@ -239,7 +240,7 @@ const App = () => {
   useEffect(() => {
     const loadFirmInfo = async () => {
       try {
-        const info = await window.electronAPI.getFirmInfo();
+        const info = await apiClient.getFirmInfo();
         if (info) setFirmInfo(prev => ({ ...prev, ...info }));
       } catch (error) {
         console.error('Error loading firm info:', error);
@@ -311,24 +312,24 @@ const App = () => {
         courtTypesData, regionsData, purposesData, taskTypesData,
         expenseCategoriesData, entityTypesData, lawyersData, statsData
       ] = await Promise.all([
-        window.electronAPI.getAllClients(),
-        window.electronAPI.getAllMatters(),
-        window.electronAPI.getAllHearings(),
-        window.electronAPI.getAllJudgments(),
-        window.electronAPI.getAllTasks(),
-        window.electronAPI.getAllTimesheets(),
-        window.electronAPI.getAllAppointments(),
-        window.electronAPI.getAllExpenses(),
-        window.electronAPI.getAllAdvances(),
-        window.electronAPI.getAllInvoices(),
-        window.electronAPI.getCourtTypes(),
-        window.electronAPI.getRegions(),
-        window.electronAPI.getHearingPurposes(),
-        window.electronAPI.getTaskTypes(),
-        window.electronAPI.getExpenseCategories(),
-        window.electronAPI.getEntityTypes(),
-        window.electronAPI.getLawyers(),
-        window.electronAPI.getDashboardStats()
+        apiClient.getAllClients(),
+        apiClient.getAllMatters(),
+        apiClient.getAllHearings(),
+        apiClient.getAllJudgments(),
+        apiClient.getAllTasks(),
+        apiClient.getAllTimesheets(),
+        apiClient.getAllAppointments(),
+        apiClient.getAllExpenses(),
+        apiClient.getAllAdvances(),
+        apiClient.getAllInvoices(),
+        apiClient.getCourtTypes(),
+        apiClient.getRegions(),
+        apiClient.getHearingPurposes(),
+        apiClient.getTaskTypes(),
+        apiClient.getExpenseCategories(),
+        apiClient.getEntityTypes(),
+        apiClient.getLawyers(),
+        apiClient.getDashboardStats()
       ]);
       
       setClients(clientsData);
@@ -352,7 +353,7 @@ const App = () => {
       
       // Load deadlines separately (graceful if API not yet available)
       try {
-        const deadlinesData = await window.electronAPI.getAllDeadlines();
+        const deadlinesData = await apiClient.getAllDeadlines();
         setDeadlines(deadlinesData || []);
       } catch (e) {
         console.log('Deadlines API not available yet');
@@ -361,7 +362,7 @@ const App = () => {
 
       // Load corporate entities (v41.1)
       try {
-        const corporateData = await window.electronAPI.getAllCorporateEntities();
+        const corporateData = await apiClient.getAllCorporateEntities();
         setCorporateEntities(corporateData || []);
       } catch (e) {
         console.log('Corporate entities API not available yet');
@@ -380,8 +381,8 @@ const App = () => {
   const refreshClients = async () => {
     try {
       const [clientsData, statsData] = await Promise.all([
-        window.electronAPI.getAllClients(),
-        window.electronAPI.getDashboardStats()
+        apiClient.getAllClients(),
+        apiClient.getDashboardStats()
       ]);
       setClients(clientsData);
       setDashboardStats(statsData);
@@ -393,8 +394,8 @@ const App = () => {
   const refreshMatters = async () => {
     try {
       const [mattersData, statsData] = await Promise.all([
-        window.electronAPI.getAllMatters(),
-        window.electronAPI.getDashboardStats()
+        apiClient.getAllMatters(),
+        apiClient.getDashboardStats()
       ]);
       setMatters(mattersData);
       setDashboardStats(statsData);
@@ -406,8 +407,8 @@ const App = () => {
   const refreshHearings = async () => {
     try {
       const [hearingsData, statsData] = await Promise.all([
-        window.electronAPI.getAllHearings(),
-        window.electronAPI.getDashboardStats()
+        apiClient.getAllHearings(),
+        apiClient.getDashboardStats()
       ]);
       setHearings(hearingsData);
       setDashboardStats(statsData);
@@ -418,7 +419,7 @@ const App = () => {
 
   const refreshJudgments = async () => {
     try {
-      const judgmentsData = await window.electronAPI.getAllJudgments();
+      const judgmentsData = await apiClient.getAllJudgments();
       setJudgments(judgmentsData);
     } catch (error) {
       console.error('Error refreshing judgments:', error);
@@ -456,7 +457,7 @@ const App = () => {
         notes: `Appeal of case: \${originalMatter.case_number || originalMatter.matter_name}`
       };
       
-      await window.electronAPI.addMatter(newMatter);
+      await apiClient.addMatter(newMatter);
       await refreshMatters();
       
       showToast('Appeal matter created successfully');
@@ -470,8 +471,8 @@ const App = () => {
   const refreshTasks = async () => {
     try {
       const [tasksData, statsData] = await Promise.all([
-        window.electronAPI.getAllTasks(),
-        window.electronAPI.getDashboardStats()
+        apiClient.getAllTasks(),
+        apiClient.getDashboardStats()
       ]);
       setTasks(tasksData);
       setDashboardStats(statsData);
@@ -482,7 +483,7 @@ const App = () => {
 
   const refreshTimesheets = async () => {
     try {
-      const timesheetsData = await window.electronAPI.getAllTimesheets();
+      const timesheetsData = await apiClient.getAllTimesheets();
       setTimesheets(timesheetsData.map(ts => ({ ...ts, billable: ts.billable === 1 })));
     } catch (error) {
       console.error('Error refreshing timesheets:', error);
@@ -491,7 +492,7 @@ const App = () => {
 
   const refreshAppointments = async () => {
     try {
-      const appointmentsData = await window.electronAPI.getAllAppointments();
+      const appointmentsData = await apiClient.getAllAppointments();
       setAppointments(appointmentsData);
     } catch (error) {
       console.error('Error refreshing appointments:', error);
@@ -500,7 +501,7 @@ const App = () => {
 
   const refreshExpenses = async () => {
     try {
-      const expensesData = await window.electronAPI.getAllExpenses();
+      const expensesData = await apiClient.getAllExpenses();
       setExpenses(expensesData.map(e => ({ ...e, billable: e.billable === 1 })));
     } catch (error) {
       console.error('Error refreshing expenses:', error);
@@ -509,7 +510,7 @@ const App = () => {
 
   const refreshAdvances = async () => {
     try {
-      const advancesData = await window.electronAPI.getAllAdvances();
+      const advancesData = await apiClient.getAllAdvances();
       setAdvances(advancesData);
     } catch (error) {
       console.error('Error refreshing advances:', error);
@@ -519,9 +520,9 @@ const App = () => {
   const refreshInvoices = async () => {
     try {
       const [invoicesData, statsData, advancesData] = await Promise.all([
-        window.electronAPI.getAllInvoices(),
-        window.electronAPI.getDashboardStats(),
-        window.electronAPI.getAllAdvances()
+        apiClient.getAllInvoices(),
+        apiClient.getDashboardStats(),
+        apiClient.getAllAdvances()
       ]);
       setInvoices(invoicesData);
       setDashboardStats(statsData);
@@ -533,7 +534,7 @@ const App = () => {
 
   const refreshDeadlines = async () => {
     try {
-      const deadlinesData = await window.electronAPI.getAllDeadlines();
+      const deadlinesData = await apiClient.getAllDeadlines();
       setDeadlines(deadlinesData || []);
     } catch (error) {
       console.error('Error refreshing deadlines:', error);
@@ -543,7 +544,7 @@ const App = () => {
   // Update deadline status - for "Mark as Handled" feature (v46.33)
   const handleUpdateDeadlineStatus = async (deadlineId, newStatus) => {
     try {
-      const result = await window.electronAPI.updateDeadlineStatus(deadlineId, newStatus);
+      const result = await apiClient.updateDeadlineStatus(deadlineId, newStatus);
       await refreshDeadlines();
     } catch (error) {
       console.error('Error updating deadline status:', error);
@@ -560,7 +561,7 @@ const App = () => {
     
     clientStatementReport.setLoading(true);
     try {
-      const data = await window.electronAPI.generateReport('client-statement', {
+      const data = await apiClient.generateReport('client-statement', {
         clientId,
         dateFrom: dateFrom || '2000-01-01',
         dateTo: dateTo || new Date().toISOString().split('T')[0]
@@ -585,13 +586,13 @@ const App = () => {
     if (!clientStatementReport.data) return;
 
     try {
-      const firmInfo = await window.electronAPI.getFirmInfo();
+      const firmInfo = await apiClient.getFirmInfo();
       let result;
 
       if (format === 'pdf') {
-        result = await window.electronAPI.exportClientStatementPdf(clientStatementReport.data, firmInfo);
+        result = await apiClient.exportClientStatementPdf(clientStatementReport.data, firmInfo);
       } else {
-        result = await window.electronAPI.exportClientStatementExcel(clientStatementReport.data);
+        result = await apiClient.exportClientStatementExcel(clientStatementReport.data);
       }
       
       if (result.success) {
@@ -614,7 +615,7 @@ const App = () => {
     
     caseStatusReport.setLoading(true);
     try {
-      const data = await window.electronAPI.generateReport('case-status-report', { clientId });
+      const data = await apiClient.generateReport('case-status-report', { clientId });
 
       if (data.error) {
         showToast(data.error, 'error');
@@ -635,13 +636,13 @@ const App = () => {
     if (!caseStatusReport.data) return;
 
     try {
-      const firmInfo = await window.electronAPI.getFirmInfo();
+      const firmInfo = await apiClient.getFirmInfo();
       let result;
 
       if (format === 'pdf') {
-        result = await window.electronAPI.exportCaseStatusPdf(caseStatusReport.data, firmInfo);
+        result = await apiClient.exportCaseStatusPdf(caseStatusReport.data, firmInfo);
       } else {
-        result = await window.electronAPI.exportCaseStatusExcel(caseStatusReport.data);
+        result = await apiClient.exportCaseStatusExcel(caseStatusReport.data);
       }
       
       if (result.success) {
@@ -661,7 +662,7 @@ const App = () => {
     
     client360Report.setLoading(true);
     try {
-      const data = await window.electronAPI.generateReport('client-360-report', { clientId });
+      const data = await apiClient.generateReport('client-360-report', { clientId });
 
       if (!data || data.error) {
         showToast(data?.error || 'Error generating report', 'error');
@@ -682,13 +683,13 @@ const App = () => {
     if (!client360Report.data) return;
 
     try {
-      const firmInfo = await window.electronAPI.getFirmInfo();
+      const firmInfo = await apiClient.getFirmInfo();
       let result;
 
       if (format === 'pdf') {
-        result = await window.electronAPI.exportClient360Pdf(client360Report.data, firmInfo);
+        result = await apiClient.exportClient360Pdf(client360Report.data, firmInfo);
       } else {
-        result = await window.electronAPI.exportClient360Excel(client360Report.data);
+        result = await apiClient.exportClient360Excel(client360Report.data);
       }
       
       if (result.success) {
@@ -706,7 +707,7 @@ const App = () => {
     try {
       // Issue #1 fix: Use getCorporateClients to get ALL qualifying clients
       // (not just those with corporate_entities records)
-      const data = await window.electronAPI.getCorporateClients();
+      const data = await apiClient.getCorporateClients();
       setCorporateEntities(data || []);
     } catch (error) {
       console.error('Error refreshing corporate entities:', error);
@@ -716,13 +717,13 @@ const App = () => {
   const refreshLookups = async () => {
     try {
       const [courtTypesData, regionsData, purposesData, taskTypesData, expenseCategoriesData, entityTypesData, lawyersData] = await Promise.all([
-        window.electronAPI.getCourtTypes(),
-        window.electronAPI.getRegions(),
-        window.electronAPI.getHearingPurposes(),
-        window.electronAPI.getTaskTypes(),
-        window.electronAPI.getExpenseCategories(),
-        window.electronAPI.getEntityTypes(),
-        window.electronAPI.getLawyers()
+        apiClient.getCourtTypes(),
+        apiClient.getRegions(),
+        apiClient.getHearingPurposes(),
+        apiClient.getTaskTypes(),
+        apiClient.getExpenseCategories(),
+        apiClient.getEntityTypes(),
+        apiClient.getLawyers()
       ]);
       setCourtTypes(courtTypesData);
       setRegions(regionsData);
@@ -744,7 +745,7 @@ const App = () => {
 
   const runConflictCheck = async (searchTerms) => {
     try {
-      const results = await window.electronAPI.conflictCheck(searchTerms);
+      const results = await apiClient.conflictCheck(searchTerms);
       return results;
     } catch (error) {
       console.error('Error running conflict check:', error);
@@ -903,7 +904,7 @@ const App = () => {
               showToast={showToast}
               hideConfirm={hideConfirm}
               refreshClients={refreshClients}
-              electronAPI={window.electronAPI}
+              electronAPI={apiClient}
             />
           )}
           {currentModule === 'matters' && (
@@ -915,7 +916,7 @@ const App = () => {
               showToast={showToast}
               hideConfirm={hideConfirm}
               refreshMatters={refreshMatters}
-              electronAPI={window.electronAPI}
+              electronAPI={apiClient}
               onViewTimeline={(matter) => {
                 matterTimelineDialog.openDialog(matter);
               }}
@@ -933,7 +934,7 @@ const App = () => {
               showToast={showToast}
               hideConfirm={hideConfirm}
               refreshHearings={refreshHearings}
-              electronAPI={window.electronAPI}
+              electronAPI={apiClient}
             />
           )}
           {currentModule === 'judgments' && (
@@ -948,7 +949,7 @@ const App = () => {
               showToast={showToast}
               hideConfirm={hideConfirm}
               refreshJudgments={refreshJudgments}
-              electronAPI={window.electronAPI}
+              electronAPI={apiClient}
             />
           )}
           {currentModule === 'deadlines' && <DeadlinesList
@@ -1140,7 +1141,7 @@ const App = () => {
           lawyers={lawyers}
           judgments={judgments}
           selectedMatter={selectedMatter}
-          electronAPI={window.electronAPI}
+          electronAPI={apiClient}
         />}
       {forms.task.isOpen && <TaskForm
           showToast={showToast}
