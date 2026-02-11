@@ -124,8 +124,8 @@ const DeadlineForm = React.memo(({ showToast, markFormDirty, clearFormDirty, ref
         result = await apiClient.addDeadline(data);
       }
 
-      if (result && result.success === false) {
-        showToast(result.error || 'Failed to save deadline', 'error');
+      if (!result || !result.success) {
+        showToast(result?.error || 'Failed to save deadline', 'error');
         return;
       }
 

@@ -104,6 +104,9 @@ function addExpenseBatch(database, logger, expenses) {
 function updateExpense(database, logger, exp) {
   if (!exp.expense_id) return { success: false, error: 'expense_id is required' };
 
+  const check = validation.check(exp, 'expense');
+  if (!check.valid) return check.result;
+
   const now = new Date().toISOString();
   const clientId = exp.client_id || null;
   const matterId = exp.matter_id || null;

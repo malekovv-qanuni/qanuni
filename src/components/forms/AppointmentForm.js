@@ -60,10 +60,15 @@ const AppointmentForm = React.memo(({ showToast, markFormDirty, clearFormDirty, 
       return;
     }
     try {
+      let result;
       if (editingAppointment) {
-        await apiClient.updateAppointment({ ...formData, appointment_id: editingAppointment.appointment_id });
+        result = await apiClient.updateAppointment({ ...formData, appointment_id: editingAppointment.appointment_id });
       } else {
-        await apiClient.addAppointment(formData);
+        result = await apiClient.addAppointment(formData);
+      }
+      if (!result || !result.success) {
+        showToast(result?.error || 'Failed to save appointment', 'error');
+        return;
       }
       clearFormDirty();
       await refreshAppointments();

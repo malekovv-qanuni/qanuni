@@ -44,6 +44,9 @@ function addAppointment(database, logger, apt) {
 function updateAppointment(database, logger, apt) {
   if (!apt.appointment_id) return { success: false, error: 'appointment_id is required' };
 
+  const check = validation.check(apt, 'appointment');
+  if (!check.valid) return check.result;
+
   const now = new Date().toISOString();
   database.execute(`UPDATE appointments SET appointment_type=?, title=?, description=?, date=?,
     start_time=?, end_time=?, all_day=?, location_type=?, location_details=?, client_id=?,

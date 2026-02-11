@@ -64,10 +64,15 @@ const LookupForm = React.memo(({ showToast, refreshLookups }) => {
       return;
     }
     try {
+      let result;
       if (editingLookup) {
-        await apiClient.updateLookupItem(lookupType, formData);
+        result = await apiClient.updateLookupItem(lookupType, formData);
       } else {
-        await apiClient.addLookupItem(lookupType, formData);
+        result = await apiClient.addLookupItem(lookupType, formData);
+      }
+      if (!result || !result.success) {
+        showToast(result?.error || 'Failed to save lookup item', 'error');
+        return;
       }
       await refreshLookups();
       showToast(editingLookup 

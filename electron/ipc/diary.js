@@ -169,6 +169,9 @@ function addDiaryEntry(database, logger, data) {
 function updateDiaryEntry(database, logger, data) {
   if (!data.entry_id) return { success: false, error: 'entry_id is required' };
 
+  const check = validation.check(data, 'diary_entry');
+  if (!check.valid) return check.result;
+
   const now = new Date().toISOString();
   database.execute(`UPDATE matter_diary SET
     entry_date = ?, entry_type = ?, title = ?, description = ?, created_by = ?, updated_at = ?

@@ -414,17 +414,17 @@ const schemas = {
   },
 
   shareholder: {
-    entity_id: {
+    client_id: {
       required: true,
       type: 'string',
-      label: 'Entity'
+      label: 'Client'
     },
     name: {
       required: true,
       type: 'string',
       label: 'Shareholder name'
     },
-    shares: {
+    shares_owned: {
       required: true,
       type: 'number',
       min: 0,
@@ -433,15 +433,78 @@ const schemas = {
   },
 
   director: {
-    entity_id: {
+    client_id: {
       required: true,
       type: 'string',
-      label: 'Entity'
+      label: 'Client'
     },
     name: {
       required: true,
       type: 'string',
       label: 'Director name'
+    }
+  },
+
+  share_transfer: {
+    client_id: {
+      required: true,
+      type: 'string',
+      label: 'Client'
+    },
+    shares_transferred: {
+      required: true,
+      type: 'number',
+      min: 1,
+      label: 'Shares transferred'
+    },
+    transfer_type: {
+      required: true,
+      type: 'string',
+      oneOf: ['transfer', 'issuance', 'redemption'],
+      label: 'Transfer type'
+    },
+    transfer_date: {
+      required: true,
+      type: 'date',
+      label: 'Transfer date'
+    }
+  },
+
+  filing: {
+    client_id: {
+      required: true,
+      type: 'string',
+      label: 'Client'
+    },
+    filing_type: {
+      required: true,
+      type: 'string',
+      maxLength: 100,
+      label: 'Filing type'
+    },
+    filing_date: {
+      required: true,
+      type: 'date',
+      label: 'Filing date'
+    }
+  },
+
+  meeting: {
+    client_id: {
+      required: true,
+      type: 'string',
+      label: 'Client'
+    },
+    meeting_type: {
+      required: true,
+      type: 'string',
+      maxLength: 100,
+      label: 'Meeting type'
+    },
+    meeting_date: {
+      required: true,
+      type: 'date',
+      label: 'Meeting date'
     }
   },
 
@@ -452,7 +515,7 @@ const schemas = {
       maxLength: 10,
       label: 'Currency code'
     },
-    name_en: {
+    name: {
       required: true,
       type: 'string',
       maxLength: 100,

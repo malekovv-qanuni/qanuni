@@ -93,6 +93,9 @@ function addAdvance(database, logger, adv) {
 function updateAdvance(database, logger, adv) {
   if (!adv.advance_id) return { success: false, error: 'advance_id is required' };
 
+  const check = validation.check(adv, 'advance');
+  if (!check.valid) return check.result;
+
   const now = new Date().toISOString();
   const clientId = (adv.advance_type === 'lawyer_advance') ? null : (adv.client_id || null);
   const matterId = (adv.advance_type === 'lawyer_advance') ? null : (adv.matter_id || null);

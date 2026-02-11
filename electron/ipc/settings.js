@@ -10,6 +10,7 @@
  */
 
 const { ipcMain } = require('electron');
+const validation = require('../validation');
 
 // ============================================================================
 // PURE FUNCTIONS - EXACT COPIES of working IPC handler logic
@@ -90,6 +91,10 @@ function addCurrency(database, data) {
 
 function updateCurrency(database, data) {
   if (!data.id) return { success: false, error: 'id is required' };
+
+  const check = validation.check(data, 'currency');
+  if (!check.valid) return check.result;
+
   const now = new Date().toISOString();
   database.execute('UPDATE firm_currencies SET name=?, name_ar=?, symbol=?, updated_at=? WHERE id=?',
     [data.name, data.name_ar || null, data.symbol || null, now, data.id]);
@@ -123,6 +128,10 @@ function addExchangeRate(database, data) {
 
 function updateExchangeRate(database, data) {
   if (!data.rate_id) return { success: false, error: 'rate_id is required' };
+
+  const check = validation.check(data, 'exchange_rate');
+  if (!check.valid) return check.result;
+
   const now = new Date().toISOString();
   database.execute(
     'UPDATE exchange_rates SET from_currency=?, to_currency=?, rate=?, effective_date=?, notes=?, updated_at=? WHERE rate_id=?',

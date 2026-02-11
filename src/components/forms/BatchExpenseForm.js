@@ -150,8 +150,12 @@ const BatchExpenseForm = React.memo(({
       }));
 
       // Call batch API
-      await apiClient.addExpensesBatch(expenses);
-      
+      const result = await apiClient.addExpensesBatch(expenses);
+      if (!result || !result.success) {
+        showToast(result?.error || 'Failed to save expenses', 'error');
+        return;
+      }
+
       await Promise.all([refreshExpenses(), refreshAdvances()]);
       
       showToast(

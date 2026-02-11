@@ -419,6 +419,11 @@ const InvoiceForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refr
         invoice_content_type: formData.invoice_content_type
       }, items);
 
+      if (!result || !result.success) {
+        showToast(result?.error || 'Failed to create invoice', 'error');
+        return;
+      }
+
       // Deduct retainer from advance if applied
       if (totals.retainerApplied > 0) {
         try {

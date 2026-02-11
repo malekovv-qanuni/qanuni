@@ -103,8 +103,8 @@ const AdvanceForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refr
       } else {
         result = await apiClient.addAdvance(advanceData);
       }
-      if (result && result.success === false) {
-        showToast('Save failed: ' + (result.error || 'Unknown error'), 'error');
+      if (!result || !result.success) {
+        showToast(result?.error || 'Failed to save payment', 'error');
         return;
       }
       await refreshAdvances();

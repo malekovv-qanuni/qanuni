@@ -313,10 +313,15 @@ const MatterForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refre
         adverse_parties: formData.adverse_parties || '[]'
       };
 
+      let result;
       if (editingMatter) {
-        await electronAPI.updateMatter(matterData);
+        result = await electronAPI.updateMatter(matterData);
       } else {
-        await electronAPI.addMatter(matterData);
+        result = await electronAPI.addMatter(matterData);
+      }
+      if (!result || !result.success) {
+        showToast(result?.error || 'Failed to save matter', 'error');
+        return;
       }
       clearFormDirty();
       await refreshMatters();

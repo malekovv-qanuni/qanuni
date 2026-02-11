@@ -199,7 +199,7 @@ const ExpenseForm = React.memo(({
       if (editingExpense) {
         // Update single expense
         const item = lineItems[0];
-        await apiClient.updateExpense({
+        const result = await apiClient.updateExpense({
           expense_id: editingExpense.expense_id,
           expense_type: editingExpense.expense_type || 'client',
           client_id: sharedData.client_id,
@@ -215,15 +215,19 @@ const ExpenseForm = React.memo(({
           attachment_note: item.attachment_note || null,
           status: editingExpense.status || 'pending'
         });
+        if (!result || !result.success) {
+          showToast(result?.error || 'Failed to update expense', 'error');
+          return;
+        }
         showToast('Expense updated successfully');
       } else {
         // Add new expenses - use addExpenseWithDeduction for proper advance handling
-        const validItems = lineItems.filter(item => 
+        const validItems = lineItems.filter(item =>
           item.category_id && item.description && item.amount && parseFloat(item.amount) > 0
         );
 
         for (const item of validItems) {
-          await apiClient.addExpenseWithDeduction({
+          const result = await apiClient.addExpenseWithDeduction({
             expense_type: 'client',
             client_id: sharedData.client_id,
             matter_id: sharedData.matter_id || null,
@@ -238,8 +242,12 @@ const ExpenseForm = React.memo(({
             attachment_note: item.attachment_note || null,
             status: 'pending'
           });
+          if (!result || !result.success) {
+            showToast(result?.error || 'Failed to add expense', 'error');
+            return;
+          }
         }
-        
+
         showToast(
           validItems.length === 1
             ? ('Expense added successfully')

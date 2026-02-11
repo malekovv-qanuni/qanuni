@@ -62,6 +62,9 @@ function addTask(database, logger, task) {
 function updateTask(database, logger, task) {
   if (!task.task_id) return { success: false, error: 'task_id is required' };
 
+  const check = validation.check(task, 'task');
+  if (!check.valid) return check.result;
+
   const now = new Date().toISOString();
   const assignedTo = task.assigned_to_id || task.assigned_to || null;
   const matterId = task.matter_id || null;

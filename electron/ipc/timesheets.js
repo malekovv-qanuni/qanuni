@@ -53,6 +53,9 @@ function addTimesheet(database, logger, ts) {
 function updateTimesheet(database, logger, ts) {
   if (!ts.timesheet_id) return { success: false, error: 'timesheet_id is required' };
 
+  const check = validation.check(ts, 'timesheet');
+  if (!check.valid) return check.result;
+
   const now = new Date().toISOString();
   const minutes = parseInt(ts.minutes) || 0;
   const ratePerHour = ts.rate_per_hour ? parseFloat(ts.rate_per_hour) : null;

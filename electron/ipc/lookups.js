@@ -6,6 +6,7 @@
  */
 
 const { ipcMain } = require('electron');
+const validation = require('../validation');
 
 // ============================================================================
 // SHARED CONFIG
@@ -93,6 +94,9 @@ function updateLookupItem(database, logger, type, data) {
   if (!normalizedType) return { success: false, error: 'Invalid lookup type: ' + type };
 
   if (normalizedType === 'lawyers') {
+    const check = validation.check(data, 'lawyer');
+    if (!check.valid) return check.result;
+
     database.execute(`UPDATE lawyers SET name=?, name_arabic=?, initials=?, email=?, phone=?, hourly_rate=?, hourly_rate_currency=? WHERE lawyer_id=?`,
       [data.full_name, data.full_name_arabic || null, data.initials || null,
        data.email || null, data.phone || null,
@@ -103,6 +107,9 @@ function updateLookupItem(database, logger, type, data) {
 
   const cfg = TABLE_CONFIGS[normalizedType];
   if (!cfg) return { success: false, error: 'Invalid lookup type: ' + type };
+
+  const check = validation.check(data, 'lookup_item');
+  if (!check.valid) return check.result;
 
   if (normalizedType === 'task-types') {
     database.execute(`UPDATE ${cfg.table} SET name_en=?, name_ar=?, name_fr=?, icon=? WHERE ${cfg.id}=?`,

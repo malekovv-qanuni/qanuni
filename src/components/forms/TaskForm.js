@@ -94,10 +94,15 @@ const TaskForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refresh
         time_budget_minutes: formData.time_budget_minutes ? parseInt(formData.time_budget_minutes) : null
       };
       
+      let result;
       if (editingTask) {
-        await apiClient.updateTask({ ...taskData, task_id: editingTask.task_id });
+        result = await apiClient.updateTask({ ...taskData, task_id: editingTask.task_id });
       } else {
-        await apiClient.addTask(taskData);
+        result = await apiClient.addTask(taskData);
+      }
+      if (!result || !result.success) {
+        showToast(result?.error || 'Failed to save task', 'error');
+        return;
       }
       clearFormDirty();
       await refreshTasks();

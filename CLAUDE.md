@@ -228,7 +228,11 @@ Every new chat should start with this workflow understanding.
 ### Phase 1: Backend Hardening (v47.0) ✅ COMPLETE
 - ✅ Database integrity (atomic operations, transactions, WAL mode)
 - ✅ Logging infrastructure (file-based, crash handlers)
-- ✅ Input validation (16 entity schemas)
+- ✅ Input validation (19 entity schemas)
+  - client, matter, lawyer, hearing, judgment, deadline, task
+  - timesheet, expense, advance, invoice, appointment
+  - diary_entry, lookup_item, corporate_entity
+  - shareholder, director, currency, exchange_rate
 - ✅ IPC modularization (21 modules, 163 handlers)
 - ✅ Error handling (structured errors, fail-fast)
 - ✅ Integration tests (117 tests, 0 failures)
@@ -286,7 +290,7 @@ Every new chat should start with this workflow understanding.
 electron/
 ├── database.js          # Atomic writes, safe IDs, transactions, WAL mode
 ├── logging.js           # File-based logging, crash handlers, IPC wrapper
-├── validation.js        # Input validation (16 entity schemas)
+├── validation.js        # Input validation (19 entity schemas)
 ├── migrations.js        # Versioned migrations (16 migrations)
 ├── schema.js            # 27 tables + seed data
 └── ipc/                 # 21 handler modules (163 handlers total)
@@ -575,7 +579,7 @@ git checkout preload.js   # Restore if modified by build
 
 | Version | Date | Changes |
 |---------|------|---------|
-| **v48.5-session7-complete** | **Feb 11, 2026** | **Session 7 COMPLETE** - Manual UI verification (3 forms tested in Electron). Critical timesheet validation bug found and fixed (schema expected `hours`, form sent `minutes`). Web version operational (localhost:3000 + localhost:3001). Core CRUD proven in browser. test-timesheet-ui.mjs created for database verification. Integration tests: 117/117 passing. See SESSION_7_SUCCESS_REPORT.md. |
+| **v48.5-session7-complete** | **Feb 11, 2026** | **Session 7 COMPLETE** - Manual UI verification (3 forms tested in Electron). Critical timesheet validation bug found and fixed (schema expected `hours`, form sent `minutes`). Web version operational (localhost:3000 + localhost:3001). Core CRUD proven in browser. test-timesheet-ui.mjs created for database verification. validation.js contains 19 complete schemas - all entity types covered. Integration tests: 117/117 passing. See SESSION_7_SUCCESS_REPORT.md. |
 | **v48.5-session6-testing** | **Feb 11, 2026** | **Session 6 COMPLETE** - Automated frontend testing created. test-frontend.mjs runs 21 tests (13 forms + 8 workflow steps) in 30 seconds via REST API. All forms validated. Dependencies: node-fetch@2. Zero code changes needed - REST API fully functional. See SESSION_6_SUCCESS_REPORT.md. |
 | **v48.4-phase3-complete** | **Feb 11, 2026** | **Session 4 Phase 3 COMPLETE** - All 38 components migrated to apiClient. 7 batches executed (forms, lists, modules, corporate, reports). ~186 window.electronAPI calls eliminated. api-client.js expanded to 200+ methods. Zero window.electronAPI calls remaining in src/components/. Integration tests: 117/117 passing. Zero regressions. Ready for Phase 4 (Web Setup). |
 | **v48.2-session3-phase2-final** | **Feb 11, 2026** | **Session 3 Phase 2 COMPLETE** - api-client.js infrastructure complete (156 methods fully aligned with preload.js). App.js migrated to apiClient (66 calls replaced). Fixed naming mismatches: create→add, getX→getAllX, corporate renames. All electronAPI calls verified (117 unique calls). Integration tests: 117/117 passing. Desktop app fully functional. |

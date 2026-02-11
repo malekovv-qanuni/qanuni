@@ -104,8 +104,8 @@ function wrapHandler(channel, handler) {
         error: err.message,
         stack: err.stack?.split('\n').slice(0, 3).join(' | ')
       });
-      // Re-throw so the frontend receives the error
-      throw err;
+      // Return structured error so frontend can check result.success
+      return { success: false, error: err.message };
     }
   };
 }

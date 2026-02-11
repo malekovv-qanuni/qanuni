@@ -6,6 +6,7 @@
  */
 
 const { ipcMain } = require('electron');
+const validation = require('../validation');
 
 // ============================================================================
 // PURE FUNCTIONS - EXACT COPIES of working IPC handler logic
@@ -56,6 +57,10 @@ function addCorporateEntity(database, logger, data) {
 
 function updateCorporateEntity(database, logger, data) {
   if (!data.client_id) return { success: false, error: 'client_id is required' };
+
+  const check = validation.check(data, 'corporate_entity');
+  if (!check.valid) return check.result;
+
   const now = new Date().toISOString();
   database.execute(`UPDATE corporate_entities SET
     registration_number=?, registration_date=?, registered_address=?, share_capital=?,
@@ -118,6 +123,10 @@ function addShareholder(database, logger, data) {
 
 function updateShareholder(database, data) {
   if (!data.id) return { success: false, error: 'id is required' };
+
+  const check = validation.check(data, 'shareholder');
+  if (!check.valid) return check.result;
+
   database.execute(`UPDATE shareholders SET name=?, id_number=?, nationality=?, shares_owned=?, share_class=?, date_acquired=? WHERE id=?`,
     [data.name, data.id_number, data.nationality, data.shares_owned, data.share_class, data.date_acquired, data.id]);
   return { success: true };
@@ -185,6 +194,9 @@ function addShareTransfer(database, logger, data) {
 
 function updateShareTransfer(database, data) {
   if (!data.id) return { success: false, error: 'id is required' };
+
+  const check = validation.check(data, 'share_transfer');
+  if (!check.valid) return check.result;
 
   const original = database.queryOne('SELECT * FROM share_transfers WHERE id = ?', [data.id]);
   if (!original) return { success: false, error: 'Transfer not found' };
@@ -256,6 +268,10 @@ function addDirector(database, data) {
 
 function updateDirector(database, data) {
   if (!data.id) return { success: false, error: 'id is required' };
+
+  const check = validation.check(data, 'director');
+  if (!check.valid) return check.result;
+
   database.execute(`UPDATE directors SET name=?, id_number=?, nationality=?, position=?, date_appointed=?, date_resigned=?, is_signatory=?, notes=? WHERE id=?`,
     [data.name, data.id_number, data.nationality, data.position, data.date_appointed,
      data.date_resigned || null, data.is_signatory ? 1 : 0, data.notes, data.id]);
@@ -289,6 +305,10 @@ function addFiling(database, data) {
 
 function updateFiling(database, data) {
   if (!data.id) return { success: false, error: 'id is required' };
+
+  const check = validation.check(data, 'filing');
+  if (!check.valid) return check.result;
+
   database.execute(`UPDATE commercial_register_filings SET
     filing_type=?, filing_description=?, filing_date=?, filing_reference=?,
     next_due_date=?, reminder_days=?, notes=?, status=? WHERE id=?`,
@@ -325,6 +345,10 @@ function addMeeting(database, data) {
 
 function updateMeeting(database, data) {
   if (!data.id) return { success: false, error: 'id is required' };
+
+  const check = validation.check(data, 'meeting');
+  if (!check.valid) return check.result;
+
   database.execute(`UPDATE company_meetings SET
     meeting_type=?, meeting_description=?, meeting_date=?, meeting_notes=?,
     attendees=?, next_meeting_date=?, next_meeting_agenda=?, reminder_days=?, status=?

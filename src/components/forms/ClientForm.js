@@ -176,8 +176,8 @@ const ClientForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refre
         }
       }
       
-      if (result && result.success === false) {
-        showToast('Error saving client' + (result.error || 'Unknown error'), 'error');
+      if (!result || !result.success) {
+        showToast(result?.error || 'Failed to save client', 'error');
         setSaving(false);
         return;
       }
