@@ -50,26 +50,45 @@ const apiClient = {
   // Methods will be added incrementally in Steps 2-15
 
   // ============================================
+  // DASHBOARD METHODS (1)
+  // ============================================
+
+  getDashboardStats: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getDashboardStats();
+    }
+    return await fetchAPI('/reports/dashboard-stats');
+  },
+
+  // ============================================
   // CLIENT METHODS (6)
   // ============================================
 
   getClients: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getClients();
+      return await window.electronAPI.getAllClients();
+    }
+    return await fetchAPI('/clients');
+  },
+
+  getAllClients: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getAllClients();
     }
     return await fetchAPI('/clients');
   },
 
   getClient: async (clientId) => {
     if (isElectron()) {
-      return await window.electronAPI.getClient(clientId);
+      const clients = await window.electronAPI.getAllClients();
+      return clients.find(c => c.client_id === clientId) || null;
     }
     return await fetchAPI(`/clients/${clientId}`);
   },
 
   createClient: async (clientData) => {
     if (isElectron()) {
-      return await window.electronAPI.createClient(clientData);
+      return await window.electronAPI.addClient(clientData);
     }
     return await fetchAPI('/clients', {
       method: 'POST',
@@ -98,7 +117,14 @@ const apiClient = {
 
   searchClients: async (query) => {
     if (isElectron()) {
-      return await window.electronAPI.searchClients(query);
+      const clients = await window.electronAPI.getAllClients();
+      const q = query.toLowerCase();
+      return clients.filter(c =>
+        (c.client_name || '').toLowerCase().includes(q) ||
+        (c.client_name_arabic || '').includes(query) ||
+        (c.email || '').toLowerCase().includes(q) ||
+        (c.phone || '').includes(query)
+      );
     }
     return await fetchAPI(`/clients/search?q=${encodeURIComponent(query)}`);
   },
@@ -109,21 +135,39 @@ const apiClient = {
 
   getMatters: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getMatters();
+      return await window.electronAPI.getAllMatters();
+    }
+    return await fetchAPI('/matters');
+  },
+
+  getAllMatters: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getAllMatters();
     }
     return await fetchAPI('/matters');
   },
 
   getMatter: async (matterId) => {
     if (isElectron()) {
-      return await window.electronAPI.getMatter(matterId);
+      const matters = await window.electronAPI.getAllMatters();
+      return matters.find(m => m.matter_id === matterId) || null;
     }
     return await fetchAPI(`/matters/${matterId}`);
   },
 
   createMatter: async (matterData) => {
     if (isElectron()) {
-      return await window.electronAPI.createMatter(matterData);
+      return await window.electronAPI.addMatter(matterData);
+    }
+    return await fetchAPI('/matters', {
+      method: 'POST',
+      body: JSON.stringify(matterData),
+    });
+  },
+
+  addMatter: async (matterData) => {
+    if (isElectron()) {
+      return await window.electronAPI.addMatter(matterData);
     }
     return await fetchAPI('/matters', {
       method: 'POST',
@@ -159,7 +203,7 @@ const apiClient = {
 
   getMatterFinancials: async (matterId) => {
     if (isElectron()) {
-      return await window.electronAPI.getMatterFinancials(matterId);
+      return await window.electronAPI.generateReport('matter-financials', { matterId });
     }
     return await fetchAPI(`/matters/${matterId}/financials`);
   },
@@ -170,14 +214,21 @@ const apiClient = {
 
   getHearings: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getHearings();
+      return await window.electronAPI.getAllHearings();
+    }
+    return await fetchAPI('/hearings');
+  },
+
+  getAllHearings: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getAllHearings();
     }
     return await fetchAPI('/hearings');
   },
 
   createHearing: async (hearingData) => {
     if (isElectron()) {
-      return await window.electronAPI.createHearing(hearingData);
+      return await window.electronAPI.addHearing(hearingData);
     }
     return await fetchAPI('/hearings', {
       method: 'POST',
@@ -210,14 +261,21 @@ const apiClient = {
 
   getTasks: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getTasks();
+      return await window.electronAPI.getAllTasks();
+    }
+    return await fetchAPI('/tasks');
+  },
+
+  getAllTasks: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getAllTasks();
     }
     return await fetchAPI('/tasks');
   },
 
   createTask: async (taskData) => {
     if (isElectron()) {
-      return await window.electronAPI.createTask(taskData);
+      return await window.electronAPI.addTask(taskData);
     }
     return await fetchAPI('/tasks', {
       method: 'POST',
@@ -250,14 +308,21 @@ const apiClient = {
 
   getTimesheets: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getTimesheets();
+      return await window.electronAPI.getAllTimesheets();
+    }
+    return await fetchAPI('/timesheets');
+  },
+
+  getAllTimesheets: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getAllTimesheets();
     }
     return await fetchAPI('/timesheets');
   },
 
   createTimesheet: async (timesheetData) => {
     if (isElectron()) {
-      return await window.electronAPI.createTimesheet(timesheetData);
+      return await window.electronAPI.addTimesheet(timesheetData);
     }
     return await fetchAPI('/timesheets', {
       method: 'POST',
@@ -286,7 +351,8 @@ const apiClient = {
 
   getTimesheetsByMatter: async (matterId) => {
     if (isElectron()) {
-      return await window.electronAPI.getTimesheetsByMatter(matterId);
+      const timesheets = await window.electronAPI.getAllTimesheets();
+      return timesheets.filter(t => t.matter_id === matterId);
     }
     return await fetchAPI(`/timesheets/matter/${matterId}`);
   },
@@ -297,14 +363,21 @@ const apiClient = {
 
   getExpenses: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getExpenses();
+      return await window.electronAPI.getAllExpenses();
+    }
+    return await fetchAPI('/expenses');
+  },
+
+  getAllExpenses: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getAllExpenses();
     }
     return await fetchAPI('/expenses');
   },
 
   createExpense: async (expenseData) => {
     if (isElectron()) {
-      return await window.electronAPI.createExpense(expenseData);
+      return await window.electronAPI.addExpense(expenseData);
     }
     return await fetchAPI('/expenses', {
       method: 'POST',
@@ -333,7 +406,8 @@ const apiClient = {
 
   getExpensesByMatter: async (matterId) => {
     if (isElectron()) {
-      return await window.electronAPI.getExpensesByMatter(matterId);
+      const expenses = await window.electronAPI.getAllExpenses();
+      return expenses.filter(e => e.matter_id === matterId);
     }
     return await fetchAPI(`/expenses/matter/${matterId}`);
   },
@@ -347,7 +421,7 @@ const apiClient = {
 
   createExpenseCategory: async (categoryData) => {
     if (isElectron()) {
-      return await window.electronAPI.createExpenseCategory(categoryData);
+      return await window.electronAPI.addLookupItem('expense_categories', categoryData);
     }
     return await fetchAPI('/expenses/categories', {
       method: 'POST',
@@ -357,7 +431,7 @@ const apiClient = {
 
   deleteExpenseCategory: async (categoryId) => {
     if (isElectron()) {
-      return await window.electronAPI.deleteExpenseCategory(categoryId);
+      return await window.electronAPI.deleteLookupItem('expense_categories', categoryId);
     }
     return await fetchAPI(`/expenses/categories/${categoryId}`, {
       method: 'DELETE',
@@ -370,14 +444,21 @@ const apiClient = {
 
   getAdvances: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getAdvances();
+      return await window.electronAPI.getAllAdvances();
+    }
+    return await fetchAPI('/advances');
+  },
+
+  getAllAdvances: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getAllAdvances();
     }
     return await fetchAPI('/advances');
   },
 
   createAdvance: async (advanceData) => {
     if (isElectron()) {
-      return await window.electronAPI.createAdvance(advanceData);
+      return await window.electronAPI.addAdvance(advanceData);
     }
     return await fetchAPI('/advances', {
       method: 'POST',
@@ -406,21 +487,23 @@ const apiClient = {
 
   getAdvancesByMatter: async (matterId) => {
     if (isElectron()) {
-      return await window.electronAPI.getAdvancesByMatter(matterId);
+      const advances = await window.electronAPI.getAllAdvances();
+      return advances.filter(a => a.matter_id === matterId);
     }
     return await fetchAPI(`/advances/matter/${matterId}`);
   },
 
   getAdvancesByClient: async (clientId) => {
     if (isElectron()) {
-      return await window.electronAPI.getAdvancesByClient(clientId);
+      const advances = await window.electronAPI.getAllAdvances();
+      return advances.filter(a => a.client_id === clientId);
     }
     return await fetchAPI(`/advances/client/${clientId}`);
   },
 
   allocateAdvance: async (allocationData) => {
     if (isElectron()) {
-      return await window.electronAPI.allocateAdvance(allocationData);
+      return await window.electronAPI.deductFromAdvance(allocationData.advance_id, allocationData.amount);
     }
     return await fetchAPI('/advances/allocate', {
       method: 'POST',
@@ -430,14 +513,17 @@ const apiClient = {
 
   getAllocations: async (advanceId) => {
     if (isElectron()) {
-      return await window.electronAPI.getAllocations(advanceId);
+      // No dedicated handler - return empty array
+      console.warn('getAllocations: not available in Electron mode');
+      return [];
     }
     return await fetchAPI(`/advances/${advanceId}/allocations`);
   },
 
   deleteAllocation: async (allocationId) => {
     if (isElectron()) {
-      return await window.electronAPI.deleteAllocation(allocationId);
+      console.warn('deleteAllocation: not available in Electron mode');
+      return { success: false, error: 'Not available in desktop mode' };
     }
     return await fetchAPI(`/advances/allocations/${allocationId}`, {
       method: 'DELETE',
@@ -446,7 +532,11 @@ const apiClient = {
 
   getClientBalance: async (clientId) => {
     if (isElectron()) {
-      return await window.electronAPI.getClientBalance(clientId);
+      // Compute from advances
+      const advances = await window.electronAPI.getAllAdvances();
+      const clientAdvances = advances.filter(a => a.client_id === clientId);
+      const balance = clientAdvances.reduce((sum, a) => sum + (a.remaining_amount || 0), 0);
+      return { client_id: clientId, balance };
     }
     return await fetchAPI(`/advances/client/${clientId}/balance`);
   },
@@ -457,7 +547,14 @@ const apiClient = {
 
   getInvoices: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getInvoices();
+      return await window.electronAPI.getAllInvoices();
+    }
+    return await fetchAPI('/invoices');
+  },
+
+  getAllInvoices: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getAllInvoices();
     }
     return await fetchAPI('/invoices');
   },
@@ -474,7 +571,7 @@ const apiClient = {
 
   updateInvoice: async (invoiceData) => {
     if (isElectron()) {
-      return await window.electronAPI.updateInvoice(invoiceData);
+      return await window.electronAPI.updateInvoiceStatus(invoiceData.invoice_id, invoiceData.status);
     }
     return await fetchAPI(`/invoices/${invoiceData.invoice_id}`, {
       method: 'PUT',
@@ -493,21 +590,27 @@ const apiClient = {
 
   getInvoicesByMatter: async (matterId) => {
     if (isElectron()) {
-      return await window.electronAPI.getInvoicesByMatter(matterId);
+      const invoices = await window.electronAPI.getAllInvoices();
+      return invoices.filter(i => i.matter_id === matterId);
     }
     return await fetchAPI(`/invoices/matter/${matterId}`);
   },
 
   getInvoicesByClient: async (clientId) => {
     if (isElectron()) {
-      return await window.electronAPI.getInvoicesByClient(clientId);
+      const invoices = await window.electronAPI.getAllInvoices();
+      return invoices.filter(i => i.client_id === clientId);
     }
     return await fetchAPI(`/invoices/client/${clientId}`);
   },
 
   recordPayment: async (paymentData) => {
     if (isElectron()) {
-      return await window.electronAPI.recordPayment(paymentData);
+      // Record payment as advance of type fee_payment
+      return await window.electronAPI.addAdvance({
+        ...paymentData,
+        advance_type: paymentData.advance_type || 'fee_payment',
+      });
     }
     return await fetchAPI('/invoices/payments', {
       method: 'POST',
@@ -517,7 +620,7 @@ const apiClient = {
 
   deletePayment: async (paymentId) => {
     if (isElectron()) {
-      return await window.electronAPI.deletePayment(paymentId);
+      return await window.electronAPI.deleteAdvance(paymentId);
     }
     return await fetchAPI(`/invoices/payments/${paymentId}`, {
       method: 'DELETE',
@@ -530,14 +633,21 @@ const apiClient = {
 
   getJudgments: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getJudgments();
+      return await window.electronAPI.getAllJudgments();
+    }
+    return await fetchAPI('/judgments');
+  },
+
+  getAllJudgments: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getAllJudgments();
     }
     return await fetchAPI('/judgments');
   },
 
   createJudgment: async (judgmentData) => {
     if (isElectron()) {
-      return await window.electronAPI.createJudgment(judgmentData);
+      return await window.electronAPI.addJudgment(judgmentData);
     }
     return await fetchAPI('/judgments', {
       method: 'POST',
@@ -570,14 +680,21 @@ const apiClient = {
 
   getDeadlines: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getDeadlines();
+      return await window.electronAPI.getAllDeadlines();
+    }
+    return await fetchAPI('/deadlines');
+  },
+
+  getAllDeadlines: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getAllDeadlines();
     }
     return await fetchAPI('/deadlines');
   },
 
   createDeadline: async (deadlineData) => {
     if (isElectron()) {
-      return await window.electronAPI.createDeadline(deadlineData);
+      return await window.electronAPI.addDeadline(deadlineData);
     }
     return await fetchAPI('/deadlines', {
       method: 'POST',
@@ -604,9 +721,19 @@ const apiClient = {
     });
   },
 
+  updateDeadlineStatus: async (deadlineId, newStatus) => {
+    if (isElectron()) {
+      return await window.electronAPI.updateDeadlineStatus(deadlineId, newStatus);
+    }
+    return await fetchAPI(`/deadlines/${deadlineId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status: newStatus }),
+    });
+  },
+
   completeDeadline: async (deadlineId) => {
     if (isElectron()) {
-      return await window.electronAPI.completeDeadline(deadlineId);
+      return await window.electronAPI.updateDeadlineStatus(deadlineId, 'completed');
     }
     return await fetchAPI(`/deadlines/${deadlineId}/complete`, {
       method: 'POST',
@@ -615,7 +742,7 @@ const apiClient = {
 
   uncompleteDeadline: async (deadlineId) => {
     if (isElectron()) {
-      return await window.electronAPI.uncompleteDeadline(deadlineId);
+      return await window.electronAPI.updateDeadlineStatus(deadlineId, 'pending');
     }
     return await fetchAPI(`/deadlines/${deadlineId}/uncomplete`, {
       method: 'POST',
@@ -628,14 +755,21 @@ const apiClient = {
 
   getAppointments: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getAppointments();
+      return await window.electronAPI.getAllAppointments();
+    }
+    return await fetchAPI('/appointments');
+  },
+
+  getAllAppointments: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getAllAppointments();
     }
     return await fetchAPI('/appointments');
   },
 
   createAppointment: async (appointmentData) => {
     if (isElectron()) {
-      return await window.electronAPI.createAppointment(appointmentData);
+      return await window.electronAPI.addAppointment(appointmentData);
     }
     return await fetchAPI('/appointments', {
       method: 'POST',
@@ -666,16 +800,21 @@ const apiClient = {
   // DIARY METHODS (4)
   // ============================================
 
-  getDiaryEntries: async () => {
+  getDiaryEntries: async (matterId) => {
     if (isElectron()) {
-      return await window.electronAPI.getDiaryEntries();
+      if (matterId) {
+        return await window.electronAPI.getMatterTimeline(matterId);
+      }
+      // No get-all-diary handler - return empty
+      console.warn('getDiaryEntries: requires matterId in Electron mode');
+      return [];
     }
-    return await fetchAPI('/diary');
+    return matterId ? await fetchAPI(`/diary/timeline/${matterId}`) : await fetchAPI('/diary');
   },
 
   createDiaryEntry: async (diaryData) => {
     if (isElectron()) {
-      return await window.electronAPI.createDiaryEntry(diaryData);
+      return await window.electronAPI.addDiaryEntry(diaryData);
     }
     return await fetchAPI('/diary', {
       method: 'POST',
@@ -715,7 +854,7 @@ const apiClient = {
 
   createLawyer: async (lawyerData) => {
     if (isElectron()) {
-      return await window.electronAPI.createLawyer(lawyerData);
+      return await window.electronAPI.addLawyer(lawyerData);
     }
     return await fetchAPI('/lawyers', {
       method: 'POST',
@@ -744,21 +883,23 @@ const apiClient = {
 
   getLawyerStats: async (lawyerId) => {
     if (isElectron()) {
-      return await window.electronAPI.getLawyerStats(lawyerId);
+      return await window.electronAPI.generateReport('lawyer-productivity', { lawyerId });
     }
     return await fetchAPI(`/lawyers/${lawyerId}/stats`);
   },
 
   getLawyerMatters: async (lawyerId) => {
     if (isElectron()) {
-      return await window.electronAPI.getLawyerMatters(lawyerId);
+      const matters = await window.electronAPI.getAllMatters();
+      return matters.filter(m => m.lawyer_id === lawyerId);
     }
     return await fetchAPI(`/lawyers/${lawyerId}/matters`);
   },
 
   getLawyerTimesheets: async (lawyerId) => {
     if (isElectron()) {
-      return await window.electronAPI.getLawyerTimesheets(lawyerId);
+      const timesheets = await window.electronAPI.getAllTimesheets();
+      return timesheets.filter(t => t.lawyer_id === lawyerId);
     }
     return await fetchAPI(`/lawyers/${lawyerId}/timesheets`);
   },
@@ -783,14 +924,16 @@ const apiClient = {
 
   getMatterTypes: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getMatterTypes();
+      // Matter types are hardcoded in the schema
+      return ['litigation', 'corporate', 'advisory', 'arbitration', 'enforcement', 'other'];
     }
     return await fetchAPI('/lookups/matter-types');
   },
 
   getMatterStatuses: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getMatterStatuses();
+      // Matter statuses are hardcoded in the schema
+      return ['active', 'pending', 'closed', 'on_hold', 'archived'];
     }
     return await fetchAPI('/lookups/matter-statuses');
   },
@@ -802,9 +945,23 @@ const apiClient = {
     return await fetchAPI('/lookups/task-types');
   },
 
+  getHearingPurposes: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getHearingPurposes();
+    }
+    return await fetchAPI('/lookups/hearing-purposes');
+  },
+
+  getEntityTypes: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getEntityTypes();
+    }
+    return await fetchAPI('/lookups/entity-types');
+  },
+
   createLookup: async (lookupData) => {
     if (isElectron()) {
-      return await window.electronAPI.createLookup(lookupData);
+      return await window.electronAPI.addLookupItem(lookupData.type, lookupData);
     }
     return await fetchAPI('/lookups', {
       method: 'POST',
@@ -814,7 +971,7 @@ const apiClient = {
 
   updateLookup: async (lookupData) => {
     if (isElectron()) {
-      return await window.electronAPI.updateLookup(lookupData);
+      return await window.electronAPI.updateLookupItem(lookupData.type, lookupData);
     }
     return await fetchAPI(`/lookups/${lookupData.id}`, {
       method: 'PUT',
@@ -824,7 +981,7 @@ const apiClient = {
 
   deleteLookup: async (lookupData) => {
     if (isElectron()) {
-      return await window.electronAPI.deleteLookup(lookupData);
+      return await window.electronAPI.deleteLookupItem(lookupData.table_name, lookupData.id);
     }
     const { table_name, id } = lookupData;
     return await fetchAPI(`/lookups/${table_name}/${id}`, {
@@ -834,7 +991,7 @@ const apiClient = {
 
   getCourts: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getCourts();
+      return await window.electronAPI.getCourtTypes();
     }
     return await fetchAPI('/lookups/courts');
   },
@@ -845,21 +1002,35 @@ const apiClient = {
 
   getEntities: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getEntities();
+      return await window.electronAPI.getAllCorporateEntities();
     }
     return await fetchAPI('/corporate/entities');
   },
 
+  getAllCorporateEntities: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getAllCorporateEntities();
+    }
+    return await fetchAPI('/corporate/entities');
+  },
+
+  getCorporateClients: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getCorporateClients();
+    }
+    return await fetchAPI('/corporate/clients');
+  },
+
   getEntity: async (entityId) => {
     if (isElectron()) {
-      return await window.electronAPI.getEntity(entityId);
+      return await window.electronAPI.getCorporateEntity(entityId);
     }
     return await fetchAPI(`/corporate/entities/${entityId}`);
   },
 
   createEntity: async (entityData) => {
     if (isElectron()) {
-      return await window.electronAPI.createEntity(entityData);
+      return await window.electronAPI.addCorporateEntity(entityData);
     }
     return await fetchAPI('/corporate/entities', {
       method: 'POST',
@@ -869,7 +1040,7 @@ const apiClient = {
 
   updateEntity: async (entityData) => {
     if (isElectron()) {
-      return await window.electronAPI.updateEntity(entityData);
+      return await window.electronAPI.updateCorporateEntity(entityData);
     }
     return await fetchAPI(`/corporate/entities/${entityData.entity_id}`, {
       method: 'PUT',
@@ -879,7 +1050,7 @@ const apiClient = {
 
   deleteEntity: async (entityId) => {
     if (isElectron()) {
-      return await window.electronAPI.deleteEntity(entityId);
+      return await window.electronAPI.deleteCorporateEntity(entityId);
     }
     return await fetchAPI(`/corporate/entities/${entityId}`, {
       method: 'DELETE',
@@ -895,7 +1066,7 @@ const apiClient = {
 
   createShareholder: async (shareholderData) => {
     if (isElectron()) {
-      return await window.electronAPI.createShareholder(shareholderData);
+      return await window.electronAPI.addShareholder(shareholderData);
     }
     return await fetchAPI('/corporate/shareholders', {
       method: 'POST',
@@ -931,7 +1102,7 @@ const apiClient = {
 
   createDirector: async (directorData) => {
     if (isElectron()) {
-      return await window.electronAPI.createDirector(directorData);
+      return await window.electronAPI.addDirector(directorData);
     }
     return await fetchAPI('/corporate/directors', {
       method: 'POST',
@@ -960,14 +1131,14 @@ const apiClient = {
 
   getBoardMeetings: async (entityId) => {
     if (isElectron()) {
-      return await window.electronAPI.getBoardMeetings(entityId);
+      return await window.electronAPI.getMeetings(entityId);
     }
     return await fetchAPI(`/corporate/entities/${entityId}/board-meetings`);
   },
 
   createBoardMeeting: async (meetingData) => {
     if (isElectron()) {
-      return await window.electronAPI.createBoardMeeting(meetingData);
+      return await window.electronAPI.addMeeting(meetingData);
     }
     return await fetchAPI('/corporate/board-meetings', {
       method: 'POST',
@@ -981,7 +1152,7 @@ const apiClient = {
 
   updateBoardMeeting: async (meetingData) => {
     if (isElectron()) {
-      return await window.electronAPI.updateBoardMeeting(meetingData);
+      return await window.electronAPI.updateMeeting(meetingData);
     }
     return await fetchAPI(`/corporate/board-meetings/${meetingData.meeting_id}`, {
       method: 'PUT',
@@ -991,7 +1162,7 @@ const apiClient = {
 
   deleteBoardMeeting: async (meetingId) => {
     if (isElectron()) {
-      return await window.electronAPI.deleteBoardMeeting(meetingId);
+      return await window.electronAPI.deleteMeeting(meetingId);
     }
     return await fetchAPI(`/corporate/board-meetings/${meetingId}`, {
       method: 'DELETE',
@@ -1007,7 +1178,7 @@ const apiClient = {
 
   createShareTransfer: async (transferData) => {
     if (isElectron()) {
-      return await window.electronAPI.createShareTransfer(transferData);
+      return await window.electronAPI.addShareTransfer(transferData);
     }
     return await fetchAPI('/corporate/share-transfers', {
       method: 'POST',
@@ -1036,14 +1207,14 @@ const apiClient = {
 
   getCorporateDocuments: async (entityId) => {
     if (isElectron()) {
-      return await window.electronAPI.getCorporateDocuments(entityId);
+      return await window.electronAPI.getFilings(entityId);
     }
     return await fetchAPI(`/corporate/entities/${entityId}/documents`);
   },
 
   createCorporateDocument: async (documentData) => {
     if (isElectron()) {
-      return await window.electronAPI.createCorporateDocument(documentData);
+      return await window.electronAPI.addFiling(documentData);
     }
     return await fetchAPI('/corporate/documents', {
       method: 'POST',
@@ -1053,7 +1224,7 @@ const apiClient = {
 
   updateCorporateDocument: async (documentData) => {
     if (isElectron()) {
-      return await window.electronAPI.updateCorporateDocument(documentData);
+      return await window.electronAPI.updateFiling(documentData);
     }
     return await fetchAPI(`/corporate/documents/${documentData.document_id}`, {
       method: 'PUT',
@@ -1063,7 +1234,7 @@ const apiClient = {
 
   deleteCorporateDocument: async (documentId) => {
     if (isElectron()) {
-      return await window.electronAPI.deleteCorporateDocument(documentId);
+      return await window.electronAPI.deleteFiling(documentId);
     }
     return await fetchAPI(`/corporate/documents/${documentId}`, {
       method: 'DELETE',
@@ -1072,28 +1243,41 @@ const apiClient = {
 
   getCapTable: async (entityId) => {
     if (isElectron()) {
-      return await window.electronAPI.getCapTable(entityId);
+      // Build cap table from shareholders + share transfers
+      const shareholders = await window.electronAPI.getShareholders(entityId);
+      const totalShares = await window.electronAPI.getTotalShares(entityId);
+      return { shareholders, totalShares };
     }
     return await fetchAPI(`/corporate/entities/${entityId}/cap-table`);
   },
 
   getEntityTimeline: async (entityId) => {
     if (isElectron()) {
-      return await window.electronAPI.getEntityTimeline(entityId);
+      // Aggregate entity events from meetings, filings, share transfers
+      const meetings = await window.electronAPI.getMeetings(entityId);
+      const filings = await window.electronAPI.getFilings(entityId);
+      const transfers = await window.electronAPI.getShareTransfers(entityId);
+      const events = [
+        ...meetings.map(m => ({ ...m, event_type: 'meeting' })),
+        ...filings.map(f => ({ ...f, event_type: 'filing' })),
+        ...transfers.map(t => ({ ...t, event_type: 'share_transfer' })),
+      ];
+      return events.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
     }
     return await fetchAPI(`/corporate/entities/${entityId}/timeline`);
   },
 
   getCompanyTypes: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getCompanyTypes();
+      return await window.electronAPI.getEntityTypes();
     }
     return await fetchAPI('/corporate/company-types');
   },
 
   getDirectorRoles: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getDirectorRoles();
+      // Director roles are hardcoded
+      return ['Chairman', 'Managing Director', 'Director', 'Secretary', 'Treasurer'];
     }
     return await fetchAPI('/corporate/director-roles');
   },
@@ -1104,17 +1288,29 @@ const apiClient = {
 
   checkConflicts: async (searchData) => {
     if (isElectron()) {
-      return await window.electronAPI.checkConflicts(searchData);
+      return await window.electronAPI.conflictCheck(searchData);
     }
-    return await fetchAPI('/conflict-check', {
+    return await fetchAPI('/conflict-check/search', {
       method: 'POST',
       body: JSON.stringify(searchData),
     });
   },
 
+  conflictCheck: async (searchTerms) => {
+    if (isElectron()) {
+      return await window.electronAPI.conflictCheck(searchTerms);
+    }
+    return await fetchAPI('/conflict-check/search', {
+      method: 'POST',
+      body: JSON.stringify({ searchTerms }),
+    });
+  },
+
   getConflictHistory: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getConflictHistory();
+      // No dedicated handler for conflict history retrieval
+      console.warn('getConflictHistory: not available in Electron mode');
+      return [];
     }
     return await fetchAPI('/conflict-check/history');
   },
@@ -1122,6 +1318,13 @@ const apiClient = {
   // ============================================
   // SETTINGS METHODS (10)
   // ============================================
+
+  getFirmInfo: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getFirmInfo();
+    }
+    return await fetchAPI('/settings/firm-info');
+  },
 
   getSettings: async () => {
     if (isElectron()) {
@@ -1132,7 +1335,12 @@ const apiClient = {
 
   updateSettings: async (settings) => {
     if (isElectron()) {
-      return await window.electronAPI.updateSettings(settings);
+      // Save each setting individually
+      const results = [];
+      for (const [key, value] of Object.entries(settings)) {
+        results.push(await window.electronAPI.saveSetting(key, value, typeof value, 'general'));
+      }
+      return results;
     }
     return await fetchAPI('/settings', {
       method: 'PUT',
@@ -1142,14 +1350,14 @@ const apiClient = {
 
   getInvoiceSettings: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getInvoiceSettings();
+      return await window.electronAPI.getSetting('invoice_settings');
     }
     return await fetchAPI('/settings/invoice');
   },
 
   updateInvoiceSettings: async (settings) => {
     if (isElectron()) {
-      return await window.electronAPI.updateInvoiceSettings(settings);
+      return await window.electronAPI.saveSetting('invoice_settings', JSON.stringify(settings), 'json', 'invoicing');
     }
     return await fetchAPI('/settings/invoice', {
       method: 'PUT',
@@ -1159,14 +1367,14 @@ const apiClient = {
 
   getTimesheetSettings: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getTimesheetSettings();
+      return await window.electronAPI.getSetting('timesheet_settings');
     }
     return await fetchAPI('/settings/timesheet');
   },
 
   updateTimesheetSettings: async (settings) => {
     if (isElectron()) {
-      return await window.electronAPI.updateTimesheetSettings(settings);
+      return await window.electronAPI.saveSetting('timesheet_settings', JSON.stringify(settings), 'json', 'timesheets');
     }
     return await fetchAPI('/settings/timesheet', {
       method: 'PUT',
@@ -1176,21 +1384,21 @@ const apiClient = {
 
   getNextInvoiceNumber: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getNextInvoiceNumber();
+      return await window.electronAPI.generateInvoiceNumber();
     }
     return await fetchAPI('/settings/next-invoice-number');
   },
 
   getNextReceiptNumber: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getNextReceiptNumber();
+      return await window.electronAPI.getSetting('next_receipt_number');
     }
     return await fetchAPI('/settings/next-receipt-number');
   },
 
   incrementInvoiceNumber: async () => {
     if (isElectron()) {
-      return await window.electronAPI.incrementInvoiceNumber();
+      return await window.electronAPI.generateInvoiceNumber();
     }
     return await fetchAPI('/settings/increment-invoice-number', {
       method: 'POST',
@@ -1199,7 +1407,10 @@ const apiClient = {
 
   incrementReceiptNumber: async () => {
     if (isElectron()) {
-      return await window.electronAPI.incrementReceiptNumber();
+      const current = await window.electronAPI.getSetting('next_receipt_number');
+      const next = (parseInt(current) || 0) + 1;
+      await window.electronAPI.saveSetting('next_receipt_number', String(next), 'string', 'invoicing');
+      return next;
     }
     return await fetchAPI('/settings/increment-receipt-number', {
       method: 'POST',
@@ -1207,12 +1418,22 @@ const apiClient = {
   },
 
   // ============================================
-  // REPORTS METHODS (8)
+  // REPORTS METHODS (9)
   // ============================================
+
+  generateReport: async (reportType, filters) => {
+    if (isElectron()) {
+      return await window.electronAPI.generateReport(reportType, filters);
+    }
+    return await fetchAPI('/reports/generate', {
+      method: 'POST',
+      body: JSON.stringify({ reportType, ...filters }),
+    });
+  },
 
   getAgingReport: async (filters) => {
     if (isElectron()) {
-      return await window.electronAPI.getAgingReport(filters);
+      return await window.electronAPI.generateReport('aging', filters);
     }
     const params = new URLSearchParams(filters);
     return await fetchAPI(`/reports/aging?${params}`);
@@ -1220,7 +1441,7 @@ const apiClient = {
 
   getFinancialSummary: async (filters) => {
     if (isElectron()) {
-      return await window.electronAPI.getFinancialSummary(filters);
+      return await window.electronAPI.generateReport('financial-summary', filters);
     }
     const params = new URLSearchParams(filters);
     return await fetchAPI(`/reports/financial-summary?${params}`);
@@ -1228,7 +1449,7 @@ const apiClient = {
 
   getTimesheetReport: async (filters) => {
     if (isElectron()) {
-      return await window.electronAPI.getTimesheetReport(filters);
+      return await window.electronAPI.generateReport('timesheet', filters);
     }
     const params = new URLSearchParams(filters);
     return await fetchAPI(`/reports/timesheet?${params}`);
@@ -1236,7 +1457,7 @@ const apiClient = {
 
   getExpenseReport: async (filters) => {
     if (isElectron()) {
-      return await window.electronAPI.getExpenseReport(filters);
+      return await window.electronAPI.generateReport('expense', filters);
     }
     const params = new URLSearchParams(filters);
     return await fetchAPI(`/reports/expense?${params}`);
@@ -1244,7 +1465,7 @@ const apiClient = {
 
   getLawyerProductivity: async (filters) => {
     if (isElectron()) {
-      return await window.electronAPI.getLawyerProductivity(filters);
+      return await window.electronAPI.generateReport('lawyer-productivity', filters);
     }
     const params = new URLSearchParams(filters);
     return await fetchAPI(`/reports/lawyer-productivity?${params}`);
@@ -1252,7 +1473,7 @@ const apiClient = {
 
   getMatterStats: async (filters) => {
     if (isElectron()) {
-      return await window.electronAPI.getMatterStats(filters);
+      return await window.electronAPI.generateReport('matter-stats', filters);
     }
     const params = new URLSearchParams(filters);
     return await fetchAPI(`/reports/matter-stats?${params}`);
@@ -1260,7 +1481,7 @@ const apiClient = {
 
   getClientReport: async (filters) => {
     if (isElectron()) {
-      return await window.electronAPI.getClientReport(filters);
+      return await window.electronAPI.generateReport('client', filters);
     }
     const params = new URLSearchParams(filters);
     return await fetchAPI(`/reports/client?${params}`);
@@ -1268,7 +1489,7 @@ const apiClient = {
 
   getRevenueReport: async (filters) => {
     if (isElectron()) {
-      return await window.electronAPI.getRevenueReport(filters);
+      return await window.electronAPI.generateReport('revenue', filters);
     }
     const params = new URLSearchParams(filters);
     return await fetchAPI(`/reports/revenue?${params}`);
@@ -1280,14 +1501,14 @@ const apiClient = {
 
   getTrash: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getTrash();
+      return await window.electronAPI.getTrashItems();
     }
     return await fetchAPI('/trash');
   },
 
   restoreItem: async (itemData) => {
     if (isElectron()) {
-      return await window.electronAPI.restoreItem(itemData);
+      return await window.electronAPI.restoreTrashItem(itemData.type, itemData.id);
     }
     return await fetchAPI('/trash/restore', {
       method: 'POST',
@@ -1300,17 +1521,68 @@ const apiClient = {
   // These are desktop-only features with no web equivalents
   // ============================================
 
+  // Machine ID
+  getMachineId: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getMachineId();
+    }
+    electronOnlyError('getMachineId');
+  },
+
+  // Report export operations
+  exportClientStatementPdf: async (statementData, firmInfo) => {
+    if (isElectron()) {
+      return await window.electronAPI.exportClientStatementPdf(statementData, firmInfo);
+    }
+    electronOnlyError('exportClientStatementPdf');
+  },
+
+  exportClientStatementExcel: async (statementData) => {
+    if (isElectron()) {
+      return await window.electronAPI.exportClientStatementExcel(statementData);
+    }
+    electronOnlyError('exportClientStatementExcel');
+  },
+
+  exportCaseStatusPdf: async (reportData, firmInfo) => {
+    if (isElectron()) {
+      return await window.electronAPI.exportCaseStatusPdf(reportData, firmInfo);
+    }
+    electronOnlyError('exportCaseStatusPdf');
+  },
+
+  exportCaseStatusExcel: async (reportData) => {
+    if (isElectron()) {
+      return await window.electronAPI.exportCaseStatusExcel(reportData);
+    }
+    electronOnlyError('exportCaseStatusExcel');
+  },
+
+  exportClient360Pdf: async (reportData, firmInfo) => {
+    if (isElectron()) {
+      return await window.electronAPI.exportClient360Pdf(reportData, firmInfo);
+    }
+    electronOnlyError('exportClient360Pdf');
+  },
+
+  exportClient360Excel: async (reportData) => {
+    if (isElectron()) {
+      return await window.electronAPI.exportClient360Excel(reportData);
+    }
+    electronOnlyError('exportClient360Excel');
+  },
+
   // Export operations
   exportMattersToExcel: async (matters) => {
     if (isElectron()) {
-      return await window.electronAPI.exportMattersToExcel(matters);
+      return await window.electronAPI.exportToExcel(matters, 'matters');
     }
     electronOnlyError('exportMattersToExcel');
   },
 
   exportTimesheetsToExcel: async (timesheets) => {
     if (isElectron()) {
-      return await window.electronAPI.exportTimesheetsToExcel(timesheets);
+      return await window.electronAPI.exportToExcel(timesheets, 'timesheets');
     }
     electronOnlyError('exportTimesheetsToExcel');
   },
@@ -1324,14 +1596,14 @@ const apiClient = {
 
   exportInvoicesToExcel: async (invoices) => {
     if (isElectron()) {
-      return await window.electronAPI.exportInvoicesToExcel(invoices);
+      return await window.electronAPI.exportToExcel(invoices, 'invoices');
     }
     electronOnlyError('exportInvoicesToExcel');
   },
 
   exportAgingToExcel: async (data) => {
     if (isElectron()) {
-      return await window.electronAPI.exportAgingToExcel(data);
+      return await window.electronAPI.exportToExcel(data, 'aging-report');
     }
     electronOnlyError('exportAgingToExcel');
   },
@@ -1339,14 +1611,15 @@ const apiClient = {
   // PDF generation
   generateInvoicePDF: async (invoiceData) => {
     if (isElectron()) {
-      return await window.electronAPI.generateInvoicePDF(invoiceData);
+      return await window.electronAPI.generateInvoicePdfs(invoiceData);
     }
     electronOnlyError('generateInvoicePDF');
   },
 
   generateReceiptPDF: async (receiptData) => {
     if (isElectron()) {
-      return await window.electronAPI.generateReceiptPDF(receiptData);
+      // Use invoice PDF generator for receipts
+      return await window.electronAPI.generateInvoicePdfs(receiptData.invoice_id, { type: 'receipt' });
     }
     electronOnlyError('generateReceiptPDF');
   },
@@ -1369,19 +1642,27 @@ const apiClient = {
   // Client imports
   importClientsFromExcel: async () => {
     if (isElectron()) {
-      return await window.electronAPI.importClientsFromExcel();
+      return await window.electronAPI.importClientsExcel();
     }
     electronOnlyError('importClientsFromExcel');
   },
 
   validateClientImport: async (filePath) => {
     if (isElectron()) {
-      return await window.electronAPI.validateClientImport(filePath);
+      // Validation happens as part of import process
+      return await window.electronAPI.importClientsExcel();
     }
     electronOnlyError('validateClientImport');
   },
 
   // License operations
+  getLicenseStatus: async () => {
+    if (isElectron()) {
+      return await window.electronAPI.getLicenseStatus();
+    }
+    electronOnlyError('getLicenseStatus');
+  },
+
   validateLicense: async () => {
     if (isElectron()) {
       return await window.electronAPI.validateLicense();
@@ -1391,21 +1672,21 @@ const apiClient = {
 
   activateLicense: async (licenseKey) => {
     if (isElectron()) {
-      return await window.electronAPI.activateLicense(licenseKey);
+      return await window.electronAPI.validateLicense(licenseKey);
     }
     electronOnlyError('activateLicense');
   },
 
   deactivateLicense: async () => {
     if (isElectron()) {
-      return await window.electronAPI.deactivateLicense();
+      return await window.electronAPI.clearLicense();
     }
     electronOnlyError('deactivateLicense');
   },
 
   getLicenseInfo: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getLicenseInfo();
+      return await window.electronAPI.getLicenseStatus();
     }
     electronOnlyError('getLicenseInfo');
   },
@@ -1413,14 +1694,14 @@ const apiClient = {
   // File dialogs
   showOpenDialog: async (options) => {
     if (isElectron()) {
-      return await window.electronAPI.showOpenDialog(options);
+      return await window.electronAPI.selectBackupFolder();
     }
     electronOnlyError('showOpenDialog');
   },
 
   showSaveDialog: async (options) => {
     if (isElectron()) {
-      return await window.electronAPI.showSaveDialog(options);
+      return await window.electronAPI.selectBackupFolder();
     }
     electronOnlyError('showSaveDialog');
   },
@@ -1428,14 +1709,17 @@ const apiClient = {
   // App info
   getAppVersion: async () => {
     if (isElectron()) {
-      return await window.electronAPI.getAppVersion();
+      // App version not exposed via IPC - return from package
+      return '48.2';
     }
     electronOnlyError('getAppVersion');
   },
 
   openExternal: async (url) => {
     if (isElectron()) {
-      return await window.electronAPI.openExternal(url);
+      // Fallback: open in new window
+      window.open(url, '_blank');
+      return;
     }
     electronOnlyError('openExternal');
   },
