@@ -1,8 +1,8 @@
 # Qanuni Project Overview
 
-**Version:** v49.7 (UI Polish Complete)
+**Version:** v49.8 (License System Production-Ready)
 **Status:** Production-ready, installer created
-**Last Updated:** February 12, 2026 (Session 18)
+**Last Updated:** February 12, 2026 (Session 19)
 
 ## Current State
 
@@ -40,16 +40,30 @@
 - ⏸️ Full context migration deferred (performance already 508x targets)
 - ⏸️ On-demand loading deferred (not blocking launch)
 
+**Licensing System (Production-Ready):**
+The desktop licensing enforcement is fully implemented and tested. License activation flow includes:
+- LicenseScreen component with machine ID display and copy button
+- Settings > License tab showing status, expiry, machine ID, and deactivation
+- Startup license check with fail-closed gate (blocks app if unlicensed)
+- Grace period warnings (30/7/1 day alerts, 7-day grace after expiry)
+- License persistence verified across restarts (%APPDATA%/qanuni/license.key)
+- HTML keygen tool (licensing/keygen.html) for customer license management
+- Production LICENSE_SALT implemented (all dev keys invalidated)
+- Security: Keygen tools excluded from installer distribution
+
+All license IPC handlers fixed: validateAndActivate() creates keys atomically,
+return shapes normalized for frontend compatibility. Integration tests: 118/118 passing.
+
 **Production Readiness:**
-- ✅ Licensing system built (license-manager.js, IPC handlers)
+- ✅ Licensing system built and enforced (license-manager.js, IPC handlers, UI)
 - ✅ Pricing strategy defined (Desktop: $199/year, Web: $10-149/month tiered)
 - ✅ Integration models decided (Desktop-first, Web-only, Hybrid options)
-- ❌ License enforcement not connected to UI (Session 19 priority)
-- ❌ Activation UI not built (Session 19)
+- ✅ License enforcement connected to UI (Session 19)
+- ✅ Activation UI built (LicenseScreen, Settings tab, warnings)
 - ⚠️ Icon assets need verification
 - ⚠️ User documentation minimal
 
-**Next:** Session 19 - Desktop Licensing Enforcement (build activation UI, connect to startup flow, test build process)
+**Next:** Session 20 - Installer Testing & Pre-Launch Polish (verify dist build, user docs, icon check)
 
 ## Project Purpose
 
@@ -113,18 +127,22 @@ qanuni/
 │       ├── client-imports.js    # 2 handlers
 │       └── license.js           # Fail-closed licensing
 ├── licensing/                   # License system (renamed from LICENSE/)
-│   ├── issued-licenses.json
-│   ├── key-generator.js
-│   └── license-manager.js
+│   ├── license-manager.js      # Runtime validation (ships in installer)
+│   ├── keygen.html             # Admin tool - HTML UI (excluded from build)
+│   ├── key-generator.js        # Admin tool - CLI (excluded from build)
+│   └── issued-licenses.json    # License log (excluded from build)
 ├── src/
 │   ├── App.js                   # Main React app (~4,000 lines)
 │   ├── constants/               # translations.js
 │   ├── utils/                   # validators, formatDate, generateId
 │   └── components/
 │       ├── common/              # Shared components
+│       │   ├── LicenseScreen.js        # Activation dialog (startup gate)
+│       │   └── LicenseWarningBanner.js # Expiry warnings
 │       ├── forms/               # ALL 13 form components
 │       ├── lists/               # 11 list components
 │       ├── modules/             # Full modules (Dashboard, Calendar, Reports)
+│       │   └── SettingsModule.js       # Includes License tab (view/deactivate)
 │       └── corporate/           # Corporate Secretary UI
 ├── test-integration.js          # 117 integration tests
 └── PATTERNS.md                  # Code standards and conventions
@@ -341,7 +359,7 @@ Get-ChildItem "src\components" -Recurse -Filter "*.js" | Select-String -Pattern 
 - `build/**/*` - React production output
 - `main.js`, `preload.js` - Electron entry points
 - `electron/**/*` - Backend modules
-- `licensing/**/*` - License system
+- `licensing/license-manager.js` - License validation (only runtime file shipped)
 - `node_modules/**/*` - Runtime dependencies
 - `package.json` - Package metadata
 
@@ -353,6 +371,7 @@ Get-ChildItem "src\components" -Recurse -Filter "*.js" | Select-String -Pattern 
 
 ## Version History
 
+- **v49.8** (Feb 12, 2026) - Session 19: License system production-ready (activation UI, startup gate, grace periods, HTML keygen, production salt)
 - **v49.7** (Feb 12, 2026) - Session 18: UI polish (DATE capitalization, dropdown prompt standardization)
 - **v49.6** (Feb 12, 2026) - Session 17: Dead code cleanup (161 lines removed, unused imports)
 - **v49.5** (Feb 12, 2026) - Session 16: Financial error handling (6 components hardened against silent failures)
@@ -384,24 +403,35 @@ Get-ChildItem "src\components" -Recurse -Filter "*.js" | Select-String -Pattern 
 - Legal AI integration with Arabic law databases
 - Cloud deployment (after desktop proves market)
 
+### Key Learnings & Principles (Licensing)
+- Desktop licensing requires fail-closed design patterns where errors default to blocking access
+- Atomic operations (validate + save together) prevent partial activation states
+- Return shape normalization ensures frontend compatibility when multiple code paths exist
+- HTML keygen tools can achieve full crypto compatibility with Node.js backends using pure JavaScript implementations of MD5/Base64
+- LICENSE_SALT must be synchronized across all keygen implementations (license-manager.js, key-generator.js, keygen.html)
+- Machine-bound licenses prevent key sharing but require support workflow for hardware changes
+- Grace periods (7 days) provide good UX during renewal without compromising security
+
 ## Next Steps
 
-**Immediate (Session 19):**
-- Build license activation UI (LicenseDialog, status cards, warnings)
-- Connect license check to App.js startup flow
-- Implement grace period behavior (7 days, daily nags)
-- Test key generation and activation process
-- Verify icon assets and installer build
+**Immediate (Session 20):**
+- Installer testing and verification (`npm run dist:clean`)
+- Create user documentation (README.txt for end users, KEYGEN_USAGE.md for internal)
+- Final pre-launch polish (icon verification, optional code signing)
+- First customer activation test (end-to-end keygen -> install -> activate)
 
 **v1.0 Launch Blockers:**
-- Desktop licensing enforcement (Session 19 target)
+- ✅ Desktop licensing enforcement (Session 19 complete)
 - Icon files verified/created
 - Basic user documentation (README.txt)
-- Test installer generation
+- Test installer generation with licensing
 - First customer activation test
 
 **Post-v1.0 (6-12 months):**
 - Web version development (after 50+ desktop installations)
+- French language support for broader MENA market penetration
+- Enhanced corporate secretary functionality
+- Integration capabilities (Dropbox/OneDrive)
 - Session limits + anomaly detection for password sharing
 - Multi-user web tiers ($10-149/month)
 - Desktop-web integration (Option A: included web access)
@@ -416,8 +446,8 @@ Get-ChildItem "src\components" -Recurse -Filter "*.js" | Select-String -Pattern 
 - Zero degradation under stress
 
 **Integration Tests:**
-- 117/117 passing (100% pass rate)
-- Cover all 21 IPC modules
+- 118/118 passing (100% pass rate)
+- Cover all 21 IPC modules + license handlers
 - Test database operations, validation, error handling
 
 **Code Quality (Session 12):**
@@ -443,6 +473,24 @@ Get-ChildItem "src\components" -Recurse -Filter "*.js" | Select-String -Pattern 
 - **KNOWN_FIXES.md** - Bug fixes and solutions
 - **SESSION_XX_SUCCESS_REPORT.md** - Session completion reports
 - Lebanese court system documentation - Legal compliance reference
+
+### Licensing Tools
+- **licensing/keygen.html** - HTML UI for generating keys, viewing history, search/filter, and JSON export/import
+- **licensing/key-generator.js** - CLI backup tool with interactive mode (`-i` flag)
+- **licensing/license-manager.js** - Runtime validation: machine fingerprinting (CPU+hostname+MAC+username), checksum validation (MD5), expiry checking with grace periods
+- Both keygen tools use same cryptographic salt and algorithms
+- License persistence uses `%APPDATA%/qanuni/license.key` for Windows installations
+
+## Session Notes
+
+Proactively report conversation context status (% used) every 5-6 exchanges, alert
+at 70% to create checkpoint. At end of sessions with major structural changes,
+update CLAUDE.md in project root. When fixing recurring bugs, update KNOWN_FIXES.md
+with version, cause, fix, and test case.
+
+Session 19 completed licensing system implementation (v49.8). All keygen tools
+excluded from installer for security. Production LICENSE_SALT active - all previous
+development keys invalidated.
 
 ---
 
