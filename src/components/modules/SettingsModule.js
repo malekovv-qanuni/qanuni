@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Plus, Edit3, Trash2, Download, Upload, FileText, FolderOpen, Clock, CheckCircle, AlertCircle, RefreshCw, HardDrive, UserX, UserCheck, DollarSign, ArrowRightLeft, X, Save
+  Plus, Edit3, Trash2, Download, Upload, FileText, FolderOpen, Clock, CheckCircle, AlertCircle, RefreshCw, HardDrive, UserX, UserCheck, DollarSign, ArrowRightLeft, X, Save,
+  Shield, Copy, XCircle, Info, AlertTriangle
 } from 'lucide-react';
-import { useUI } from '../../contexts';
+import { useUI, useApp } from '../../contexts';
 import apiClient from '../../api-client';
 
 // ============================================
@@ -32,8 +33,9 @@ const SettingsModule = ({
   // Refresh
   refreshLookups
 }) => {
-  const [settingsTab, setSettingsTab] = useState('firmInfo');
+  const [settingsTab, setSettingsTab] = useState('firm');
   const { forms, openForm } = useUI();
+  const { licenseStatus, machineId, setLicenseStatus } = useApp();
   const { currentType: currentLookupType, setCurrentType: setCurrentLookupType } = forms.lookup;
   // Local state for firm saving
   const [firmSaving, setFirmSaving] = useState(false);
@@ -454,6 +456,17 @@ const SettingsModule = ({
         >
           <HardDrive className="w-4 h-4 inline mr-1" />
           Backup & Restore
+        </button>
+        <button
+          onClick={() => setSettingsTab('license')}
+          className={`px-4 py-2 -mb-px border-b-2 transition-colors ${
+            settingsTab === 'license'
+              ? 'border-blue-600 text-blue-600 font-medium'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <Shield className="w-4 h-4 inline mr-1" />
+          License
         </button>
       </div>
 
@@ -1313,6 +1326,168 @@ const SettingsModule = ({
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* License Tab */}
+      {settingsTab === 'license' && (
+        <div className="space-y-6">
+          {/* License Status Card */}
+          <div className="bg-white rounded-lg shadow p-6 max-w-2xl">
+            <h3 className="text-lg font-semibold mb-4">License Information</h3>
+
+            <div className="space-y-3">
+              {/* Status */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Status</span>
+                {licenseStatus?.isValid ? (
+                  licenseStatus.status === 'GRACE_PERIOD' ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs">
+                      <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                      Grace Period
+                    </span>
+                  ) : licenseStatus.status === 'DEV_MODE' ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">
+                      <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                      Development Mode
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      Active
+                    </span>
+                  )
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded text-xs">
+                    <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                    {licenseStatus?.status === 'NO_KEY' ? 'No License' : 'Expired'}
+                  </span>
+                )}
+              </div>
+
+              {/* Details - only when license exists */}
+              {licenseStatus?.details && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Licensed To</span>
+                    <span className="text-sm text-gray-900">{licenseStatus.details.issuedTo}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">License Type</span>
+                    <span className="text-sm text-gray-900 capitalize">{licenseStatus.details.type || 'Standard'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Expires</span>
+                    <span className="text-sm text-gray-900">
+                      {new Date(licenseStatus.details.expiresAt).toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'long', day: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Days Remaining</span>
+                    <span className={`text-sm font-medium ${
+                      licenseStatus.details.daysUntilExpiry < 7 ? 'text-red-600' :
+                      licenseStatus.details.daysUntilExpiry < 30 ? 'text-amber-600' :
+                      'text-green-600'
+                    }`}>
+                      {licenseStatus.details.daysUntilExpiry > 0
+                        ? `${licenseStatus.details.daysUntilExpiry} days`
+                        : `Expired ${Math.abs(licenseStatus.details.daysUntilExpiry)} days ago`
+                      }
+                    </span>
+                  </div>
+                </>
+              )}
+
+              {/* Grace Period Warning */}
+              {licenseStatus?.status === 'GRACE_PERIOD' && (
+                <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg mt-4">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-800">
+                    <p className="font-medium">License Expired - Grace Period Active</p>
+                    <p className="mt-1">
+                      Please renew your license to continue using Qanuni without interruption.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Machine ID Card */}
+          <div className="bg-white rounded-lg shadow p-6 max-w-2xl">
+            <h3 className="text-lg font-semibold mb-4">Machine Information</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Machine ID</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={machineId || 'Loading...'}
+                  readOnly
+                  className="flex-1 px-3 py-2 border rounded-md bg-gray-50 font-mono text-sm"
+                />
+                <button
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(machineId);
+                      showToast('Machine ID copied to clipboard');
+                    } catch (err) {
+                      showToast('Failed to copy Machine ID', 'error');
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
+                >
+                  <Copy className="w-4 h-4" />
+                  Copy
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Provide this Machine ID when requesting a license key or contacting support.
+              </p>
+            </div>
+          </div>
+
+          {/* Actions Card - only for valid non-dev licenses */}
+          {licenseStatus?.isValid && licenseStatus?.status !== 'DEV_MODE' && (
+            <div className="bg-white rounded-lg shadow p-6 max-w-2xl">
+              <h3 className="text-lg font-semibold mb-4">License Actions</h3>
+              <button
+                onClick={() => {
+                  showConfirm(
+                    'Deactivate License',
+                    'Are you sure you want to deactivate this license? You will need to enter a valid license key to continue using Qanuni.',
+                    async () => {
+                      try {
+                        const result = await apiClient.deactivateLicense();
+                        if (result.success) {
+                          showToast('License deactivated');
+                          hideConfirm();
+                          setLicenseStatus({
+                            isValid: false,
+                            status: 'NO_KEY',
+                            message: 'No license key found',
+                            machineId: machineId
+                          });
+                        } else {
+                          showToast(result.error || 'Failed to deactivate license', 'error');
+                        }
+                      } catch (error) {
+                        showToast('Error deactivating license', 'error');
+                      }
+                    }
+                  );
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-red-300 text-red-700 rounded-md hover:bg-red-50"
+              >
+                <XCircle className="w-4 h-4" />
+                Deactivate License
+              </button>
+              <p className="text-xs text-gray-500 text-center mt-2">
+                Deactivating will remove this license from this computer. You can reactivate with the same key later.
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>
