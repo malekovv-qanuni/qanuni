@@ -177,6 +177,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveSetting: (key, value, type, category) => ipcRenderer.invoke('save-setting', key, value, type, category),
   getFirmInfo: () => ipcRenderer.invoke('get-firm-info'),
   saveFirmInfo: (data) => ipcRenderer.invoke('save-firm-info', data),
+  updateFirmInfo: (data) => ipcRenderer.invoke('save-firm-info', data),
 
   // Currency Management (v46.52)
   getCurrencies: () => ipcRenderer.invoke('get-currencies'),

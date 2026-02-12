@@ -16,16 +16,11 @@
  */
 
 const { ipcMain } = require('electron');
-const isDev = require('electron-is-dev');
 
-module.exports = function registerLicenseHandlers({ database, logger }) {
+module.exports = function registerLicenseHandlers({ database, logger, licenseManager, isDev }) {
 
-  let licenseManager;
-  try {
-    licenseManager = require('../../licensing/license-manager');
-  } catch (e) {
-    logger.error('License manager module not found', { error: e.message });
-    licenseManager = null;
+  if (!licenseManager) {
+    logger.error('License manager not provided to license handler');
   }
 
   // ==================== GET STATUS ====================
