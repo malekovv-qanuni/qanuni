@@ -29,6 +29,9 @@ files:
   - "!v48-translations-map.json"
   - "!nul"
   - "!create-distribution-setup.js"
+  - "!licensing/keygen.html"
+  - "!licensing/key-generator.js"
+  - "!licensing/issued-licenses.json"
 win:
   target: nsis
   icon: build/icon.ico
