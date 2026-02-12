@@ -245,13 +245,20 @@ const InvoiceForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refr
 
   const loadUnbilledItems = async () => {
     if (formData.client_id) {
-      const time = await apiClient.getUnbilledTime(formData.client_id, formData.matter_id || null);
-      const exp = await apiClient.getUnbilledExpenses(formData.client_id, formData.matter_id || null);
-      setUnbilledTimeItems(time);
-      setUnbilledExpenseItems(exp);
-      setSelectedTimeIds(time.map(t => t.timesheet_id));
-      setSelectedExpenseIds(exp.map(e => e.expense_id));
-      await loadRetainerBalance();
+      try {
+        const time = await apiClient.getUnbilledTime(formData.client_id, formData.matter_id || null);
+        const exp = await apiClient.getUnbilledExpenses(formData.client_id, formData.matter_id || null);
+        setUnbilledTimeItems(time || []);
+        setUnbilledExpenseItems(exp || []);
+        setSelectedTimeIds((time || []).map(t => t.timesheet_id));
+        setSelectedExpenseIds((exp || []).map(e => e.expense_id));
+        await loadRetainerBalance();
+      } catch (error) {
+        console.error('Error loading unbilled items:', error);
+        showToast('Error loading unbilled items', 'error');
+        setUnbilledTimeItems([]);
+        setUnbilledExpenseItems([]);
+      }
     }
   };
 
@@ -427,9 +434,13 @@ const InvoiceForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refr
       // Deduct retainer from advance if applied
       if (totals.retainerApplied > 0) {
         try {
-          await apiClient.deductRetainer(formData.client_id, formData.matter_id || null, 'client_retainer', totals.retainerApplied);
+          const deductResult = await apiClient.deductRetainer(formData.client_id, formData.matter_id || null, 'client_retainer', totals.retainerApplied);
+          if (deductResult && deductResult.success === false) {
+            showToast('Invoice created but retainer deduction failed', 'error');
+          }
         } catch (error) {
           console.error('Error deducting retainer:', error);
+          showToast('Invoice created but retainer deduction failed', 'error');
         }
       }
 

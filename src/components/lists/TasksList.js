@@ -750,10 +750,21 @@ const TasksList = ({
                         className="text-blue-600 hover:text-blue-900 mr-2">Edit</button>
                       <button onClick={() => {
                         showConfirm('Delete Task', 'Are you sure you want to delete this task?', async () => {
-                          await apiClient.deleteTask(task.task_id);
-                          await refreshTasks();
-                          showToast('Task deleted');
-                          hideConfirm();
+                          try {
+                            const result = await apiClient.deleteTask(task.task_id);
+                            if (!result || result.success === false) {
+                              showToast(result?.error || 'Failed to delete task', 'error');
+                              hideConfirm();
+                              return;
+                            }
+                            await refreshTasks();
+                            showToast('Task deleted');
+                            hideConfirm();
+                          } catch (error) {
+                            console.error('Error deleting task:', error);
+                            showToast('Error deleting task', 'error');
+                            hideConfirm();
+                          }
                         });
                       }} className="text-red-600 hover:text-red-900">Delete</button>
                     </td>

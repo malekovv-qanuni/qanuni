@@ -699,10 +699,21 @@ const AppointmentsList = ({
                             'Delete Appointment',
                             'Are you sure you want to delete this appointment?',
                             async () => {
-                              await apiClient.deleteAppointment(a.appointment_id);
-                              await refreshAppointments();
-                              showToast('Appointment deleted');
-                              hideConfirm();
+                              try {
+                                const result = await apiClient.deleteAppointment(a.appointment_id);
+                                if (!result || result.success === false) {
+                                  showToast(result?.error || 'Failed to delete appointment', 'error');
+                                  hideConfirm();
+                                  return;
+                                }
+                                await refreshAppointments();
+                                showToast('Appointment deleted');
+                                hideConfirm();
+                              } catch (error) {
+                                console.error('Error deleting appointment:', error);
+                                showToast('Error deleting appointment', 'error');
+                                hideConfirm();
+                              }
                             }
                           );
                         }}

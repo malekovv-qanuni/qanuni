@@ -543,10 +543,21 @@ const TimesheetsList = ({
                               'Delete Timesheet',
                               'Are you sure you want to delete this timesheet?',
                               async () => {
-                                await apiClient.deleteTimesheet(ts.timesheet_id);
-                                await refreshTimesheets();
-                                showToast('Timesheet deleted');
-                                hideConfirm();
+                                try {
+                                  const result = await apiClient.deleteTimesheet(ts.timesheet_id);
+                                  if (!result || result.success === false) {
+                                    showToast(result?.error || 'Failed to delete timesheet', 'error');
+                                    hideConfirm();
+                                    return;
+                                  }
+                                  await refreshTimesheets();
+                                  showToast('Timesheet deleted');
+                                  hideConfirm();
+                                } catch (error) {
+                                  console.error('Error deleting timesheet:', error);
+                                  showToast('Error deleting timesheet', 'error');
+                                  hideConfirm();
+                                }
                               }
                             );
                           }} className="text-red-600 hover:text-red-900">{'Delete'}</button>

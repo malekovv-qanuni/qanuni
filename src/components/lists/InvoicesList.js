@@ -697,17 +697,35 @@ const InvoicesList = ({
                           <button onClick={() => openForm('invoice', inv)}
                             className="text-blue-600 hover:text-blue-900 mr-3">{'Edit'}</button>
                           <button onClick={async () => {
-                            await apiClient.updateInvoiceStatus(inv.invoice_id, 'sent');
-                            await refreshInvoices();
-                            showToast('Invoice marked as sent');
+                            try {
+                              const result = await apiClient.updateInvoiceStatus(inv.invoice_id, 'sent');
+                              if (!result || result.success === false) {
+                                showToast(result?.error || 'Failed to mark invoice as sent', 'error');
+                                return;
+                              }
+                              await refreshInvoices();
+                              showToast('Invoice marked as sent');
+                            } catch (error) {
+                              console.error('Error marking invoice as sent:', error);
+                              showToast('Error marking invoice as sent', 'error');
+                            }
                           }} className="text-green-600 hover:text-green-900 mr-3">{'Mark as Sent'}</button>
                         </>
                       )}
                       {(inv.status === 'sent' || inv.status === 'viewed' || inv.status === 'partial') && (
                         <button onClick={async () => {
-                          await apiClient.updateInvoiceStatus(inv.invoice_id, 'paid');
-                          await refreshInvoices();
-                          showToast('Invoice marked as paid');
+                          try {
+                            const result = await apiClient.updateInvoiceStatus(inv.invoice_id, 'paid');
+                            if (!result || result.success === false) {
+                              showToast(result?.error || 'Failed to mark invoice as paid', 'error');
+                              return;
+                            }
+                            await refreshInvoices();
+                            showToast('Invoice marked as paid');
+                          } catch (error) {
+                            console.error('Error marking invoice as paid:', error);
+                            showToast('Error marking invoice as paid', 'error');
+                          }
                         }} className="text-green-600 hover:text-green-900 mr-3">{'Mark as Paid'}</button>
                       )}
                       <button onClick={() => {
@@ -715,10 +733,21 @@ const InvoicesList = ({
                           'Delete Invoice',
                           'Are you sure you want to delete this invoice?',
                           async () => {
-                            await apiClient.deleteInvoice(inv.invoice_id);
-                            await refreshInvoices();
-                            showToast('Invoice deleted');
-                            hideConfirm();
+                            try {
+                              const result = await apiClient.deleteInvoice(inv.invoice_id);
+                              if (!result || result.success === false) {
+                                showToast(result?.error || 'Failed to delete invoice', 'error');
+                                hideConfirm();
+                                return;
+                              }
+                              await refreshInvoices();
+                              showToast('Invoice deleted');
+                              hideConfirm();
+                            } catch (error) {
+                              console.error('Error deleting invoice:', error);
+                              showToast('Error deleting invoice', 'error');
+                              hideConfirm();
+                            }
                           }
                         );
                       }} className="text-red-600 hover:text-red-900">{'Delete'}</button>
