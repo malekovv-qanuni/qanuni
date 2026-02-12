@@ -1,0 +1,42 @@
+appId: com.qanuni.app
+productName: Qanuni
+copyright: Copyright © 2026 Malek Kallas
+directories:
+  buildResources: build
+  output: dist
+files:
+  - "**/*"
+  - "!**/*.map"
+  - "!test-*.js"
+  - "!generate-*.js"
+  - "!benchmark-*.js"
+  - "!SESSION_*.md"
+  - "!CHECKPOINT_*.md"
+  - "!QANUNI_*.md"
+  - "!PATTERNS.md"
+  - "!Known_Fixes.md"
+  - "!API_ENDPOINTS.md"
+  - "!CODING_STANDARDS.md"
+  - "!*.bak"
+  - "!*.tmp"
+  - "!qanuni-web.db.backup-*"
+  - "!qanuni-web.db.bak"
+  - "!qanuni-web.db.tmp"
+  - "!.git"
+  - "!.claude"
+  - "!CProjectsqanunisrccontexts"
+  - "!TWO_CHAT_WORKFLOW_FOR_CLAUDE_MD.md"
+  - "!v48-translations-map.json"
+  - "!nul"
+  - "!create-distribution-setup.js"
+win:
+  target: nsis
+  icon: build/icon.png
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  artifactName: "${productName}-Setup-${version}.${ext}"
+  deleteAppDataOnUninstall: false
+  license: LICENSE

@@ -26,7 +26,7 @@ const database = require('./electron/database');
 const migrations = require('./electron/migrations');
 const validation = require('./electron/validation');
 const { createTables, seedLookupData } = require('./electron/schema');
-const licenseManager = require('./license/license-manager');
+const licenseManager = require('./licensing/license-manager');
 const crashRecovery = require('./electron/crash-recovery');
 
 let mainWindow = null;
@@ -118,11 +118,11 @@ function createWindow() {
     title: 'Qanuni - Legal ERP'
   });
 
-  const startUrl = isDev
-    ? 'http://localhost:3000'
-    : `file://${path.join(__dirname, 'build/index.html')}`;
-
-  mainWindow.loadURL(startUrl);
+  if (isDev) {
+    mainWindow.loadURL('http://localhost:3000');
+  } else {
+    mainWindow.loadFile(path.join(__dirname, 'build', 'index.html'));
+  }
   if (isDev) mainWindow.webContents.openDevTools();
   mainWindow.on('closed', () => { mainWindow = null; });
 }

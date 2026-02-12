@@ -10,7 +10,10 @@
     "electron": "electron .",
     "dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
     "api": "nodemon server/api-server.js",
-    "dev:web": "concurrently \"npm run api\" \"npm run dev\""
+    "dev:web": "concurrently \"npm run api\" \"npm run dev\"",
+    "dist": "react-scripts build && electron-builder",
+    "dist:clean": "react-scripts build && electron-builder --dir",
+    "dist:win": "react-scripts build && electron-builder --win"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
@@ -30,6 +33,7 @@
     "autoprefixer": "^10.4.17",
     "concurrently": "^8.2.2",
     "electron": "^28.2.0",
+    "electron-builder": "^26.7.0",
     "nodemon": "^3.0.2",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
@@ -42,5 +46,30 @@
     "development": [
       "last 1 electron version"
     ]
+  },
+  "author": "Malek Kallas",
+  "build": {
+    "appId": "com.qanuni.app",
+    "productName": "Qanuni",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "build/**/*",
+      "main.js",
+      "preload.js",
+      "electron/**/*",
+      "licensing/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "main.js"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.png"
+    }
   }
 }
