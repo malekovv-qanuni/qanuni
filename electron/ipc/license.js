@@ -22,7 +22,7 @@ module.exports = function registerLicenseHandlers({ database, logger }) {
 
   let licenseManager;
   try {
-    licenseManager = require('../../license/license-manager');
+    licenseManager = require('../../licensing/license-manager');
   } catch (e) {
     logger.error('License manager module not found', { error: e.message });
     licenseManager = null;

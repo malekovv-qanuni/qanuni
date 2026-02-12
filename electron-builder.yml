@@ -31,7 +31,7 @@ files:
   - "!create-distribution-setup.js"
 win:
   target: nsis
-  icon: build/icon.png
+  icon: build/icon.ico
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

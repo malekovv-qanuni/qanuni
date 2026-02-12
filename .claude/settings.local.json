@@ -22,7 +22,12 @@
       "Bash(git status:*)",
       "Bash(Remove-Item \"C:\\\\Projects\\\\qanuni\\\\qanuni-test.db\" -ErrorAction SilentlyContinue)",
       "Bash(ren:*)",
-      "Bash(del \"C:\\\\Projects\\\\qanuni\\\\src\\\\contexts\\\\EntityDataContext.js\")"
+      "Bash(del \"C:\\\\Projects\\\\qanuni\\\\src\\\\contexts\\\\EntityDataContext.js\")",
+      "Bash(npx asar:*)",
+      "Bash(ls -la \"C:\\\\Projects\\\\qanuni\\\\public\"\" 2>nul | findstr /i \"icon \")",
+      "Bash(findstr:*)",
+      "Bash(xxd:*)",
+      "Bash(npx react-scripts build:*)"
     ]
   }
 }

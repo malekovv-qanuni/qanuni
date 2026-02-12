@@ -269,8 +269,9 @@ const PRELOAD_CHANNELS = [
   // Matters
   'get-all-matters', 'add-matter', 'update-matter', 'delete-matter',
   'get-related-matters', 'check-file-number-unique',
-  // Diary
+  // Diary & Timeline Export
   'get-matter-timeline', 'add-diary-entry', 'update-diary-entry', 'delete-diary-entry',
+  'export-matter-timeline',
   // Hearings
   'get-all-hearings', 'add-hearing', 'update-hearing', 'delete-hearing',
   // Judgments
@@ -339,7 +340,7 @@ const PRELOAD_CHANNELS = [
 
 // Channels that require file dialogs or external deps — test registration only
 const DIALOG_CHANNELS = [
-  'import-clients-excel', 'export-client-template',
+  'import-clients-excel', 'export-client-template', 'export-matter-timeline',
   'backup-database', 'restore-database', 'export-all-data',
   'run-auto-backup', 'select-backup-folder', 'open-backup-folder',
   'export-to-excel', 'export-to-csv', 'export-to-pdf', 'open-file',
@@ -575,6 +576,7 @@ async function runTests() {
     ['./electron/ipc/settings',         electronDeps],
     ['./electron/ipc/reports',          electronDeps],
     ['./electron/ipc/client-imports',   electronDeps],
+    ['./electron/ipc/matter-timeline', electronDeps],
   ];
 
   const loadedModules = [];

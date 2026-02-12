@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Matter Timeline & Diary (v46.53)
   getMatterTimeline: (matterId) => ipcRenderer.invoke('get-matter-timeline', matterId),
+  exportMatterTimeline: (data) => ipcRenderer.invoke('export-matter-timeline', data),  // v49.4
   addDiaryEntry: (data) => ipcRenderer.invoke('add-diary-entry', data),
   updateDiaryEntry: (data) => ipcRenderer.invoke('update-diary-entry', data),
   deleteDiaryEntry: (id) => ipcRenderer.invoke('delete-diary-entry', id),

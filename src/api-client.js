@@ -212,6 +212,14 @@ const apiClient = {
     return await fetchAPI(`/matters/${matterId}/timeline`);
   },
 
+  exportMatterTimeline: async (matterId) => {
+    if (isElectron()) {
+      return await window.electronAPI.exportMatterTimeline({ matter_id: matterId });
+    }
+    // Web fallback — not supported (requires file dialog)
+    return { success: false, error: 'Export not supported in web mode' };
+  },
+
   getMatterFinancials: async (matterId) => {
     if (isElectron()) {
       return await window.electronAPI.generateReport('matter-financials', { matterId });

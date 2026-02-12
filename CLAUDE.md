@@ -1,8 +1,8 @@
 # Qanuni Project Overview
 
-**Version:** v49.1 (All 6 Phases Complete - Production Ready)
-**Status:** Production-ready, all hardening phases complete
-**Last Updated:** February 11, 2026 (Session 13)
+**Version:** v49.2 (Distribution Ready)
+**Status:** Production-ready, installer created
+**Last Updated:** February 12, 2026 (Session 14)
 
 ## Current State
 
@@ -13,6 +13,12 @@
 - **Scale:** Validated with 26,268 records, 5-508x faster than targets
 - **Infrastructure:** Migration versioning, crash recovery, file-based logging
 - **Code Quality:** 32,332 lines of dead code removed, zero console.log in production
+
+**Distribution:**
+- Windows installer created: `Qanuni Setup 1.0.0.exe` (105 MB)
+- NSIS installer with desktop/Start Menu shortcuts
+- Tested unpacked build - fully functional
+- Ready for end-user installation testing
 
 **Completed Phases (QANUNI_HARDENING_STRATEGY.md):**
 - ✅ Phase 1: Data Safety (atomic writes, proper IDs, validation)
@@ -40,7 +46,7 @@ Qanuni is a comprehensive legal practice management system (Legal ERP) built wit
 ## Technical Stack
 
 **Core:**
-- Electron 32.2.7 (desktop app framework)
+- Electron 28.3.3 (desktop app framework)
 - React 18 (frontend UI)
 - SQLite via sql.js (embedded database)
 - Tailwind CSS (styling)
@@ -85,6 +91,10 @@ qanuni/
 │       ├── reports.js           # 12 handlers
 │       ├── client-imports.js    # 2 handlers
 │       └── license.js           # Fail-closed licensing
+├── licensing/                   # License system (renamed from LICENSE/)
+│   ├── issued-licenses.json
+│   ├── key-generator.js
+│   └── license-manager.js
 ├── src/
 │   ├── App.js                   # Main React app (~4,000 lines)
 │   ├── constants/               # translations.js
@@ -194,11 +204,14 @@ node benchmark-performance.js         # Performance benchmarks
 node test-ui-performance.js           # UI workflow tests
 
 # Distribution
-npm run dist:clean   # Clean build for testing
-npm run dist         # Production build with obfuscation
+npm run dist:clean   # Build unpacked (for testing, faster)
+npm run dist         # Build installer (Qanuni-Setup-1.0.0.exe)
+npm run dist:win     # Build Windows installer (explicit)
 
-# Post-distribution cleanup
-git checkout preload.js   # Restore after dist (obfuscation modifies source)
+# Note: dist scripts run react-scripts build first, then electron-builder
+
+# Post-distribution cleanup (if needed)
+git checkout preload.js main.js   # Restore if modified by build process
 ```
 
 ## Critical Development Rules
@@ -290,8 +303,37 @@ Get-ChildItem "src\components" -Recurse -Filter "*.js" | Select-String -Pattern 
 - Runs encoding-safe operations
 - Tests implementations locally
 
+## Distribution Files
+
+**Created in Session 14:**
+- `LICENSE` - Copyright © 2026 Malek Kallas (placeholder for EULA)
+- `README.md` - Complete project documentation  
+- `electron-builder.yml` - Build configuration
+- `dist/Qanuni Setup 1.0.0.exe` - Windows installer (105 MB)
+
+**Build Process:**
+1. `react-scripts build` - Compiles React app to `build/`
+2. `electron-builder` - Packages app with whitelisted files only
+3. Output: NSIS installer with shortcuts and uninstaller
+
+**Packaged Files (Whitelist):**
+- `build/**/*` - React production output
+- `main.js`, `preload.js` - Electron entry points
+- `electron/**/*` - Backend modules
+- `licensing/**/*` - License system
+- `node_modules/**/*` - Runtime dependencies
+- `package.json` - Package metadata
+
+**Excluded from Package:**
+- ❌ `src/` - Raw React source (not needed)
+- ❌ `public/` - React templates (build/ has compiled version)
+- ❌ `server/` - REST API (not needed for desktop)
+- ❌ All .md files, test files, backups
+
 ## Version History
 
+- **v49.3** (Feb 12, 2026) - Session 15: Icon integration (icon.ico created, configs updated, BrowserWindow icon added)
+- **v49.2** (Feb 12, 2026) - Session 14: Distribution ready (installer created)
 - **v49.1** (Feb 11, 2026) - Phase 3 complete: Frontend hardening (zero useState, context-based state)
 - **v49.0** (Feb 11, 2026) - Phase 5 complete: Code cleanup (32K lines removed)
 - **v48.9** (Feb 11, 2026) - Phase 4 complete: Production infrastructure
@@ -320,17 +362,17 @@ Get-ChildItem "src\components" -Recurse -Filter "*.js" | Select-String -Pattern 
 
 ## Next Steps
 
-**Immediate (Phase 3 - Frontend Hardening):**
-- Context-based state management (replace 70+ useState)
-- On-demand data loading per module
-- React error boundaries
-- Performance improvements
+**Immediate (Pre-Release Testing):**
+- Test installer on clean Windows machine
+- Verify license activation in production build
+- Create comprehensive EULA (replace LICENSE placeholder)
+- Add professional icon (replace default Electron icon)
 
-**Short-term (Distribution):**
-- Production build testing
-- Installer creation
-- User documentation
-- Distribution checklist
+**Short-term (Official Release):**
+- User documentation (installation guide, quick start)
+- Code signing certificate (remove unsigned warnings)
+- Marketing materials
+- Support channels setup
 
 ## Success Metrics
 
@@ -360,6 +402,7 @@ Get-ChildItem "src\components" -Recurse -Filter "*.js" | Select-String -Pattern 
 - ✅ Handles 10x current scale
 - ✅ Sub-second response times
 - ✅ Clean, professional codebase
+- ✅ Windows installer created
 
 ## Resources
 

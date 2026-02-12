@@ -444,53 +444,20 @@ const MatterTimeline = ({
     }
   };
   
-  // Export to Excel
+  // Export to Excel (via backend IPC - v49.4)
   const exportToExcel = async () => {
     setExporting(true);
     try {
-      const ExcelJS = require('exceljs');
-      const workbook = new ExcelJS.Workbook();
-      const sheet = workbook.addWorksheet('Matter Timeline');
-      
-      // Header
-      sheet.columns = [
-        { header: 'Date', key: 'date', width: 15 },
-        { header: 'Type', key: 'type', width: 12 },
-        { header: 'Title', key: 'title', width: 40 },
-        { header: 'Description', key: 'description', width: 50 },
-        { header: 'Amount', key: 'amount', width: 12 },
-        { header: 'Source', key: 'source', width: 10 }
-      ];
-      
-      // Style header
-      sheet.getRow(1).font = { bold: true };
-      sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
-      
-      // Data rows
-      filteredTimeline.forEach(entry => {
-        sheet.addRow({
-          date: entry.date,
-          type: ENTRY_TYPES[entry.type]?.label_en || entry.type,
-          title: entry.title,
-          description: entry.description || '',
-          amount: entry.amount || '',
-          source: entry.source === 'manual' ? 'Manual' : 'Auto'
-        });
-      });
-      
-      // Save file
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${matter.matter_name}_Timeline_${new Date().toISOString().split('T')[0]}.xlsx`;
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      showToast('Exported successfully', 'success');
+      const result = await apiClient.exportMatterTimeline(matter.matter_id);
+      if (result.canceled) {
+        // User cancelled save dialog — not an error
+      } else if (result.success) {
+        showToast('Exported successfully', 'success');
+      } else {
+        throw new Error(result.error || 'Export failed');
+      }
     } catch (error) {
-      console.error('Export error:', error);
+      console.error('Timeline export error:', error);
       showToast('Export failed', 'error');
     }
     setExporting(false);

@@ -110,6 +110,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
+    icon: path.join(__dirname, 'build', 'icon.ico'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -183,6 +184,7 @@ function registerAllHandlers() {
     ['./electron/ipc/settings',         electronDeps],
     ['./electron/ipc/reports',          electronDeps],
     ['./electron/ipc/client-imports',   electronDeps],
+    ['./electron/ipc/matter-timeline', electronDeps],
   ];
 
   let loaded = 0;
