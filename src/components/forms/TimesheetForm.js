@@ -129,7 +129,7 @@ const TimesheetForm = React.memo(({ showToast, markFormDirty, clearFormDirty, re
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label={'DATE'} required error={errors.date}>
+              <FormField label={'Date'} required error={errors.date}>
                 <input type="date" value={formData.date}
                   onChange={(e) => handleFieldChange('date', e.target.value)}
                   onBlur={() => handleBlur('date')}

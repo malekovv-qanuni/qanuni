@@ -269,7 +269,7 @@ const ClientForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refre
                   <select value={formData.entity_type || ''}
                     onChange={(e) => handleFieldChange('entity_type', e.target.value)}
                     className="w-full px-3 py-2 border rounded-md">
-                    <option value="">{'Select'}...</option>
+                    <option value="">-- {'Select'} --</option>
                     {entityTypes.map(et => (
                       <option key={et.code} value={et.code}>
                         {et.name_en}

@@ -112,7 +112,7 @@ const AppointmentForm = React.memo(({ showToast, markFormDirty, clearFormDirty, 
                   onBlur={() => handleBlur('title')}
                   className={inputClass(errors.title)} />
               </FormField>
-              <FormField label={'DATE'} required error={errors.date}>
+              <FormField label={'Date'} required error={errors.date}>
                 <input type="date" value={formData.date}
                   onChange={(e) => handleFieldChange('date', e.target.value)}
                   onBlur={() => handleBlur('date')}

@@ -139,7 +139,7 @@ const TaskForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refresh
                     markFormDirty();
                   }}
                   className="w-full px-3 py-2 border rounded-md">
-                  <option value="">-- {'Select Client'} --</option>
+                  <option value="">{'Select Client'}</option>
                   {clients.map(c => (
                     <option key={c.client_id} value={c.client_id}>{c.client_name}</option>
                   ))}
@@ -151,7 +151,7 @@ const TaskForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refresh
                   onChange={(e) => handleFieldChange('matter_id', e.target.value)}
                   disabled={!formData.client_id}
                   className="w-full px-3 py-2 border rounded-md disabled:bg-gray-100">
-                  <option value="">{formData.client_id ? '-- ' + 'Select Matter' + ' --' : 'Select client first'}</option>
+                  <option value="">{formData.client_id ? 'Select Matter' : 'Select client first'}</option>
                   {filteredMatters.map(m => (
                     <option key={m.matter_id} value={m.matter_id}>
                       {`${m.custom_matter_number ? '[' + m.custom_matter_number + '] ' : ''}${m.matter_name}${m.case_number ? ` - ${m.case_number}` : ''}${m.court_name ? ` - ${m.court_name}` : ''}`}

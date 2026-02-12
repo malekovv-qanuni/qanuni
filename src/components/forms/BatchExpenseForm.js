@@ -210,7 +210,7 @@ const BatchExpenseForm = React.memo(({
                     disabled={!sharedData.client_id}
                     className="w-full px-3 py-2 border rounded-md text-sm disabled:bg-gray-100"
                   >
-                    <option value="">{sharedData.client_id ? ('Select Matter') : ('Select Client First')}</option>
+                    <option value="">{sharedData.client_id ? ('Select Matter') : ('Select client first')}</option>
                     {filteredMatters.map(m => (
                       <option key={m.matter_id} value={m.matter_id}>{m.matter_name}</option>
                     ))}
@@ -219,7 +219,7 @@ const BatchExpenseForm = React.memo(({
 
                 {/* Date */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">{'DATE'} *</label>
+                  <label className="block text-sm font-medium mb-1">{'Date'} *</label>
                   <input 
                     type="date" 
                     value={sharedData.date}
