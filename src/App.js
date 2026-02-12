@@ -1,19 +1,16 @@
 import React, { useEffect, useCallback } from 'react';
 import {
-  Plus, Users, Briefcase, Clock, Calendar, CalendarDays, FileText, BarChart3,
-  Menu, X, Globe, Search, AlertTriangle, CheckCircle, ChevronRight, AlertCircle,
-  Phone, Mail, Building, Building2, User, Gavel, ClipboardList, Settings, Trash2, Edit3, Pencil, Scale,
-  DollarSign, Receipt, Wallet, CreditCard, PieChart, Download, Upload, Loader2,
-  Play, Pause, Square, Timer, Minimize2, Maximize2, Save, FileSpreadsheet
+  Users, Briefcase, Clock, Calendar, CalendarDays, FileText, BarChart3,
+  Menu, X, Search, AlertTriangle,
+  Building2, Gavel, ClipboardList, Settings, Trash2, Scale,
+  Receipt, Wallet, PieChart,
+  Timer, Save
 } from 'lucide-react';
 import apiClient from './api-client';
 
 // Extracted common components
 import Toast from './components/common/Toast';
 import ConfirmDialog from './components/common/ConfirmDialog';
-import LoadingButton from './components/common/LoadingButton';
-import EmptyState from './components/common/EmptyState';
-import FormField from './components/common/FormField';
 import LicenseScreen from './components/common/LicenseScreen';
 import LicenseWarningBanner from './components/common/LicenseWarningBanner';
 import ErrorBoundary from './components/common/ErrorBoundary';
@@ -39,7 +36,7 @@ import { Company360ReportModal, ComplianceCalendarReport, ShareholderRegistryRep
 
 // Extracted constants (v46.19)
 // Translations import removed (v48)
-import { validators, useFormValidation, formatDate, generateID } from './utils';
+import { formatDate } from './utils';
 import PrintStyles from './components/common/PrintStyles';
 import GuidedTourSystem from './components/common/GuidedTour';
 
