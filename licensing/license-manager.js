@@ -14,8 +14,8 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 
-// Secret salt - CHANGE THIS to your own random string for production!
-const LICENSE_SALT = 'Qanuni-2026-MalekKallas-LegalERP-SecretKey';
+// Production salt - changed before v1.0 release (DO NOT SHARE)
+const LICENSE_SALT = 'w9dqq+mqP+b5tybz1XviCbGT3qWdLOQ89bfpg61fYqk=';
 
 // Grace period in days after expiry (app works but shows warning)
 const GRACE_PERIOD_DAYS = 7;

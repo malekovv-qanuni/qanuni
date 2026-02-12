@@ -25,7 +25,7 @@ const path = require('path');
 const readline = require('readline');
 
 // MUST match the salt in license-manager.js!
-const LICENSE_SALT = 'Qanuni-2026-MalekKallas-LegalERP-SecretKey';
+const LICENSE_SALT = 'w9dqq+mqP+b5tybz1XviCbGT3qWdLOQ89bfpg61fYqk=';
 
 // Log file for tracking issued licenses
 const LOG_FILE = path.join(__dirname, 'issued-licenses.json');
