@@ -81,11 +81,11 @@ module.exports = function registerLicenseHandlers({ database, logger }) {
 
   ipcMain.handle('license:validate', logger.wrapHandler('license:validate', (event, licenseKey) => {
     if (!licenseManager) {
-      return { success: false, error: 'License system unavailable' };
+      return { success: false, valid: false, status: 'ERROR', error: 'License system unavailable' };
     }
 
     if (!licenseKey || typeof licenseKey !== 'string' || licenseKey.trim().length === 0) {
-      return { success: false, error: 'Invalid license key' };
+      return { success: false, valid: false, status: 'ERROR', error: 'Invalid license key' };
     }
 
     try {
@@ -94,10 +94,15 @@ module.exports = function registerLicenseHandlers({ database, logger }) {
         success: result.success,
         status: result.status
       });
-      return result;
+      // Ensure both success and valid fields exist for frontend compatibility
+      return {
+        ...result,
+        success: result.success !== undefined ? result.success : result.valid,
+        valid: result.valid !== undefined ? result.valid : result.success
+      };
     } catch (error) {
       logger.error('License activation failed', { error: error.message });
-      return { success: false, error: 'Activation failed. Please try again.' };
+      return { success: false, valid: false, status: 'ERROR', error: 'Activation failed. Please try again.' };
     }
   }));
 
@@ -109,9 +114,13 @@ module.exports = function registerLicenseHandlers({ database, logger }) {
     }
 
     try {
-      licenseManager.clearLicense();
-      logger.info('License cleared');
-      return { success: true };
+      const cleared = licenseManager.clearLicenseKey();
+      if (cleared) {
+        logger.info('License cleared');
+        return { success: true };
+      } else {
+        return { success: false, error: 'No license file found to clear' };
+      }
     } catch (error) {
       logger.error('Failed to clear license', { error: error.message });
       return { success: false, error: error.message };

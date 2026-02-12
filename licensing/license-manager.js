@@ -339,6 +339,50 @@ function getLicenseStatusSummary() {
   };
 }
 
+/**
+ * Validate a license key and save it if valid
+ * Combined operation for the activation flow
+ *
+ * @param {string} licenseKey - The license key to validate and activate
+ * @returns {object} - Result with both success and valid flags
+ */
+function validateAndActivate(licenseKey) {
+  try {
+    const machineId = getMachineId();
+    const validation = validateLicenseKey(licenseKey, machineId);
+
+    if (validation.valid) {
+      const saveResult = saveLicenseKey(licenseKey);
+      if (!saveResult.success) {
+        return {
+          success: false,
+          valid: false,
+          status: 'ERROR',
+          error: `Validation succeeded but failed to save: ${saveResult.error}`
+        };
+      }
+
+      return {
+        ...validation,
+        success: true
+      };
+    } else {
+      return {
+        ...validation,
+        success: false
+      };
+    }
+  } catch (error) {
+    console.error('Error in validateAndActivate:', error);
+    return {
+      success: false,
+      valid: false,
+      status: 'ERROR',
+      error: `Error during activation: ${error.message}`
+    };
+  }
+}
+
 // Export functions
 module.exports = {
   getMachineId,
@@ -346,6 +390,7 @@ module.exports = {
   loadLicenseKey,
   clearLicenseKey,
   validateLicenseKey,
+  validateAndActivate,
   checkStoredLicense,
   getLicenseStatusSummary,
   GRACE_PERIOD_DAYS,
