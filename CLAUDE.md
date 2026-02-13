@@ -492,6 +492,65 @@ Session 19 completed licensing system implementation (v49.8). All keygen tools
 excluded from installer for security. Production LICENSE_SALT active - all previous
 development keys invalidated.
 
+## v1.0.0 - Production Release (Session 20 - Feb 13, 2026)
+
+**Status:** Production-ready installer created  
+**Installer:** `Qanuni Setup 1.0.0.exe` (104.64 MB)  
+**Tests:** 118/118 passing
+
+### Session 20 Accomplishments
+
+**Security Fix (from Session 19):**
+- Fixed critical keygen file inclusion bug
+- Changed `package.json` licensing whitelist from `/**/*` to `/license-manager.js`
+- Added `!licensing/qanuni-licenses-*.json` exclusion
+- Verified keygen tools excluded from distribution
+- Installer size reduced to 104.64 MB
+
+**Documentation:**
+- Created `README.txt` (5.8 KB) - User installation and activation guide
+- Created `KEYGEN_USAGE.md` (11.4 KB) - Internal license management workflow
+- Updated `electron-builder.yml` and `package.json` with `extraResources`
+- README.txt bundled in installer package
+
+**Final Build:**
+- Production NSIS installer created via `npm run dist`
+- Code signing attempted (signtool.exe)
+- Block map generated for auto-updates
+- Security verification: Keygen tools NOT in distribution ✅
+
+### Files Modified
+- `package.json` - Fixed licensing whitelist, added extraResources
+- `electron-builder.yml` - Added keygen exclusions, added extraResources
+- `README.txt` (new) - User-facing documentation
+- `KEYGEN_USAGE.md` (new) - Internal support documentation
+
+### Key Learnings
+- `package.json` build config overrides `electron-builder.yml` when both present
+- Whitelist patterns in files array override blacklist exclusions
+- Must explicitly whitelist only necessary files from sensitive directories
+- README.txt via extraResources bundles into installer package
+- Installer size reduction (169 MB → 104 MB) confirms successful exclusions
+
+### Next Steps for Deployment
+1. **Code Signing:** Obtain certificate from DigiCert/Sectigo for production
+2. **Auto-Updates:** Configure update server URL in electron-builder.yml
+3. **Distribution:** Host installer on download server
+4. **Backup:** Export license database weekly from keygen.html tool
+
+### Production Checklist ✅
+- [x] All tests passing (118/118)
+- [x] Security verified (keygen excluded)
+- [x] Documentation complete (README + KEYGEN_USAGE)
+- [x] Installer created (104.64 MB)
+- [x] README included in installer
+- [x] Git history clean (2 commits in Session 20)
+- [ ] Code signing certificate (optional for v1.0)
+- [ ] Update server configured (optional for v1.0)
+- [ ] Installation tested on clean Windows system (recommended)
+
+**Ready for distribution** to early adopters and beta customers.
+
 ---
 
 *For detailed session reports, see SESSION_XX_SUCCESS_REPORT.md files in project root.*
