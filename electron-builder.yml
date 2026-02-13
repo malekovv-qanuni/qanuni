@@ -33,6 +33,8 @@ files:
   - "!licensing/key-generator.js"
   - "!licensing/issued-licenses.json"
   - "!licensing/qanuni-licenses-*.json"
+extraResources:
+  - "README.txt"
 win:
   target: nsis
   icon: build/icon.ico
