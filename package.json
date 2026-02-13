@@ -61,7 +61,7 @@
       "main.js",
       "preload.js",
       "electron/**/*",
-      "licensing/**/*",
+      "licensing/license-manager.js",
       "node_modules/**/*",
       "package.json"
     ],
