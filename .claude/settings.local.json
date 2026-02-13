@@ -32,7 +32,27 @@
       "Bash(grep:*)",
       "Bash(find:*)",
       "Bash(Select-String -Pattern \"Compiled|error|warning|success|fail\" -CaseSensitive:$false)",
-      "Bash(powershell -NoProfile -Command:*)"
+      "Bash(powershell -NoProfile -Command:*)",
+      "Bash(git log:*)",
+      "Bash(Select-String -Pattern \"keygen|key-gen|license.*html\")",
+      "Bash(git -C \"C:\\\\Projects\\\\qanuni\" log --oneline --after=\"2026-02-12T16:54:00\" --before=\"2026-02-12T19:20:00\" --all)",
+      "Bash(git -C \"C:\\\\Projects\\\\qanuni\" log --oneline -10 --format=\"%h %ai %s\")",
+      "Bash(git -C \"C:\\\\Projects\\\\qanuni\" diff c31c12ba~1..c31c12ba --stat)",
+      "Bash(git -C \"C:\\\\Projects\\\\qanuni\" diff c31c12ba~1..c31c12ba)",
+      "Bash(git -C \"C:\\\\Projects\\\\qanuni\" show c31c12ba~1:electron/ipc/license.js)",
+      "Bash(git -C \"C:\\\\Projects\\\\qanuni\" show c31c12ba~1:licensing/license-manager.js)",
+      "Bash(git -C \"C:\\\\Projects\\\\qanuni\" log --format=\"%h %ai %s\" c31c12ba~2..c31c12ba)",
+      "Bash(git -C \"C:/Projects/qanuni\" log --format=\"%h %ai %s\" --after=\"2026-02-12T15:10:00\" --before=\"2026-02-12T17:20:00\")",
+      "Bash(git -C \"C:/Projects/qanuni\" log --format=\"%h %ai %s\" --after=\"2026-02-12T17:00:00+0200\" --before=\"2026-02-12T19:20:00+0200\")",
+      "Bash(git -C \"C:/Projects/qanuni\" log --format=\"%h %ai %s\" --after=\"2026-02-12T17:10:00+0000\" --before=\"2026-02-12T19:20:00+0000\")",
+      "Bash(git -C \"C:/Projects/qanuni\" status)",
+      "Bash(git -C \"C:/Projects/qanuni\" diff)",
+      "Bash(git -C \"C:/Projects/qanuni\" log --oneline -5)",
+      "Bash(git -C \"C:/Projects/qanuni\" add licensing/license-manager.js licensing/key-generator.js licensing/keygen.html CLAUDE.md)",
+      "Bash(git -C \"C:/Projects/qanuni\" commit -m \"$\\(cat <<''EOF''\nRotate LICENSE_SALT to production-grade cryptographic key\n\nReplace placeholder salt with crypto.randomBytes\\(32\\) value across all\nthree licensing files \\(license-manager.js, key-generator.js, keygen.html\\).\nInvalidates all previously issued dev/test keys before v1.0 release.\nAlso updates CLAUDE.md to reflect v49.7 status and Session 19 plan.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(Test-Path \"C:\\\\Projects\\\\qanuni\\\\LICENSE\")",
+      "Bash(powershell.exe -NoProfile -Command \"Test-Path ''C:\\\\Projects\\\\qanuni\\\\LICENSE''\")",
+      "Bash(powershell.exe:*)"
     ]
   }
 }
