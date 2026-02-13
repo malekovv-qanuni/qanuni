@@ -1,44 +1,41 @@
 # Qanuni Project Overview
 
-**Version:** v49.8 (License System Production-Ready)
-**Status:** Production-ready, installer created
-**Last Updated:** February 12, 2026 (Session 19)
+**Version:** v1.0.0 (production release) — internal dev v49.8
+**Status:** Production-ready, SaaS planning in progress
+**Last Updated:** February 13, 2026 (Session 22)
 
-## Current State
+## Current Status
 
-**Architecture:** Modular, hardened, production-grade, professional codebase
-- **Backend:** 21 IPC modules, 163 handlers, fully tested
-- **Database:** SQLite with atomic writes, migrations, integrity checks, crash recovery
-- **Tests:** 118 integration tests passing (100% pass rate)
-- **Scale:** Validated with 26,268 records, 5-508x faster than targets
-- **Infrastructure:** Migration versioning, crash recovery, file-based logging
-- **Code Quality:** 32,332 lines of dead code removed, zero console.log in production
+Qanuni has reached production-ready status at version v1.0.0 with desktop application fully complete. **Active work has shifted to SaaS strategy planning.**
 
-**Distribution:**
-- Windows installer created: `Qanuni Setup 1.0.0.exe` (105 MB)
-- NSIS installer with desktop/Start Menu shortcuts
-- Tested unpacked build - fully functional
-- Ready for end-user installation testing
+### Desktop Application (Complete)
+- ✅ All core modules operational (22 IPC modules, 156 total handlers)
+- ✅ 118 integration tests passing (100% happy-path coverage)
+- ✅ Complete licensing system with machine-bound protection
+- ✅ Windows installer built and polished (104.64 MB)
+- ✅ All hardening phases (1-6) complete per QANUNI_HARDENING_STRATEGY.md
 
-**Completed Phases (QANUNI_HARDENING_STRATEGY.md):**
-- ✅ Phase 1: Data Safety (atomic writes, proper IDs, validation)
-- ✅ Phase 2: Modular Backend (21 IPC modules, clean separation)
-- ✅ Phase 3: Frontend Hardening (zero useState, context-based, user-friendly errors)
-- ✅ Phase 4: Production Infrastructure (migrations, integrity checks, crash recovery)
-- ✅ Phase 5: Code Cleanup (removed dead code, console.log statements)
-- ✅ Phase 6: Scale Testing (26K records validated)
+### SaaS Planning (In Progress)
+**Strategy finalized:** Desktop-first validated, now planning web transformation
 
-**All 6 Hardening Phases Complete - Production Ready!**
+**Hosting decision:** Use existing SmarterASP.NET Premium Plan
+- 3GB RAM quota (supports 20-30 concurrent users)
+- 10GB SQL Server included
+- Free SSL, Node.js support via IISNode
+- Already paid through March 2028
+- **Cost Year 1: $0** (saves $600 vs. immediate upgrade)
 
-**Phase 3 Frontend Hardening:** ✅ COMPLETE
-- ✅ Error Boundary implemented (wraps main content, Electron logging)
-- ✅ AppContext complete (language, module, sidebar)
-- ✅ DataContext partial (lawyers, lookups)
-- ✅ Financial error handling (v49.5) - all critical ops validate
-- ✅ Dead code cleanup (v49.6) - removed 161 lines
-- ✅ UI bug fixes (v49.7) - DATE capitalization, dropdown prompts
-- ⏸️ Full context migration deferred (performance already 508x targets)
-- ⏸️ On-demand loading deferred (not blocking launch)
+**Architecture:** Node.js + Express + SQL Server + React frontend
+- Backend: Map 156 IPC handlers to REST endpoints
+- Database: SQLite → SQL Server migration (multi-tenant via firm_id)
+- Auth: JWT-based with role permissions (Admin/Lawyer/Staff)
+- Frontend: Reuse 90% of desktop components
+
+**Timeline:** 4-6 weeks for MVP implementation
+**Capacity:** 20-30 concurrent users on existing hosting
+**Upgrade trigger:** When reaching 25+ concurrent users or 75% RAM usage
+
+**Next phase:** IISNode deployment guide + SQL Server migration
 
 **Licensing System (Production-Ready):**
 The desktop licensing enforcement is fully implemented and tested. License activation flow includes:
@@ -60,10 +57,13 @@ return shapes normalized for frontend compatibility. Integration tests: 118/118 
 - ✅ Integration models decided (Desktop-first, Web-only, Hybrid options)
 - ✅ License enforcement connected to UI (Session 19)
 - ✅ Activation UI built (LicenseScreen, Settings tab, warnings)
+- ✅ User documentation complete (README.txt + KEYGEN_USAGE.md, Session 20)
+- ✅ Production audit passed (Session 21 — all claims verified)
+- ✅ Installer created and verified (104.64 MB, Session 20)
 - ⚠️ Icon assets need verification
-- ⚠️ User documentation minimal
+- ⚠️ Clean VM testing pending
 
-**Next:** Session 20 - Installer Testing & Pre-Launch Polish (verify dist build, user docs, icon check)
+**Next:** Session 23 - IISNode deployment guide + SQL Server schema migration
 
 ## Project Purpose
 
@@ -104,10 +104,11 @@ qanuni/
 │   ├── schema.js                # 27 tables + seed data
 │   ├── validation.js            # Input validation schemas
 │   ├── crash-recovery.js        # Crash handling + reports
-│   └── ipc/                     # 21 modular IPC handlers
+│   └── ipc/                     # 22 handler modules, 156 handlers (all complete)
 │       ├── clients.js           # 6 handlers
 │       ├── lawyers.js           # 7 handlers
 │       ├── matters.js           # 6 handlers
+│       ├── matter-timeline.js   # 4 handlers
 │       ├── diary.js             # 4 handlers
 │       ├── hearings.js          # 4 handlers
 │       ├── judgments.js         # 4 handlers
@@ -122,8 +123,8 @@ qanuni/
 │       ├── conflict-check.js    # 2 handlers
 │       ├── corporate.js         # 24 handlers
 │       ├── trash.js             # 5 handlers
-│       ├── settings.js          # 22 handlers
-│       ├── reports.js           # 12 handlers
+│       ├── settings.js          # ~22 handlers
+│       ├── reports.js           # ~12 handlers
 │       ├── client-imports.js    # 2 handlers
 │       └── license.js           # Fail-closed licensing
 ├── licensing/                   # License system (renamed from LICENSE/)
@@ -144,7 +145,7 @@ qanuni/
 │       ├── modules/             # Full modules (Dashboard, Calendar, Reports)
 │       │   └── SettingsModule.js       # Includes License tab (view/deactivate)
 │       └── corporate/           # Corporate Secretary UI
-├── test-integration.js          # 117 integration tests
+├── test-integration.js          # 118 integration tests
 └── PATTERNS.md                  # Code standards and conventions
 ```
 
@@ -168,7 +169,7 @@ qanuni/
 
 ## IPC Architecture (Post-Hardening)
 
-**Pattern (all 21 modules follow this):**
+**Pattern (all 22 modules follow this):**
 ```javascript
 ipcMain.handle('channel-name', logger.wrapHandler('channel-name', (event, data) => {
   // 1. Validate input
@@ -237,7 +238,7 @@ npm run dev          # Production database
 npm run dev:test     # Test database (--test-db flag)
 
 # Testing
-node test-integration.js              # Run 117 integration tests
+node test-integration.js              # Run 118 integration tests
 node generate-test-data.js            # Generate 26K test records
 node benchmark-performance.js         # Performance benchmarks
 node test-ui-performance.js           # UI workflow tests
@@ -258,7 +259,7 @@ git checkout preload.js main.js   # Restore if modified by build process
 ### Testing First
 ```powershell
 # MANDATORY before every commit
-node test-integration.js    # Must show 117/117 passing
+node test-integration.js    # Must show 118/118 passing
 ```
 
 ### IPC Pattern (Frontend → Backend)
@@ -371,6 +372,9 @@ Get-ChildItem "src\components" -Recurse -Filter "*.js" | Select-String -Pattern 
 
 ## Version History
 
+- **v1.0.0** (Feb 13, 2026) - Session 22: SaaS strategy finalized, SmarterASP.NET hosting validated, SQL Server migration planned
+- **v1.0.0** (Feb 13, 2026) - Session 21: Production audit passed, 4 cosmetic fixes, web SaaS strategy decided (Option A)
+- **v1.0.0** (Feb 13, 2026) - Session 20: Installer created (104.64 MB), README.txt + KEYGEN_USAGE.md, security fix (keygen exclusion)
 - **v49.8** (Feb 12, 2026) - Session 19: License system production-ready (activation UI, startup gate, grace periods, HTML keygen, production salt)
 - **v49.7** (Feb 12, 2026) - Session 18: UI polish (DATE capitalization, dropdown prompt standardization)
 - **v49.6** (Feb 12, 2026) - Session 17: Dead code cleanup (161 lines removed, unused imports)
@@ -382,7 +386,7 @@ Get-ChildItem "src\components" -Recurse -Filter "*.js" | Select-String -Pattern 
 - **v48.9** (Feb 11, 2026) - Phase 4 complete: Production infrastructure
 - **v48.8** (Feb 11, 2026) - Phase 6: Scale testing (26K records validated)
 - **v48.2** - Session 9: Context migration, on-demand loading
-- **v47.0** - Phase 2 complete: Backend modularization (21 IPC modules)
+- **v47.0** - Phase 2 complete: Backend modularization (22 IPC modules)
 - **v46.56** - Forms consolidated to src/components/forms/
 - Earlier versions - Feature development, initial hardening
 
@@ -412,29 +416,88 @@ Get-ChildItem "src\components" -Recurse -Filter "*.js" | Select-String -Pattern 
 - Machine-bound licenses prevent key sharing but require support workflow for hardware changes
 - Grace periods (7 days) provide good UX during renewal without compromising security
 
+### Production-Ready Criteria (v1.0.0 validated)
+- Zero TODO/FIXME comments in codebase
+- All IPC handlers use structured error handling (`{ success: false, error }`)
+- All handlers wrapped with logger.wrapHandler
+- ErrorBoundary implemented for crash recovery
+- 118/118 tests passing (caveat: happy-path only, no negative tests)
+- Installer builds correctly, no post-build corruption
+- Documentation accurate (CLAUDE.md, PATTERNS.md, KNOWN_FIXES.md)
+
+### Test Coverage Gap (deferred improvement)
+Current 118 tests provide smoke-testing for happy paths but lack:
+- Negative tests (invalid inputs, validation failures)
+- Delete operation functional tests
+- Concurrent operation tests
+- Performance/stress tests
+**Recommendation:** Add negative test suite before v1.1.0
+
 ## Next Steps
 
-**Immediate (Session 20):**
-- Installer testing and verification (`npm run dist:clean`)
-- Create user documentation (README.txt for end users, KEYGEN_USAGE.md for internal)
-- Final pre-launch polish (icon verification, optional code signing)
-- First customer activation test (end-to-end keygen -> install -> activate)
+**Immediate (Session 23):**
+- IISNode deployment guide — Step-by-step for SmarterASP.NET
+- SQL Server schema migration — Convert 27 tables from SQLite
+- JWT authentication — Implementation details
+- web.config setup — Node.js configuration for IIS
+- Testing strategy — Load testing to validate 20-30 user capacity
 
-**v1.0 Launch Blockers:**
+**v1.0 Launch Checklist:**
 - ✅ Desktop licensing enforcement (Session 19 complete)
-- Icon files verified/created
-- Basic user documentation (README.txt)
-- Test installer generation with licensing
-- First customer activation test
+- ✅ User documentation (README.txt + KEYGEN_USAGE.md, Session 20)
+- ✅ Installer created and verified (104.64 MB, Session 20)
+- ✅ Production audit passed (Session 21)
+- ✅ SaaS strategy finalized, hosting validated (Session 22)
+- [ ] Test installer on clean Windows VM
+- [ ] Code signing certificate (optional for v1.0)
+- [ ] First customer activation test (end-to-end)
+
+**SaaS MVP (4-6 weeks):**
+- Phase 1: Backend API — SQL Server schema + Express REST endpoints (2-3 weeks)
+- Phase 2: Frontend Adaptation — Auth UI + API integration (1-2 weeks)
+- Phase 3: Deployment — IISNode + SSL + domain setup (1 week)
 
 **Post-v1.0 (6-12 months):**
-- Web version development (after 50+ desktop installations)
+- Web SaaS platform launch on SmarterASP.NET Premium Plan
 - French language support for broader MENA market penetration
 - Enhanced corporate secretary functionality
 - Integration capabilities (Dropbox/OneDrive)
 - Session limits + anomaly detection for password sharing
-- Multi-user web tiers ($10-149/month)
-- Desktop-web integration (Option A: included web access)
+- Multi-user web tiers ($29-199/month via Stripe)
+
+## Web Implementation Plan (SaaS)
+
+**Model:** Full SaaS Platform (Option A)
+**Timeline:** 4-6 weeks for MVP
+**Target Market:** MENA region law firms + global privacy-conscious firms
+**Hosting:** SmarterASP.NET Premium Plan (prepaid through March 2028)
+
+### Architecture
+- **Backend:** Node.js/Express REST API via IISNode
+- **Database:** SQL Server 2022 (10GB included, multi-tenant via firm_id)
+- **Frontend:** React SPA (reuse 90% of desktop components)
+- **Auth:** JWT tokens, role-based permissions (Admin/Lawyer/Staff)
+- **Infrastructure:** SmarterASP.NET, IIS, Let's Encrypt SSL
+- **Billing:** Subscription-based (Stripe), 3 tiers ($29/$79/$199)
+
+### Key Challenges
+1. **Database Migration:** SQLite → SQL Server (syntax differences, add firm_id)
+2. **Multi-Tenancy:** Add `firm_id` to all 27 tables, row-level security
+3. **Authentication:** Replace single-user desktop model with multi-user JWT auth
+4. **IISNode Setup:** web.config, URL rewriting, process.env.PORT
+5. **GDPR Compliance:** Privacy Policy, ToS, DPA, data portability
+
+### Hosting Upgrade Path
+| Phase | Plan | RAM | Monthly Cost | Capacity |
+|-------|------|-----|--------------|----------|
+| MVP (Month 1-6) | Premium (current) | 3GB | $0 | 15-25 users |
+| Growth (Month 7-12) | Premium (monitor) | 3GB | $0 | 25-35 users |
+| Scale (Month 13-18) | Semi-Advance | 6GB | $49.95 | 40-60 users |
+| Expansion (Month 19+) | Semi-Premium | 9GB | $79.95 | 60-100 users |
+
+**Upgrade triggers:** >75% RAM sustained, 25+ concurrent users, >8GB SQL usage
+
+**Status:** Strategy finalized (Session 22), implementation next
 
 ## Success Metrics
 
@@ -447,7 +510,7 @@ Get-ChildItem "src\components" -Recurse -Filter "*.js" | Select-String -Pattern 
 
 **Integration Tests:**
 - 118/118 passing (100% pass rate)
-- Cover all 21 IPC modules + license handlers
+- Cover all 22 IPC modules + license handlers
 - Test database operations, validation, error handling
 
 **Code Quality (Session 12):**
@@ -491,6 +554,18 @@ with version, cause, fix, and test case.
 Session 19 completed licensing system implementation (v49.8). All keygen tools
 excluded from installer for security. Production LICENSE_SALT active - all previous
 development keys invalidated.
+
+Session 21 completed production audit. Resolved stale SESSION_20_CHECKPOINT.md
+discrepancies, confirmed v1.0.0 production-ready. Applied 4 cosmetic fixes
+(console.log removal, JSDoc version, error shapes, doc corrections). Decided on
+Full SaaS Platform (Option A) for web implementation.
+
+Session 22 completed SaaS strategy and hosting analysis. Validated existing
+SmarterASP.NET Premium Plan (3GB RAM, 10GB SQL Server, paid through March 2028).
+Chose SQL Server over PostgreSQL for MVP (included in plan, no extra cost).
+Architecture: Node.js + Express + IISNode + JWT auth + multi-tenant firm_id.
+Timeline: 4-6 weeks for MVP. Year 1 hosting cost: $0. Next: IISNode deployment
+guide + SQL Server schema migration.
 
 ## v1.0.0 - Production Release (Session 20 - Feb 13, 2026)
 
