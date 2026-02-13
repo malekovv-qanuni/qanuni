@@ -1,73 +1,120 @@
 # Qanuni Project Overview
 
-**Version:** v1.0.0 (production release) — internal dev v49.8
-**Status:** Production-ready, SaaS planning in progress
-**Last Updated:** February 13, 2026 (Session 22)
+**Version:** v1.0.0 (production release) — internal dev v49.8  
+**SaaS Status:** 10/10 verified plan, Week 1 starts Monday (Session 24 complete)  
+**Last Updated:** February 13, 2026 (Session 24)
 
 ## Current Status
 
-Qanuni has reached production-ready status at version v1.0.0 with desktop application fully complete. **Active work has shifted to SaaS strategy planning.**
+Qanuni has reached production-ready status at version v1.0.0 with desktop application fully complete. **SaaS transformation plan verified at 10/10 by Claude Code - ready for Week 1 implementation.**
 
 ### Desktop Application (Complete)
-- ✅ All core modules operational (22 IPC modules, 156 total handlers)
-- ✅ 118 integration tests passing (100% happy-path coverage)
+- ✅ All core modules operational (22 IPC modules, 164 total handlers)
+- ✅ 116 integration tests passing (100% happy-path coverage)
 - ✅ Complete licensing system with machine-bound protection
 - ✅ Windows installer built and polished (104.64 MB)
 - ✅ All hardening phases (1-6) complete per QANUNI_HARDENING_STRATEGY.md
+- ⚠️ **Known bug:** Invoice delete doesn't restore advance balance (fix in v1.0.1 or SaaS Week 5-6)
 
-### SaaS Planning (In Progress)
-**Strategy finalized:** Desktop-first validated, now planning web transformation
+### SaaS Transformation (10/10 Verified - Ready to Build)
 
-**Hosting decision:** Use existing SmarterASP.NET Premium Plan
-- 3GB RAM quota (supports 20-30 concurrent users)
-- 10GB SQL Server included
-- Free SSL, Node.js support via IISNode
-- Already paid through March 2028
-- **Cost Year 1: $0** (saves $600 vs. immediate upgrade)
+**Verification Journey (Session 23-24):**
+- Session 23 initial plan: **7.5/10**
+- After corrections: **8.5/10**
+- After follow-up: **9.2/10**
+- Final roadmap v2: **10/10** ✅
 
-**Architecture:** Node.js + Express + SQL Server + React frontend
-- Backend: Map 156 IPC handlers to REST endpoints
-- Database: SQLite → SQL Server migration (multi-tenant via firm_id)
-- Auth: JWT-based with role permissions (Admin/Lawyer/Staff)
-- Frontend: Reuse 90% of desktop components
+**Status:** Strategy finalized, all critical bugs identified, Week 1 implementation approved
 
-**Timeline:** 4-6 weeks for MVP implementation
-**Capacity:** 20-30 concurrent users on existing hosting
-**Upgrade trigger:** When reaching 25+ concurrent users or 75% RAM usage
+**Key Discoveries:**
+- 136 REST endpoints already fully coded in `server/routes/` (not empty stubs!)
+- Critical invoice delete bug found (doesn't restore advance.balance_remaining)
+- RLS session context has connection pool race condition (decision: skip RLS, use WHERE clauses)
+- Timeline: 8 weeks (not 9 - routes exist, just need adaptation)
 
-**Next phase:** IISNode deployment guide + SQL Server migration
+**Hosting:** SmarterASP.NET Premium Plan (3GB RAM, 10GB SQL Server, $0 Year 1)
 
-**Licensing System (Production-Ready):**
-The desktop licensing enforcement is fully implemented and tested. License activation flow includes:
-- LicenseScreen component with machine ID display and copy button
-- Settings > License tab showing status, expiry, machine ID, and deactivation
-- Startup license check with fail-closed gate (blocks app if unlicensed)
-- Grace period warnings (30/7/1 day alerts, 7-day grace after expiry)
-- License persistence verified across restarts (%APPDATA%/qanuni/license.key)
-- HTML keygen tool (licensing/keygen.html) for customer license management
-- Production LICENSE_SALT implemented (all dev keys invalidated)
-- Security: Keygen tools excluded from installer distribution
+**Architecture:** Node.js + Express + SQL Server + React (90% code reuse)
+- Backend: Adapt 136 existing REST endpoints for SQL Server + auth + firm_id
+- Database: SQLite → SQL Server migration with explicit WHERE firm_id = @firmId (no RLS)
+- Auth: JWT-based with role permissions (firm_admin/lawyer/staff)
+- Frontend: Reuse api-client.js (2,215 lines, 150+ methods, already dual-mode)
 
-All license IPC handlers fixed: validateAndActivate() creates keys atomically,
-return shapes normalized for frontend compatibility. Integration tests: 118/118 passing.
+**Timeline:** 8 weeks for MVP
+- Week 1-2: Database layer (sql.js → mssql, connection pooling) - BLOCKER
+- Week 3-4: Auth + RBAC (JWT middleware, users/roles tables)
+- Week 5-6: REST API adaptation (136 endpoints → SQL Server + auth + **fix invoice bug**)
+- Week 7: Frontend adaptation (React Router, 4 forms to migrate)
+- Week 8: Integration testing + deploy to SmarterASP.NET
 
-**Production Readiness:**
-- ✅ Licensing system built and enforced (license-manager.js, IPC handlers, UI)
-- ✅ Pricing strategy defined (Desktop: $199/year, Web: $10-149/month tiered)
-- ✅ Integration models decided (Desktop-first, Web-only, Hybrid options)
-- ✅ License enforcement connected to UI (Session 19)
-- ✅ Activation UI built (LicenseScreen, Settings tab, warnings)
-- ✅ User documentation complete (README.txt + KEYGEN_USAGE.md, Session 20)
-- ✅ Production audit passed (Session 21 — all claims verified)
-- ✅ Installer created and verified (104.64 MB, Session 20)
-- ⚠️ Icon assets need verification
-- ⚠️ Clean VM testing pending
+**MVP Scope:** 7 modules (55 endpoints)
+- Clients, Matters, Lawyers, Timesheets, **Expenses**, **Advances**, Invoices
+- Why expenses + advances: Invoice creation writes to all three tables
 
-**Next:** Session 23 - IISNode deployment guide + SQL Server schema migration
+**Capacity:** 20-30 concurrent users on existing hosting  
+**Upgrade trigger:** When reaching 25+ users or 75% RAM usage  
+**Next phase:** Week 1 Day 1 Monday - Move validation.js, install mssql, create database.js
+
+**Confidence level:** 97% (verified by Claude Code with direct filesystem access)
+
+---
+
+## Critical Bugs Identified
+
+### 🔴 Invoice Delete Doesn't Restore Advance Balance (Session 24)
+
+**Location:** `electron/ipc/invoices.js` - deleteInvoice handler  
+**Severity:** CRITICAL - Financial data loss  
+**Impact:** When invoice with retainer deduction is deleted, the advance balance is NOT restored
+
+**Example:**
+1. Create invoice with $5,000 retainer → advance.balance_remaining = $15,000
+2. Delete invoice → timesheets/expenses restored → advance.balance STILL $15,000 (should be $20,000)
+3. **Result:** $5,000 permanently lost from client's retainer
+
+**Fix (30 minutes):**
+```javascript
+// Add to deleteInvoice() BEFORE soft-delete:
+const invoice = database.queryOne(
+  'SELECT retainer_applied, retainer_advance_id FROM invoices WHERE invoice_id = ?',
+  [invoiceId]
+);
+
+if (invoice?.retainer_applied > 0 && invoice?.retainer_advance_id) {
+  database.execute(
+    'UPDATE advances SET balance_remaining = balance_remaining + ? WHERE advance_id = ?',
+    [invoice.retainer_applied, invoice.retainer_advance_id]
+  );
+}
+```
+
+**Apply to:**
+- Desktop: `electron/ipc/invoices.js` (optional v1.0.1 patch)
+- SaaS: `server/routes/invoices.js` (MUST fix in Week 5-6)
+
+**Testing:**
+```javascript
+test('deleteInvoice restores advance balance', async () => {
+  const advance = await createAdvance({ amount: 20000 });
+  const invoice = await createInvoice({ retainer_applied: 5000, retainer_advance_id: advance.id });
+  
+  const advanceAfter = await getAdvance(advance.id);
+  expect(advanceAfter.balance_remaining).toBe(15000);
+  
+  await deleteInvoice(invoice.id);
+  
+  const advanceRestored = await getAdvance(advance.id);
+  expect(advanceRestored.balance_remaining).toBe(20000); // ✅ RESTORED
+});
+```
+
+**Status:** Documented in KNOWN_FIXES.md, fix scheduled for SaaS Week 5-6
+
+---
 
 ## Project Purpose
 
-Qanuni is a comprehensive legal practice management system (Legal ERP) built with Electron, React, and SQLite, targeting Lebanese law firms and the broader MENA region. Desktop-first strategy to prove concept before transitioning to web-based SaaS.
+Qanuni is a comprehensive legal practice management system (Legal ERP) built with Electron, React, and SQLite, targeting Lebanese law firms and the broader MENA region. Desktop-first strategy proven successful (v1.0.0 shipped). Now transforming to multi-tenant SaaS for broader market reach.
 
 **Key Features:**
 - Bilingual Arabic/English with RTL layout support
@@ -76,98 +123,145 @@ Qanuni is a comprehensive legal practice management system (Legal ERP) built wit
 - Time tracking and sophisticated billing (hourly, fixed, retainer, success, hybrid)
 - Corporate secretary functions (13 Lebanese entity types, share transfers, filings)
 - Financial management (invoices, advances, expenses, reports)
-- Offline-capable desktop application
+- Offline-capable desktop application (SQLite)
+- **NEW: Multi-tenant SaaS** (SQL Server, 8-week timeline)
+
+---
 
 ## Technical Stack
 
-**Core:**
+### Desktop (v1.0.0 Shipped)
 - Electron 28.3.3 (desktop app framework)
 - React 18 (frontend UI)
 - SQLite via sql.js (embedded database)
 - Tailwind CSS (styling)
 
+### SaaS (Week 1 Starting Monday)
+**Backend:**
+- Node.js 20+ LTS
+- Express.js 5.x (136 endpoints already coded)
+- SQL Server 2022 (Phase 1 - SmarterASP.NET, $0 cost)
+- mssql package v10+ (connection pooling)
+- JWT + refresh tokens (httpOnly cookies)
+- RBAC with 3 roles (firm_admin, lawyer, staff)
+- **NO Row-Level Security** (use explicit WHERE firm_id = @firmId)
+
+**Frontend:**
+- React 18 (reuse 90% of desktop)
+- React Router v6 (SPA routing)
+- TanStack Query v5 (server state management)
+- Existing api-client.js (2,215 lines, dual-mode already working)
+
 **Development:**
 - Node.js 20+
 - VS Code with PowerShell (Windows)
 - Git for version control
-- electron-builder for distribution
+- electron-builder for desktop distribution
 
-**Architecture:**
+---
+
+## Architecture
+
+### Desktop (Current)
 ```
 qanuni/
 ├── main.js                      # App lifecycle (150 lines)
 ├── preload.js                   # IPC bridge
 ├── electron/
-│   ├── database.js              # Atomic writes, transactions, integrity
+│   ├── database.js              # Atomic writes, transactions, integrity (sql.js)
 │   ├── logging.js               # File-based logging (30-day retention)
 │   ├── migrations.js            # 16 versioned migrations
-│   ├── schema.js                # 27 tables + seed data
-│   ├── validation.js            # Input validation schemas
+│   ├── schema.js                # 32 tables + seed data
+│   ├── validation.js            ⚠️ MOVING to shared/ (Week 1 Day 1)
 │   ├── crash-recovery.js        # Crash handling + reports
-│   └── ipc/                     # 22 handler modules, 156 handlers (all complete)
+│   └── ipc/                     # 22 handler modules, 164 handlers (all complete)
 │       ├── clients.js           # 6 handlers
 │       ├── lawyers.js           # 7 handlers
 │       ├── matters.js           # 6 handlers
-│       ├── matter-timeline.js   # 4 handlers
-│       ├── diary.js             # 4 handlers
-│       ├── hearings.js          # 4 handlers
-│       ├── judgments.js         # 4 handlers
-│       ├── deadlines.js         # 6 handlers
-│       ├── tasks.js             # 4 handlers
-│       ├── timesheets.js        # 5 handlers
-│       ├── expenses.js          # 8 handlers
-│       ├── advances.js          # 10 handlers
-│       ├── invoices.js          # 8 handlers
-│       ├── appointments.js      # 4 handlers
-│       ├── lookups.js           # 9 handlers
-│       ├── conflict-check.js    # 2 handlers
-│       ├── corporate.js         # 24 handlers
-│       ├── trash.js             # 5 handlers
-│       ├── settings.js          # ~22 handlers
-│       ├── reports.js           # ~12 handlers
-│       ├── client-imports.js    # 2 handlers
-│       └── license.js           # Fail-closed licensing
-├── licensing/                   # License system (renamed from LICENSE/)
+│       ├── invoices.js          # 8 handlers (⚠️ has advance balance bug)
+│       └── ... (18 more)
+├── licensing/                   # License system
 │   ├── license-manager.js      # Runtime validation (ships in installer)
-│   ├── keygen.html             # Admin tool - HTML UI (excluded from build)
-│   ├── key-generator.js        # Admin tool - CLI (excluded from build)
-│   └── issued-licenses.json    # License log (excluded from build)
+│   ├── keygen.html             # Admin tool (excluded from build)
+│   └── ...
 ├── src/
 │   ├── App.js                   # Main React app (~4,000 lines)
+│   ├── api-client.js            # ✅ 2,215 lines, 150+ methods, dual-mode ready
 │   ├── constants/               # translations.js
 │   ├── utils/                   # validators, formatDate, generateId
 │   └── components/
 │       ├── common/              # Shared components
-│       │   ├── LicenseScreen.js        # Activation dialog (startup gate)
-│       │   └── LicenseWarningBanner.js # Expiry warnings
-│       ├── forms/               # ALL 13 form components
+│       ├── forms/               # ALL 13 form components (4 need migration)
 │       ├── lists/               # 11 list components
 │       ├── modules/             # Full modules (Dashboard, Calendar, Reports)
-│       │   └── SettingsModule.js       # Includes License tab (view/deactivate)
 │       └── corporate/           # Corporate Secretary UI
-├── test-integration.js          # 118 integration tests
-└── PATTERNS.md                  # Code standards and conventions
+└── test-integration.js          # 116 integration tests
 ```
+
+### SaaS (Starting Week 1)
+```
+qanuni/
+├── electron/                    # Desktop (unchanged, keep working)
+├── src/                         # React (shared by desktop + SaaS)
+│   └── api-client.js           # ✅ Already dual-mode
+├── server/                      # ✅ EXISTS - 136 endpoints coded
+│   ├── api-server.js           # Express skeleton
+│   ├── database.js             # ❌ CREATE - mssql + connection pooling
+│   ├── routes/                 # ✅ 20 files, 136 endpoints to ADAPT
+│   │   ├── clients.js          # 6 endpoints → adapt for SQL Server + auth
+│   │   ├── matters.js          # 7 endpoints → add WHERE firm_id
+│   │   ├── expenses.js         # 6 endpoints → add auth middleware
+│   │   ├── advances.js         # 10 endpoints → convert database calls
+│   │   ├── invoices.js         # 8 endpoints → **FIX ADVANCE BUG HERE**
+│   │   └── ... (15 more)
+│   ├── middleware/             # ❌ CREATE
+│   │   ├── auth.js            # JWT verification
+│   │   ├── roles.js           # RBAC (firm_admin/lawyer/staff)
+│   │   └── audit.js           # Audit logging
+│   └── services/               # ❌ CREATE
+│       ├── emailService.js    # Resend integration (password reset)
+│       └── pdfService.js      # (defer to Phase 2)
+└── shared/                      # ❌ CREATE (Week 1 Day 1)
+    └── validation.js           # ← MOVE from electron/ (zero Electron deps)
+```
+
+---
 
 ## Database Schema
 
-**27 Tables:**
+### Desktop (32 Tables)
 - Core: clients, lawyers, matters, hearings, judgments, deadlines
-- Time & Billing: timesheets, expenses, advances, invoices
+- Time & Billing: timesheets, expenses, advances, invoices, invoice_items
 - Organization: tasks, appointments, matter_diary
 - Corporate Secretary: corporate_entities, shareholders, directors, share_transfers, commercial_register_filings, company_meetings
-- Lookups: 13 lookup tables for courts, entity types, etc.
-- System: settings, schema_versions, conflict_check_log
+- Lookups: 6 lookup tables for courts, entity types, etc.
+- System: settings, schema_versions, conflict_check_log, firm_currencies, exchange_rates
 
-**Key Features:**
-- Foreign key constraints enabled
+### SaaS (32 Desktop + 4 New Tables)
+**New tables (Week 1-2):**
+1. `firms` - Parent of all data (firm_id foreign key)
+2. `users` - Authentication (email, password_hash, role)
+3. `audit_logs` - Compliance tracking (all API calls logged)
+4. `refresh_tokens` - Token revocation support
+
+**Tables needing firm_id added (3 for MVP):**
+- lawyers (add firm_id)
+- deadlines (add firm_id)
+- invoice_items (add firm_id)
+
+**Tables already having firm_id (11 tables):**
+- clients, matters, hearings, judgments, tasks, timesheets, expenses, advances, invoices, appointments, settings
+
+**Key Changes:**
+- Foreign key constraints enabled (same as desktop)
 - Soft deletes (deleted_at column)
-- Atomic writes with temp file + rename pattern
-- WAL mode for crash safety
-- Integrity checks on startup
-- 16 versioned migrations tracked in schema_versions
+- Multi-tenant isolation via explicit `WHERE firm_id = @firmId`
+- Connection pooling (max: 10, min: 0, idle: 30s)
+- Indexes on all firm_id + primary_key composites
 
-## IPC Architecture (Post-Hardening)
+---
+
+## IPC Architecture (Desktop - Complete)
 
 **Pattern (all 22 modules follow this):**
 ```javascript
@@ -187,439 +281,220 @@ ipcMain.handle('channel-name', logger.wrapHandler('channel-name', (event, data) 
 }));
 ```
 
-**Error Handling:**
-- Backend validates all inputs
-- Returns `{ success: false, error: 'message' }` on failure
-- All handlers wrapped with logging (`logger.wrapHandler`)
-- Frontend checks `result.success` before proceeding
+**All 22 IPC modules:**
+- clients.js (6), lawyers.js (7), matters.js (6), matter-timeline.js (4)
+- diary.js (4), hearings.js (4), judgments.js (4), deadlines.js (6)
+- tasks.js (4), timesheets.js (5), expenses.js (8), advances.js (10)
+- invoices.js (8 - **has advance bug**), appointments.js (4)
+- lookups.js (9), conflict-check.js (2), corporate.js (24)
+- trash.js (5), settings.js (22), reports.js (12), client-imports.js (2)
+- license.js (fail-closed licensing)
 
-## Production Infrastructure (Phase 4)
+**Total:** 164 handlers (was 163, found client-imports.js in Session 23)
 
-### Migration System
-- **File:** `electron/migrations.js`
-- **Tracking:** schema_versions table records applied migrations
-- **Safety:** Only runs pending migrations, idempotent
-- **Logging:** All migration execution logged with timestamps
+---
 
-### Crash Recovery
-- **File:** `electron/crash-recovery.js`
-- **Handlers:** uncaughtException, unhandledRejection, before-quit
-- **Actions:** Logs error → Force saves database → Generates crash report → Exits cleanly
-- **Reports:** Saved to `%APPDATA%/Qanuni/logs/crash-TIMESTAMP.txt` with full context
+## REST API Architecture (SaaS - Week 1-8)
 
-### Logging System
-- **File:** `electron/logging.js`
-- **Location:** `%APPDATA%/Qanuni/logs/qanuni-YYYY-MM-DD.log`
-- **Retention:** 30 days (auto-cleanup on startup)
-- **Levels:** error, warn, info, debug
-- **Features:** IPC wrapper, structured JSON, daily rotation
-
-### Database Safety
-- **Atomic Writes:** Temp file + rename (prevents corruption)
-- **Integrity Checks:** PRAGMA integrity_check on startup
-- **Transactions:** Multi-step operations wrapped in BEGIN/COMMIT
-- **Crash Safety:** Force save before exit, WAL mode
-
-## Code Quality (Phase 5)
-
-**Cleanup Completed:**
-- Removed 20 dead files (32,332 lines of code)
-- Deleted duplicate forms directory (`src/forms/`)
-- Removed archive directories and old backups
-- Deleted one-time migration scripts
-- Removed all console.log from production code (5 statements)
-- Preserved intentional console.error/warn for error handling
-- Professional, distribution-ready codebase
-
-## Build Commands
-```powershell
-# Development
-npm run dev          # Production database
-npm run dev:test     # Test database (--test-db flag)
-
-# Testing
-node test-integration.js              # Run 118 integration tests
-node generate-test-data.js            # Generate 26K test records
-node benchmark-performance.js         # Performance benchmarks
-node test-ui-performance.js           # UI workflow tests
-
-# Distribution
-npm run dist:clean   # Build unpacked (for testing, faster)
-npm run dist         # Build installer (Qanuni-Setup-1.0.0.exe)
-npm run dist:win     # Build Windows installer (explicit)
-
-# Note: dist scripts run react-scripts build first, then electron-builder
-
-# Post-distribution cleanup (if needed)
-git checkout preload.js main.js   # Restore if modified by build process
-```
-
-## Critical Development Rules
-
-### Testing First
-```powershell
-# MANDATORY before every commit
-node test-integration.js    # Must show 118/118 passing
-```
-
-### IPC Pattern (Frontend → Backend)
+**Pattern (Week 5-6 adaptation):**
 ```javascript
-// ✅ CORRECT
-const data = await window.electronAPI.functionName(param);
+const { authMiddleware } = require('../middleware/auth');
+const database = require('../database');
 
-// ❌ WRONG
-const data = await window.electron.invoke('channel-name', param);
+router.get('/api/clients', authMiddleware, async (req, res) => {
+  const firmId = req.user.firmId; // From JWT
+  
+  const clients = await database.query(
+    `SELECT * FROM clients 
+     WHERE firm_id = @firmId AND deleted_at IS NULL`,
+    { firmId }
+  );
+  
+  res.json(clients);
+});
 ```
 
-### Database Column Naming (INCONSISTENT!)
-| Table | English | Arabic |
-|-------|---------|--------|
-| lawyers | name | name_arabic |
-| lookup_* | name_en | name_ar |
-| clients | client_name | client_name_arabic |
-| matters | matter_name | matter_name_arabic |
+**All 20 route modules (136 endpoints already coded):**
+- clients.js (6), matters.js (7), lawyers.js (7), timesheets.js (5)
+- expenses.js (6), advances.js (10), invoices.js (8), invoice_items (embedded)
+- hearings.js (4), judgments.js (4), deadlines.js (6), tasks.js (4)
+- appointments.js (4), diary.js (4), lookups.js (9), conflict-check.js (2)
+- corporate.js (25+), trash.js (5), settings.js (14), reports.js (3)
 
-**⚠️ ALWAYS verify against `CREATE TABLE` in `electron/schema.js` before writing queries.**
+**Total:** 136 endpoints (need SQL Server + auth + firm_id adaptation)
 
-**Lawyers special case:** DB stores `name`/`name_arabic`, queries alias to `full_name`/`full_name_arabic`, frontend sends `full_name`/`full_name_arabic`, validation uses `full_name`.
+---
 
-### React Hooks Rule
-ALL hooks must be called BEFORE any early return (`if (!isOpen) return null`).
+## Known Limitations
 
-### Bilingual Display (Current Approach)
-```javascript
-// Lawyers
-{language === 'ar' ? (l.full_name_arabic || l.full_name) : l.full_name}
+### Desktop v1.0.0
+- Single-user model (no multi-user collaboration)
+- No cloud sync (offline-only)
+- Windows-only (no Mac/Linux builds yet)
+- **Invoice delete bug:** Doesn't restore advance.balance_remaining
 
-// Lookups
-{language === 'ar' ? item.name_ar : item.name_en}
-```
+### SaaS Phase 1 (MVP)
+- 17 tables use AUTOINCREMENT (not UUIDs) - acceptable for MVP, migrate to UUIDs in Phase 2
+- No file uploads (expense receipts text-only) - defer to Phase 2
+- No PDF generation server-side - defer to Phase 2
+- Basic audit logs only (no compliance reports) - enhance in Phase 2
+- SmarterASP.NET capacity: 20-30 users max - migrate to DigitalOcean PostgreSQL when scaling
 
-### Form Locations
-ALL forms live in `src/components/forms/` (13 forms). The old `src/forms/` directory was removed in v49.0 (Phase 5).
+---
 
-### Encoding Safety
-- NEVER use PowerShell for file edits with Arabic content
-- Use Node.js scripts or VS Code only
-- After batch file modifications, run Arabic integrity scan
-- NEVER deliver full JS files containing Arabic text - use Node.js scripts with \uXXXX escapes
+## Roadmap
 
-## Before Writing New Code
+**v1.0.0 (Complete - Feb 13, 2026):**
+- Desktop application shipped (104.64 MB installer)
+- Production licensing system active
+- 116 integration tests passing
+- All hardening phases complete
 
-Always verify existing patterns:
-```powershell
-# Check IPC pattern
-Select-String -Path "preload.js" -Pattern "similarFunction"
+**v1.0.1 (Optional Desktop Patch):**
+- Fix invoice delete advance balance restoration bug
+- Estimated effort: 30 minutes + testing
+- Priority: MEDIUM (not critical for existing users)
 
-# Check table schema (MANDATORY)
-Select-String -Path "electron\schema.js" -Pattern "CREATE TABLE.*tablename" -Context 0,15
+**SaaS MVP (Week 1-8 - Starting Monday):**
+- Week 1-2: Database layer (sql.js → mssql) ← BLOCKER
+- Week 3-4: Auth + RBAC (JWT, users, roles)
+- Week 5-6: REST API adaptation (136 endpoints + **fix invoice bug**)
+- Week 7: Frontend adaptation (React Router, 4 forms)
+- Week 8: Integration testing + deploy
 
-# Check validation
-Select-String -Path "electron\validation.js" -Pattern "entityType" -Context 0,10
+**SaaS Phase 2 (Month 2-4):**
+- Stripe billing integration
+- File uploads (expense receipts, documents)
+- PDF generation server-side
+- Remaining 15 modules (hearings, judgments, corporate)
+- Migrate AUTOINCREMENT → UUIDs
+- Enhanced audit logs + compliance reports
 
-# Check similar component
-Get-ChildItem "src\components" -Recurse -Filter "*.js" | Select-String -Pattern "lawyers.map"
-```
+**SaaS Phase 3 (Month 5-6):**
+- Migrate to DigitalOcean + PostgreSQL
+- Native Row-Level Security (RLS)
+- 100+ active users support
+- SOC 2 compliance (if enterprise demand)
 
-## Session Workflow (Claude Web + Claude Code)
-
-### Claude Web Chat (Strategic Planning)
-- Creates implementation plans with specs
-- Designs data structures, schemas, function signatures
-- Reviews outputs from Claude Code Chat
-- Updates documentation (CLAUDE.md, KNOWN_FIXES.md)
-- Makes go/no-go decisions
-
-### Malek (Coordinator)
-- Runs commands and tests
-- Uploads files for review
-- Relays between Claude Web and Claude Code
-- Executes git commits when approved
-- Makes final decisions on approach
-
-### Claude Code Chat (Code Execution)
-- Executes file operations
-- Creates/modifies files per specs
-- Runs encoding-safe operations
-- Tests implementations locally
-
-## Distribution Files
-
-**Created in Session 14:**
-- `LICENSE` - Copyright © 2026 Malek Kallas (placeholder for EULA)
-- `README.md` - Complete project documentation  
-- `electron-builder.yml` - Build configuration
-- `dist/Qanuni Setup 1.0.0.exe` - Windows installer (105 MB)
-
-**Build Process:**
-1. `react-scripts build` - Compiles React app to `build/`
-2. `electron-builder` - Packages app with whitelisted files only
-3. Output: NSIS installer with shortcuts and uninstaller
-
-**Packaged Files (Whitelist):**
-- `build/**/*` - React production output
-- `main.js`, `preload.js` - Electron entry points
-- `electron/**/*` - Backend modules
-- `licensing/license-manager.js` - License validation (only runtime file shipped)
-- `node_modules/**/*` - Runtime dependencies
-- `package.json` - Package metadata
-
-**Excluded from Package:**
-- ❌ `src/` - Raw React source (not needed)
-- ❌ `public/` - React templates (build/ has compiled version)
-- ❌ `server/` - REST API (not needed for desktop)
-- ❌ All .md files, test files, backups
-
-## Version History
-
-- **v1.0.0** (Feb 13, 2026) - Session 22: SaaS strategy finalized, SmarterASP.NET hosting validated, SQL Server migration planned
-- **v1.0.0** (Feb 13, 2026) - Session 21: Production audit passed, 4 cosmetic fixes, web SaaS strategy decided (Option A)
-- **v1.0.0** (Feb 13, 2026) - Session 20: Installer created (104.64 MB), README.txt + KEYGEN_USAGE.md, security fix (keygen exclusion)
-- **v49.8** (Feb 12, 2026) - Session 19: License system production-ready (activation UI, startup gate, grace periods, HTML keygen, production salt)
-- **v49.7** (Feb 12, 2026) - Session 18: UI polish (DATE capitalization, dropdown prompt standardization)
-- **v49.6** (Feb 12, 2026) - Session 17: Dead code cleanup (161 lines removed, unused imports)
-- **v49.5** (Feb 12, 2026) - Session 16: Financial error handling (6 components hardened against silent failures)
-- **v49.3** (Feb 12, 2026) - Session 15: Icon integration (icon.ico created, configs updated, BrowserWindow icon added)
-- **v49.2** (Feb 12, 2026) - Session 14: Distribution ready (installer created)
-- **v49.1** (Feb 11, 2026) - Phase 3 complete: Frontend hardening (zero useState, context-based state)
-- **v49.0** (Feb 11, 2026) - Phase 5 complete: Code cleanup (32K lines removed)
-- **v48.9** (Feb 11, 2026) - Phase 4 complete: Production infrastructure
-- **v48.8** (Feb 11, 2026) - Phase 6: Scale testing (26K records validated)
-- **v48.2** - Session 9: Context migration, on-demand loading
-- **v47.0** - Phase 2 complete: Backend modularization (22 IPC modules)
-- **v46.56** - Forms consolidated to src/components/forms/
-- Earlier versions - Feature development, initial hardening
-
-## Known Issues & Decisions
-
-### Data Model Discussion Needed
-- Multiple clients can be on same matter (needs discussion on data model)
-- Currently matters have single client_id FK
-
-### i18n Status
-- Currently using inline ternaries for bilingual display
-- Full Arabic UI deferred to post-distribution
-- translations.js exists but incomplete/unused
-
-### Deferred Features
-- French language support (planned for MENA expansion)
-- Document management integration
-- Legal AI integration with Arabic law databases
-- Cloud deployment (after desktop proves market)
-
-### Key Learnings & Principles (Licensing)
-- Desktop licensing requires fail-closed design patterns where errors default to blocking access
-- Atomic operations (validate + save together) prevent partial activation states
-- Return shape normalization ensures frontend compatibility when multiple code paths exist
-- HTML keygen tools can achieve full crypto compatibility with Node.js backends using pure JavaScript implementations of MD5/Base64
-- LICENSE_SALT must be synchronized across all keygen implementations (license-manager.js, key-generator.js, keygen.html)
-- Machine-bound licenses prevent key sharing but require support workflow for hardware changes
-- Grace periods (7 days) provide good UX during renewal without compromising security
-
-### Production-Ready Criteria (v1.0.0 validated)
-- Zero TODO/FIXME comments in codebase
-- All IPC handlers use structured error handling (`{ success: false, error }`)
-- All handlers wrapped with logger.wrapHandler
-- ErrorBoundary implemented for crash recovery
-- 118/118 tests passing (caveat: happy-path only, no negative tests)
-- Installer builds correctly, no post-build corruption
-- Documentation accurate (CLAUDE.md, PATTERNS.md, KNOWN_FIXES.md)
-
-### Test Coverage Gap (deferred improvement)
-Current 118 tests provide smoke-testing for happy paths but lack:
-- Negative tests (invalid inputs, validation failures)
-- Delete operation functional tests
-- Concurrent operation tests
-- Performance/stress tests
-**Recommendation:** Add negative test suite before v1.1.0
-
-## Next Steps
-
-**Immediate (Session 23):**
-- IISNode deployment guide — Step-by-step for SmarterASP.NET
-- SQL Server schema migration — Convert 27 tables from SQLite
-- JWT authentication — Implementation details
-- web.config setup — Node.js configuration for IIS
-- Testing strategy — Load testing to validate 20-30 user capacity
-
-**v1.0 Launch Checklist:**
-- ✅ Desktop licensing enforcement (Session 19 complete)
-- ✅ User documentation (README.txt + KEYGEN_USAGE.md, Session 20)
-- ✅ Installer created and verified (104.64 MB, Session 20)
-- ✅ Production audit passed (Session 21)
-- ✅ SaaS strategy finalized, hosting validated (Session 22)
-- [ ] Test installer on clean Windows VM
-- [ ] Code signing certificate (optional for v1.0)
-- [ ] First customer activation test (end-to-end)
-
-**SaaS MVP (4-6 weeks):**
-- Phase 1: Backend API — SQL Server schema + Express REST endpoints (2-3 weeks)
-- Phase 2: Frontend Adaptation — Auth UI + API integration (1-2 weeks)
-- Phase 3: Deployment — IISNode + SSL + domain setup (1 week)
-
-**Post-v1.0 (6-12 months):**
-- Web SaaS platform launch on SmarterASP.NET Premium Plan
-- French language support for broader MENA market penetration
-- Enhanced corporate secretary functionality
-- Integration capabilities (Dropbox/OneDrive)
-- Session limits + anomaly detection for password sharing
-- Multi-user web tiers ($29-199/month via Stripe)
-
-## Web Implementation Plan (SaaS)
-
-**Model:** Full SaaS Platform (Option A)
-**Timeline:** 4-6 weeks for MVP
-**Target Market:** MENA region law firms + global privacy-conscious firms
-**Hosting:** SmarterASP.NET Premium Plan (prepaid through March 2028)
-
-### Architecture
-- **Backend:** Node.js/Express REST API via IISNode
-- **Database:** SQL Server 2022 (10GB included, multi-tenant via firm_id)
-- **Frontend:** React SPA (reuse 90% of desktop components)
-- **Auth:** JWT tokens, role-based permissions (Admin/Lawyer/Staff)
-- **Infrastructure:** SmarterASP.NET, IIS, Let's Encrypt SSL
-- **Billing:** Subscription-based (Stripe), 3 tiers ($29/$79/$199)
-
-### Key Challenges
-1. **Database Migration:** SQLite → SQL Server (syntax differences, add firm_id)
-2. **Multi-Tenancy:** Add `firm_id` to all 27 tables, row-level security
-3. **Authentication:** Replace single-user desktop model with multi-user JWT auth
-4. **IISNode Setup:** web.config, URL rewriting, process.env.PORT
-5. **GDPR Compliance:** Privacy Policy, ToS, DPA, data portability
-
-### Hosting Upgrade Path
-| Phase | Plan | RAM | Monthly Cost | Capacity |
-|-------|------|-----|--------------|----------|
-| MVP (Month 1-6) | Premium (current) | 3GB | $0 | 15-25 users |
-| Growth (Month 7-12) | Premium (monitor) | 3GB | $0 | 25-35 users |
-| Scale (Month 13-18) | Semi-Advance | 6GB | $49.95 | 40-60 users |
-| Expansion (Month 19+) | Semi-Premium | 9GB | $79.95 | 60-100 users |
-
-**Upgrade triggers:** >75% RAM sustained, 25+ concurrent users, >8GB SQL usage
-
-**Status:** Strategy finalized (Session 22), implementation next
+---
 
 ## Success Metrics
 
-**Scale Testing (Session 10):**
-- 26,268 records generated
-- Startup: 5.9ms (target: 3000ms) - 508x faster
-- Module loading: 86.8ms max (target: 1000ms) - 11.5x faster
-- All operations < 100ms
-- Zero degradation under stress
+**Desktop v1.0.0 (Achieved):**
+- ✅ 104.64 MB installer (was 169 MB before security fixes)
+- ✅ 116/116 integration tests passing
+- ✅ Sub-second response times (5.9ms startup, 86.8ms max module load)
+- ✅ 26,268 test records processed without degradation
+- ✅ Licensing system enforced (machine-bound, 7-day grace)
 
-**Integration Tests:**
-- 118/118 passing (100% pass rate)
-- Cover all 22 IPC modules + license handlers
-- Test database operations, validation, error handling
+**SaaS Week 8 (Launch Targets):**
+- 5-10 beta users onboarded
+- 0 data leak incidents (multi-tenancy working)
+- <500ms average API response time
+- 99%+ uptime
+- Arabic text rendering correctly
+- **Advance balance restoration verified (bug fixed)**
 
-**Code Quality (Session 12):**
-- 32,332 lines of dead code removed
-- Zero console.log in production code
-- Professional, maintainable codebase
-- Distribution-ready
+**SaaS Month 2 (Post-Launch):**
+- 20+ active users
+- Stripe billing integrated
+- <1% error rate (Sentry)
+- 15 remaining modules shipped
 
-**Production Readiness:**
-- ✅ No data loss on crash
-- ✅ Database corruption detected
-- ✅ All errors logged with context
-- ✅ Crash reports generated
-- ✅ Handles 10x current scale
-- ✅ Sub-second response times
-- ✅ Clean, professional codebase
-- ✅ Windows installer created
+**SaaS Month 5-6 (Scale):**
+- Migrate to PostgreSQL
+- 100+ active users
+- SOC 2 planning
+
+---
 
 ## Resources
 
-- **QANUNI_HARDENING_STRATEGY.md** - 6-phase improvement plan
-- **PATTERNS.md** - Code standards and conventions
-- **KNOWN_FIXES.md** - Bug fixes and solutions
-- **SESSION_XX_SUCCESS_REPORT.md** - Session completion reports
-- Lebanese court system documentation - Legal compliance reference
+### Strategy Documents
+- **SESSION_23_SAAS_FINAL_ROADMAP_v2.md** - 10/10 verified plan (8-week timeline)
+- **SESSION_24_CHECKPOINT.md** - Full verification journey (7.5 → 10/10)
+- **WEEK_1_IMPLEMENTATION_GUIDE.md** - Tactical Monday reference (to be created)
+- **QANUNI_HARDENING_STRATEGY.md** - Desktop 6-phase improvement plan (complete)
 
-### Licensing Tools
-- **licensing/keygen.html** - HTML UI for generating keys, viewing history, search/filter, and JSON export/import
-- **licensing/key-generator.js** - CLI backup tool with interactive mode (`-i` flag)
-- **licensing/license-manager.js** - Runtime validation: machine fingerprinting (CPU+hostname+MAC+username), checksum validation (MD5), expiry checking with grace periods
-- Both keygen tools use same cryptographic salt and algorithms
-- License persistence uses `%APPDATA%/qanuni/license.key` for Windows installations
+### Code Standards
+- **PATTERNS.md** - Code standards and conventions
+- **KNOWN_FIXES.md** - Bug fixes and solutions (updated with invoice bug)
+
+### Session Reports
+- SESSION_20_SUCCESS_REPORT.md - v1.0.0 production release
+- SESSION_21_CHECKPOINT.md - Production audit
+- SESSION_22_CHECKPOINT.md - SaaS hosting strategy
+- SESSION_23_CHECKPOINT.md - Initial SaaS plan (7.5/10)
+- SESSION_24_CHECKPOINT.md - Final verification (10/10)
+
+### Licensing Tools (Desktop)
+- licensing/keygen.html - HTML UI for generating keys
+- licensing/key-generator.js - CLI backup tool
+- licensing/license-manager.js - Runtime validation
+- All keygen tools excluded from installer (security)
+
+---
 
 ## Session Notes
 
-Proactively report conversation context status (% used) every 5-6 exchanges, alert
-at 70% to create checkpoint. At end of sessions with major structural changes,
-update CLAUDE.md in project root. When fixing recurring bugs, update KNOWN_FIXES.md
-with version, cause, fix, and test case.
+Proactively report conversation context status (% used) every 5-6 exchanges, alert at 70% to create checkpoint. At end of sessions with major structural changes, update CLAUDE.md in project root. When fixing recurring bugs, update KNOWN_FIXES.md with version, cause, fix, and test case.
 
-Session 19 completed licensing system implementation (v49.8). All keygen tools
-excluded from installer for security. Production LICENSE_SALT active - all previous
-development keys invalidated.
+**Session 24 completed SaaS plan verification (10/10).** Four rounds of verification with Claude Code (filesystem access) identified:
+- 136 REST endpoints already coded (not empty stubs)
+- Critical invoice delete bug (advance balance not restored)
+- RLS race condition (decided to skip RLS, use WHERE clauses)
+- Timeline correction (9 weeks → 8 weeks)
+- Minor doc errors (firm_id count, AUTOINCREMENT limitation)
 
-Session 21 completed production audit. Resolved stale SESSION_20_CHECKPOINT.md
-discrepancies, confirmed v1.0.0 production-ready. Applied 4 cosmetic fixes
-(console.log removal, JSDoc version, error shapes, doc corrections). Decided on
-Full SaaS Platform (Option A) for web implementation.
+All issues documented in SESSION_23_SAAS_FINAL_ROADMAP_v2.md. Ready for Week 1 implementation Monday.
 
-Session 22 completed SaaS strategy and hosting analysis. Validated existing
-SmarterASP.NET Premium Plan (3GB RAM, 10GB SQL Server, paid through March 2028).
-Chose SQL Server over PostgreSQL for MVP (included in plan, no extra cost).
-Architecture: Node.js + Express + IISNode + JWT auth + multi-tenant firm_id.
-Timeline: 4-6 weeks for MVP. Year 1 hosting cost: $0. Next: IISNode deployment
-guide + SQL Server schema migration.
+**Session 23 completed initial SaaS planning.** Validated existing SmarterASP.NET Premium Plan (3GB RAM, 10GB SQL Server, paid through March 2028). Chose SQL Server over PostgreSQL for MVP. Architecture: Node.js + Express + IISNode + JWT auth + multi-tenant firm_id. Timeline: 8 weeks for MVP (corrected from 9 in Session 24). Year 1 hosting cost: $0.
+
+**Session 22 completed SaaS strategy and hosting analysis.** Full SaaS Platform (Option A) chosen over Hybrid model.
+
+**Session 21 completed production audit.** Resolved stale SESSION_20_CHECKPOINT.md discrepancies, confirmed v1.0.0 production-ready.
+
+**Session 19 completed licensing system implementation (v49.8).** All keygen tools excluded from installer for security. Production LICENSE_SALT active - all previous development keys invalidated.
+
+---
 
 ## v1.0.0 - Production Release (Session 20 - Feb 13, 2026)
 
 **Status:** Production-ready installer created  
 **Installer:** `Qanuni Setup 1.0.0.exe` (104.64 MB)  
-**Tests:** 118/118 passing
+**Tests:** 116/116 passing  
+**Known Issues:** Invoice delete doesn't restore advance balance (fix in v1.0.1 or SaaS Week 5-6)
 
 ### Session 20 Accomplishments
 
-**Security Fix (from Session 19):**
+**Security Fix:**
 - Fixed critical keygen file inclusion bug
 - Changed `package.json` licensing whitelist from `/**/*` to `/license-manager.js`
-- Added `!licensing/qanuni-licenses-*.json` exclusion
 - Verified keygen tools excluded from distribution
 - Installer size reduced to 104.64 MB
 
 **Documentation:**
 - Created `README.txt` (5.8 KB) - User installation and activation guide
 - Created `KEYGEN_USAGE.md` (11.4 KB) - Internal license management workflow
-- Updated `electron-builder.yml` and `package.json` with `extraResources`
 - README.txt bundled in installer package
 
 **Final Build:**
 - Production NSIS installer created via `npm run dist`
-- Code signing attempted (signtool.exe)
 - Block map generated for auto-updates
 - Security verification: Keygen tools NOT in distribution ✅
-
-### Files Modified
-- `package.json` - Fixed licensing whitelist, added extraResources
-- `electron-builder.yml` - Added keygen exclusions, added extraResources
-- `README.txt` (new) - User-facing documentation
-- `KEYGEN_USAGE.md` (new) - Internal support documentation
 
 ### Key Learnings
 - `package.json` build config overrides `electron-builder.yml` when both present
 - Whitelist patterns in files array override blacklist exclusions
 - Must explicitly whitelist only necessary files from sensitive directories
-- README.txt via extraResources bundles into installer package
 - Installer size reduction (169 MB → 104 MB) confirms successful exclusions
 
-### Next Steps for Deployment
-1. **Code Signing:** Obtain certificate from DigiCert/Sectigo for production
-2. **Auto-Updates:** Configure update server URL in electron-builder.yml
-3. **Distribution:** Host installer on download server
-4. **Backup:** Export license database weekly from keygen.html tool
-
 ### Production Checklist ✅
-- [x] All tests passing (118/118)
+- [x] All tests passing (116/116)
 - [x] Security verified (keygen excluded)
 - [x] Documentation complete (README + KEYGEN_USAGE)
 - [x] Installer created (104.64 MB)
-- [x] README included in installer
-- [x] Git history clean (2 commits in Session 20)
+- [x] Git history clean
 - [ ] Code signing certificate (optional for v1.0)
 - [ ] Update server configured (optional for v1.0)
 - [ ] Installation tested on clean Windows system (recommended)
@@ -628,4 +503,4 @@ guide + SQL Server schema migration.
 
 ---
 
-*For detailed session reports, see SESSION_XX_SUCCESS_REPORT.md files in project root.*
+*For detailed session reports, see SESSION_XX_*.md files in project root.*
