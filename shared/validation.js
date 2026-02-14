@@ -83,7 +83,18 @@ function validate(data, schema) {
       }
     }
 
-    // String length
+    // String length - minimum
+    if (rules.minLength && typeof value === 'string' && value.length < rules.minLength) {
+      errors.push({
+        field,
+        message: rules.label
+          ? `${rules.label} must be at least ${rules.minLength} characters`
+          : `${field} must be at least ${rules.minLength} characters`,
+        code: 'MIN_LENGTH'
+      });
+    }
+
+    // String length - maximum
     if (rules.maxLength && typeof value === 'string' && value.length > rules.maxLength) {
       errors.push({ field, message: `${field} exceeds maximum length of ${rules.maxLength}`, code: 'MAX_LENGTH' });
     }
@@ -544,6 +555,52 @@ const schemas = {
       required: true,
       type: 'date',
       label: 'Effective date'
+    }
+  },
+
+  // ==================== AUTH SCHEMAS (SaaS) ====================
+
+  register: {
+    email: {
+      required: true,
+      type: 'string',
+      maxLength: 255,
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      patternMessage: 'Invalid email format',
+      label: 'Email'
+    },
+    password: {
+      required: true,
+      type: 'string',
+      minLength: 6,
+      maxLength: 128,
+      label: 'Password'
+    },
+    firm_name: {
+      required: true,
+      type: 'string',
+      minLength: 2,
+      maxLength: 255,
+      label: 'Firm name'
+    },
+    full_name: {
+      required: false,
+      type: 'string',
+      maxLength: 255,
+      label: 'Full name'
+    }
+  },
+
+  login: {
+    email: {
+      required: true,
+      type: 'string',
+      label: 'Email'
+    },
+    password: {
+      required: true,
+      type: 'string',
+      label: 'Password'
     }
   }
 };

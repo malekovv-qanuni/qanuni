@@ -104,6 +104,36 @@ async function getAll(query, params = {}) {
 }
 
 /**
+ * Execute multiple queries in a transaction
+ * Usage:
+ *   const result = await database.transaction(async (request) => {
+ *     const firm = await request.query('INSERT INTO firms ...; SELECT SCOPE_IDENTITY() AS id');
+ *     const user = await request.query('INSERT INTO users ...');
+ *     return { firm, user };
+ *   });
+ *
+ * @param {Function} callback - Async function receiving a transaction-bound request factory
+ * @returns {Promise} Result from callback
+ */
+async function transaction(callback) {
+  const pool = await getPool();
+  const txn = new sql.Transaction(pool);
+  await txn.begin();
+
+  try {
+    // Provide a factory that creates transaction-bound requests
+    const createRequest = () => new sql.Request(txn);
+    const result = await callback(createRequest);
+    await txn.commit();
+    return result;
+  } catch (error) {
+    await txn.rollback();
+    console.error('Transaction error:', error);
+    throw error;
+  }
+}
+
+/**
  * Close connection pool (for graceful shutdown)
  */
 async function close() {
@@ -119,6 +149,7 @@ module.exports = {
   execute,
   getOne,
   getAll,
+  transaction,
   close,
-  sql // Export sql for advanced usage (e.g., transactions)
+  sql // Export sql for advanced usage (e.g., transactions, typed params)
 };
