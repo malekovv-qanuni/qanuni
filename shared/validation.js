@@ -733,6 +733,19 @@ const schemas = {
   // firm_id comes from JWT token (req.user.firm_id), not from request body.
   // matter_id existence is validated in route handler (FK check).
 
+  // ==================== SaaS DIARY SCHEMA ====================
+  // Separate from desktop 'diary_entry' schema to avoid conflicts.
+  // firm_id comes from JWT token (req.user.firm_id), not from request body.
+  // matter_id existence is validated in route handler (FK check).
+
+  diary_saas: {
+    matter_id: { required: true, type: 'number', label: 'Matter' },
+    entry_date: { required: true, type: 'date', label: 'Entry date' },
+    entry_type: { type: 'string', oneOf: ['note', 'call', 'meeting', 'correspondence', 'filing', 'research', 'other'] },
+    title: { required: true, type: 'string', minLength: 1, maxLength: 500, label: 'Title' },
+    description: { type: 'string', maxLength: 10000 }
+  },
+
   hearing_saas: {
     matter_id: {
       required: true,

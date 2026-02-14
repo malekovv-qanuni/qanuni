@@ -18,7 +18,7 @@ let failed = 0;
 let totalAssertions = 0;
 
 // Track created resources for cleanup
-const cleanup = { clients: [], matters: [], lawyers: [], hearings: [] };
+const cleanup = { clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
 
 // ==================== HTTP Helper ====================
 
@@ -365,6 +365,99 @@ async function testFilters() {
   assert('All are trial type', t24.body.data.every(h => h.hearing_type === 'trial'));
 }
 
+// ==================== Diary Tests ====================
+
+async function testDiary() {
+  console.log('\n--- DIARY TESTS ---\n');
+
+  // Test 28: Create diary entry
+  console.log('  Test 28: Create diary entry');
+  const t28 = await request('POST', '/api/diary', {
+    matter_id: cleanup.matters[0],
+    entry_date: '2026-02-14',
+    entry_type: 'note',
+    title: 'Test diary entry',
+    description: 'This is a test diary entry'
+  });
+  assert('Status 201', t28.status === 201, 'Got ' + t28.status);
+  assert('Has diary object', t28.body.diary != null);
+  assert('Has diary_id', t28.body.diary && t28.body.diary.diary_id > 0);
+  const testDiaryId = t28.body.diary ? t28.body.diary.diary_id : null;
+  if (testDiaryId) cleanup.diary.push(testDiaryId);
+
+  // Test 29: Create diary entry (minimal - no description)
+  console.log('\n  Test 29: Create diary entry (minimal)');
+  const t29 = await request('POST', '/api/diary', {
+    matter_id: cleanup.matters[0],
+    entry_date: '2026-02-15',
+    entry_type: 'call',
+    title: 'Client phone call'
+  });
+  assert('Status 201', t29.status === 201, 'Got ' + t29.status);
+  assert('Created successfully', t29.body.success === true);
+  if (t29.body.diary) cleanup.diary.push(t29.body.diary.diary_id);
+
+  // Test 30: Reject invalid matter_id
+  console.log('\n  Test 30: Reject invalid matter_id');
+  const t30 = await request('POST', '/api/diary', {
+    matter_id: 99999,
+    entry_date: '2026-02-14',
+    entry_type: 'note',
+    title: 'Should fail'
+  });
+  assert('Status 404', t30.status === 404, 'Got ' + t30.status);
+  assert('Error mentions Matter', t30.body.error && t30.body.error.includes('Matter not found'));
+
+  // Test 31: List diary entries
+  console.log('\n  Test 31: List diary entries');
+  const t31 = await request('GET', '/api/diary');
+  assert('Has data array', Array.isArray(t31.body.data));
+  assert('Has pagination', t31.body.pagination != null);
+  assert('Has at least 2 entries', t31.body.data.length >= 2, 'Got ' + t31.body.data.length);
+
+  // Test 32: Filter by matter_id
+  console.log('\n  Test 32: Filter by matter_id');
+  const t32 = await request('GET', '/api/diary?matter_id=' + cleanup.matters[0]);
+  assert('Returns diary entries', t32.body.data.length >= 2, 'Got ' + t32.body.data.length);
+  assert('All match matter_id', t32.body.data.every(e => e.matter_id === cleanup.matters[0]));
+
+  // Test 33: Filter by date range
+  console.log('\n  Test 33: Filter by date range');
+  const t33 = await request('GET', '/api/diary?start_date=2026-02-14&end_date=2026-02-15');
+  assert('Returns entries in range', t33.body.data.length >= 2, 'Got ' + t33.body.data.length);
+
+  // Test 34: Get single diary entry
+  console.log('\n  Test 34: Get single diary entry');
+  const t34 = await request('GET', '/api/diary/' + testDiaryId);
+  assert('Status 200', t34.status === 200, 'Got ' + t34.status);
+  assert('Has diary object', t34.body.diary != null);
+  assert('diary_id matches', t34.body.diary && t34.body.diary.diary_id === testDiaryId);
+  assert('Title matches', t34.body.diary && t34.body.diary.title === 'Test diary entry');
+
+  // Test 35: Update diary entry
+  console.log('\n  Test 35: Update diary entry');
+  const t35 = await request('PUT', '/api/diary/' + testDiaryId, {
+    matter_id: cleanup.matters[0],
+    entry_date: '2026-02-16',
+    entry_type: 'meeting',
+    title: 'Updated title',
+    description: 'Updated description'
+  });
+  assert('Status 200', t35.status === 200, 'Got ' + t35.status);
+  assert('Title updated', t35.body.diary && t35.body.diary.title === 'Updated title');
+  assert('Entry type updated', t35.body.diary && t35.body.diary.entry_type === 'meeting');
+
+  // Test 36: Soft delete diary entry
+  console.log('\n  Test 36: Soft delete diary entry');
+  const t36 = await request('DELETE', '/api/diary/' + testDiaryId);
+  assert('Status 200', t36.status === 200, 'Got ' + t36.status);
+  assert('Success message', t36.body.message === 'Diary entry deleted successfully');
+
+  // Verify not in list
+  const t36list = await request('GET', '/api/diary');
+  assert('Deleted entry not in list', !t36list.body.data.find(e => e.diary_id === testDiaryId));
+}
+
 // ==================== Cross-Resource Tests ====================
 
 async function testCrossResource() {
@@ -433,7 +526,12 @@ async function testCrossResource() {
 async function cleanupData() {
   console.log('\nCleanup...');
 
-  // Delete in reverse dependency order: hearings -> matters -> lawyers -> clients
+  // Delete in reverse dependency order: diary -> hearings -> matters -> lawyers -> clients
+  for (const id of cleanup.diary) {
+    await request('DELETE', '/api/diary/' + id);
+  }
+  console.log('  Deleted ' + cleanup.diary.length + ' diary entries');
+
   for (const id of cleanup.hearings) {
     await request('DELETE', '/api/hearings/' + id);
   }
@@ -464,6 +562,7 @@ async function run() {
     await testPagination();
     await testSearch();
     await testFilters();
+    await testDiary();
     await testCrossResource();
     await cleanupData();
   } catch (err) {
