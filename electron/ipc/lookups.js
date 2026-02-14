@@ -6,7 +6,7 @@
  */
 
 const { ipcMain } = require('electron');
-const validation = require('../validation');
+const validation = require('../../shared/validation');
 
 // ============================================================================
 // SHARED CONFIG

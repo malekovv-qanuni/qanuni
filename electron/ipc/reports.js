@@ -182,9 +182,9 @@ function generateReport(database, reportType, filters) {
 
     case 'client-statement': {
       const clientId = filters?.clientId;
-      if (!clientId) return { error: 'Client ID required' };
+      if (!clientId) return { success: false, error: 'Client ID required' };
       const client = database.queryOne('SELECT * FROM clients WHERE client_id = ?', [clientId]);
-      if (!client) return { error: 'Client not found' };
+      if (!client) return { success: false, error: 'Client not found' };
 
       const invoices = database.query(`SELECT i.*, m.matter_name FROM invoices i
         LEFT JOIN matters m ON i.matter_id = m.matter_id
@@ -226,14 +226,14 @@ function generateReport(database, reportType, filters) {
 
     case 'case-status-report': {
       const caseClientId = filters?.clientId;
-      if (!caseClientId) return { error: 'Client ID required' };
+      if (!caseClientId) return { success: false, error: 'Client ID required' };
       const todayStr = new Date().toISOString().split('T')[0];
       const in90Days = new Date(Date.now() + 90*24*60*60*1000).toISOString().split('T')[0];
       const in60Days = new Date(Date.now() + 60*24*60*60*1000).toISOString().split('T')[0];
       const past12M = new Date(Date.now() - 365*24*60*60*1000).toISOString().split('T')[0];
 
       const caseClient = database.queryOne('SELECT * FROM clients WHERE client_id = ?', [caseClientId]);
-      if (!caseClient) return { error: 'Client not found' };
+      if (!caseClient) return { success: false, error: 'Client not found' };
 
       const clientMatters = database.query(`SELECT m.*, l.name as lawyer_name FROM matters m
         LEFT JOIN lawyers l ON m.responsible_lawyer_id = l.lawyer_id
@@ -261,9 +261,9 @@ function generateReport(database, reportType, filters) {
 
     case 'client-360-report': {
       const client360Id = filters?.clientId;
-      if (!client360Id) return { error: 'Client ID required' };
+      if (!client360Id) return { success: false, error: 'Client ID required' };
       const client360 = database.queryOne('SELECT * FROM clients WHERE client_id = ?', [client360Id]);
-      if (!client360) return { error: 'Client not found' };
+      if (!client360) return { success: false, error: 'Client not found' };
 
       const allMatters = database.query(`SELECT m.*, l.name as lawyer_name FROM matters m LEFT JOIN lawyers l ON m.responsible_lawyer_id = l.lawyer_id WHERE m.client_id = ? ORDER BY m.opening_date DESC`, [client360Id]);
       const allHearings = database.query(`SELECT h.*, m.matter_name, m.matter_name_arabic, lp.name_en as purpose_name, lp.name_ar as purpose_name_ar FROM hearings h LEFT JOIN matters m ON h.matter_id = m.matter_id LEFT JOIN lookup_hearing_purposes lp ON h.purpose_id = lp.purpose_id WHERE m.client_id = ? ORDER BY h.hearing_date DESC`, [client360Id]);

@@ -10,7 +10,7 @@
  */
 
 const { ipcMain } = require('electron');
-const validation = require('../validation');
+const validation = require('../../shared/validation');
 
 // ============================================================================
 // PURE FUNCTIONS - EXACT COPIES of working IPC handler logic

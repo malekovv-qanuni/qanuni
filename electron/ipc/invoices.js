@@ -7,7 +7,7 @@
 const { ipcMain, dialog, BrowserWindow } = require('electron');
 const fs = require('fs');
 const path = require('path');
-const validation = require('../validation');
+const validation = require('../../shared/validation');
 
 // ============================================================================
 // PURE FUNCTIONS - EXACT COPIES of working IPC handler logic
