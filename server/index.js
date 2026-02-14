@@ -31,8 +31,10 @@ app.use((req, res, next) => {
 // Routes
 const authRoutes = require('./routes/auth');
 const clientRoutes = require('./routes/clients');
+const matterRoutes = require('./routes/matters');
 app.use('/api/auth', authRoutes);
 app.use('/api/clients', clientRoutes);
+app.use('/api/matters', matterRoutes);
 
 // Health check endpoint (root)
 app.get('/health', async (req, res) => {

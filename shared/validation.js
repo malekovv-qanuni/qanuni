@@ -608,6 +608,58 @@ const schemas = {
   // Separate from desktop 'client' schema to avoid conflicts.
   // firm_id comes from JWT token (req.user.firm_id), not from request body.
 
+  // ==================== SaaS MATTER SCHEMA ====================
+  // Separate from desktop 'matter' schema to avoid conflicts.
+  // firm_id comes from JWT token (req.user.firm_id), not from request body.
+  // client_ids and primary_client_id are validated in route handler (not here).
+
+  matter_saas: {
+    matter_number: {
+      required: true,
+      type: 'string',
+      maxLength: 50,
+      label: 'Matter number'
+    },
+    matter_name: {
+      required: true,
+      type: 'string',
+      minLength: 2,
+      maxLength: 500,
+      label: 'Matter name'
+    },
+    matter_name_arabic: {
+      type: 'string',
+      maxLength: 500
+    },
+    matter_type: {
+      type: 'string',
+      required: false,
+      oneOf: ['litigation', 'advisory', 'corporate', 'transactional', 'other']
+    },
+    matter_status: {
+      type: 'string',
+      required: false,
+      oneOf: ['active', 'pending', 'closed', 'archived']
+    },
+    court_name: { type: 'string', maxLength: 200 },
+    court_name_arabic: { type: 'string', maxLength: 200 },
+    case_number: { type: 'string', maxLength: 100 },
+    case_year: { type: 'number' },
+    hourly_rate: { type: 'number' },
+    flat_fee: { type: 'number' },
+    billing_type: {
+      type: 'string',
+      required: false,
+      oneOf: ['hourly', 'flat_fee', 'contingency', 'pro_bono']
+    },
+    date_opened: { type: 'date' },
+    date_closed: { type: 'date' },
+    statute_of_limitations: { type: 'date' },
+    description: { type: 'string' },
+    notes: { type: 'string' },
+    is_active: { required: false }
+  },
+
   client_saas: {
     client_name: {
       required: true,
