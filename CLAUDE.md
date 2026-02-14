@@ -1,269 +1,161 @@
-# Qanuni Project Overview
-
-**Version:** v1.0.0 (production release) — internal dev v49.8  
-**SaaS Status:** 10/10 verified plan, Week 1 starts Monday (Session 24 complete)  
-**Last Updated:** February 13, 2026 (Session 24)
+# Qanuni Project Context
 
 ## Current Status
+- **Desktop Version:** v1.0.0 (shipped)
+- **Desktop Backend:** Fully modularized — 21 IPC modules, 163 handlers
+- **Desktop Tests:** 118 integration tests passing (`node test-integration.js`)
+- **SaaS Transformation:** Week 1 Day 1 complete (Phase 2: Database layer foundation)
+- **SQL Server:** Configured, tested, Windows Auth working via msnodesqlv8
+- **Next:** Week 1 Day 2 - First REST endpoint (Express + health check)
 
-Qanuni has reached production-ready status at version v1.0.0 with desktop application fully complete. **SaaS transformation plan verified at 10/10 by Claude Code - ready for Week 1 implementation.**
+## Three-Party Workflow
 
-### Desktop Application (Complete)
-- ✅ All core modules operational (22 IPC modules, 164 total handlers)
-- ✅ 116 integration tests passing (100% happy-path coverage)
-- ✅ Complete licensing system with machine-bound protection
-- ✅ Windows installer built and polished (104.64 MB)
-- ✅ All hardening phases (1-6) complete per QANUNI_HARDENING_STRATEGY.md
-- ⚠️ **Known bug:** Invoice delete doesn't restore advance balance (fix in v1.0.1 or SaaS Week 5-6)
+### 1. Claude Web Chat (Strategic Planning & Review)
+**Role:**
+- Create implementation plans with detailed specifications
+- Design data structures, schemas, function signatures
+- Define success criteria for each step
+- Review outputs from Claude Code Chat for approval
+- Update documentation (CLAUDE.md, KNOWN_FIXES.md)
+- Make go/no-go decisions before commits
 
-### SaaS Transformation (10/10 Verified - Ready to Build)
+**Does NOT:**
+- Write actual code files (Claude Code Chat does this)
+- Run terminal commands (Malek does this)
+- Edit files directly (to prevent encoding issues)
 
-**Verification Journey (Session 23-24):**
-- Session 23 initial plan: **7.5/10**
-- After corrections: **8.5/10**
-- After follow-up: **9.2/10**
-- Final roadmap v2: **10/10** ✅
+### 2. Malek (Coordinator & Gatekeeper)
+**Role:**
+- Run commands requested by Claude Web Chat (tests, git, file searches)
+- Act as relay between Claude Web Chat and Claude Code Chat
+- Execute git commits when approved
+- Alert if something looks wrong before proceeding
+- Make final decisions when options presented
 
-**Status:** Strategy finalized, all critical bugs identified, Week 1 implementation approved
+**Workflow per task:**
+1. Claude Web Chat creates implementation plan
+2. You take plan to Claude Code Chat
+3. Claude Code Chat implements
+4. You run `node test-integration.js`
+5. If tests pass (118/118), upload results to Claude Web Chat
+6. Claude Web Chat reviews and approves
+7. You commit
 
-**Key Discoveries:**
-- 136 REST endpoints already fully coded in `server/routes/` (not empty stubs!)
-- Critical invoice delete bug found (doesn't restore advance.balance_remaining)
-- RLS session context has connection pool race condition (decision: skip RLS, use WHERE clauses)
-- Timeline: 8 weeks (not 9 - routes exist, just need adaptation)
+### 3. Claude Code Chat (Code Execution & Verification)
+**Role:**
+- Execute file operations based on specifications from Claude Web Chat
+- Create new files following provided schemas
+- Modify existing files with precise changes
+- Run encoding-safe operations for Arabic content
+- Has direct root folder access (no upload delays)
+- **Second opinion:** Review strategy decisions and planning from Claude Web Chat
+- Catch implementation issues Claude Web Chat may have missed by reviewing actual codebase
 
-**Hosting:** SmarterASP.NET Premium Plan (3GB RAM, 10GB SQL Server, $0 Year 1)
+**Input needed (via Malek):**
+- Exact file specifications from Claude Web Chat
+- Function signatures
+- SQL schemas
+- Expected behavior descriptions
+- Test cases to validate
 
-**Architecture:** Node.js + Express + SQL Server + React (90% code reuse)
-- Backend: Adapt 136 existing REST endpoints for SQL Server + auth + firm_id
-- Database: SQLite → SQL Server migration with explicit WHERE firm_id = @firmId (no RLS)
-- Auth: JWT-based with role permissions (firm_admin/lawyer/staff)
-- Frontend: Reuse api-client.js (2,215 lines, 150+ methods, already dual-mode)
+**Output provided:**
+- Implementation confirmation
+- Soundness verification of strategy (can see what Web Chat missed)
+- Actual file modifications completed
 
-**Timeline:** 8 weeks for MVP
-- Week 1-2: Database layer (sql.js → mssql, connection pooling) - BLOCKER
-- Week 3-4: Auth + RBAC (JWT middleware, users/roles tables)
-- Week 5-6: REST API adaptation (136 endpoints → SQL Server + auth + **fix invoice bug**)
-- Week 7: Frontend adaptation (React Router, 4 forms to migrate)
-- Week 8: Integration testing + deploy to SmarterASP.NET
+## Session Start Requirements
+At the start of EVERY new chat:
+1. Check what phase/day of work we're on
+2. Run `node test-integration.js` to confirm baseline (118/118 passing)
+3. Run `node test-mssql-connection.js` to verify SQL Server (if SaaS work)
+4. Request the files needed for that phase
 
-**MVP Scope:** 7 modules (55 endpoints)
-- Clients, Matters, Lawyers, Timesheets, **Expenses**, **Advances**, Invoices
-- Why expenses + advances: Invoice creation writes to all three tables
+**For Desktop work:**
+- `App.js` — main React app
+- Relevant component files from `src/components/`
+- `electron/ipc/<module>.js` — specific module being changed
+- `preload.js` — if adding new IPC channels
 
-**Capacity:** 20-30 concurrent users on existing hosting  
-**Upgrade trigger:** When reaching 25+ users or 75% RAM usage  
-**Next phase:** Week 1 Day 1 Monday - Move validation.js, install mssql, create database.js
+**For SaaS transformation:**
+- SESSION_25_CHECKPOINT.md (or latest session checkpoint)
+- WEEK_1_DAY_X_READY.md — tactical execution plan for current day
+- SESSION_23_SAAS_FINAL_ROADMAP_v2.md — 10/10 verified strategy (reference)
 
-**Confidence level:** 97% (verified by Claude Code with direct filesystem access)
+## Before Writing New Code
 
----
+**Claude Web Chat should request an audit from Claude Code Chat before creating implementation plans.**
 
-## Critical Bugs Identified
+### Audit Request Template (via Malek to Claude Code Chat)
 
-### 🔴 Invoice Delete Doesn't Restore Advance Balance (Session 24)
+```
+Please audit the following before we proceed with [task description]:
 
-**Location:** `electron/ipc/invoices.js` - deleteInvoice handler  
-**Severity:** CRITICAL - Financial data loss  
-**Impact:** When invoice with retainer deduction is deleted, the advance balance is NOT restored
+1. Check existing IPC pattern for similar functionality:
+   - Search preload.js for: [similar function name]
+   - Search electron/ipc/ for: [related handlers]
 
-**Example:**
-1. Create invoice with $5,000 retainer → advance.balance_remaining = $15,000
-2. Delete invoice → timesheets/expenses restored → advance.balance STILL $15,000 (should be $20,000)
-3. **Result:** $5,000 permanently lost from client's retainer
+2. Verify table schema if modifying database:
+   - Review CREATE TABLE statements in electron/schema.js
+   - Confirm column names (especially bilingual fields)
+   - Check for foreign key relationships
 
-**Fix (30 minutes):**
+3. Check validation schema if handling new data:
+   - Review shared/validation.js schemas
+   - Verify required fields and types match database
+
+4. Find similar component usage patterns:
+   - Search src/components/ for: [similar functionality]
+   - Review how existing code handles [specific pattern]
+
+5. Identify potential conflicts or issues:
+   - Check for similar bug fixes in KNOWN_FIXES.md
+   - Review any related TODO comments in codebase
+
+Please provide:
+- Existing patterns found
+- Any conflicts or issues discovered
+- Recommendations for implementation approach
+```
+
+### Workflow
+1. Claude Web Chat creates audit request
+2. Malek relays to Claude Code Chat
+3. Claude Code Chat performs audit (has direct file access)
+4. Malek uploads audit report back to Claude Web Chat
+5. Claude Web Chat reviews audit and creates implementation plan
+6. Implementation proceeds with verified approach
+
+**This prevents:**
+- Duplicate implementations
+- Column name mismatches
+- Breaking existing patterns
+- Missing validation schemas
+
+## Critical Rules
+
+### Testing First
+```powershell
+# MANDATORY before every commit
+node test-integration.js    # Must show 0 failures (currently 118/118)
+
+# For SaaS work, also verify SQL Server connection
+node test-mssql-connection.js    # Must show 3/3 passing
+
+# After ANY backend change, run tests before UI testing
+# After adding new IPC handlers, add test cases to test-integration.js
+```
+
+### IPC Calls (Frontend → Backend)
 ```javascript
-// Add to deleteInvoice() BEFORE soft-delete:
-const invoice = database.queryOne(
-  'SELECT retainer_applied, retainer_advance_id FROM invoices WHERE invoice_id = ?',
-  [invoiceId]
-);
+// ✅ CORRECT
+const data = await window.electronAPI.functionName(param);
 
-if (invoice?.retainer_applied > 0 && invoice?.retainer_advance_id) {
-  database.execute(
-    'UPDATE advances SET balance_remaining = balance_remaining + ? WHERE advance_id = ?',
-    [invoice.retainer_applied, invoice.retainer_advance_id]
-  );
-}
+// ❌ WRONG - never use this pattern
+const data = await window.electron.invoke('channel-name', param);
 ```
 
-**Apply to:**
-- Desktop: `electron/ipc/invoices.js` (optional v1.0.1 patch)
-- SaaS: `server/routes/invoices.js` (MUST fix in Week 5-6)
-
-**Testing:**
-```javascript
-test('deleteInvoice restores advance balance', async () => {
-  const advance = await createAdvance({ amount: 20000 });
-  const invoice = await createInvoice({ retainer_applied: 5000, retainer_advance_id: advance.id });
-  
-  const advanceAfter = await getAdvance(advance.id);
-  expect(advanceAfter.balance_remaining).toBe(15000);
-  
-  await deleteInvoice(invoice.id);
-  
-  const advanceRestored = await getAdvance(advance.id);
-  expect(advanceRestored.balance_remaining).toBe(20000); // ✅ RESTORED
-});
-```
-
-**Status:** Documented in KNOWN_FIXES.md, fix scheduled for SaaS Week 5-6
-
----
-
-## Project Purpose
-
-Qanuni is a comprehensive legal practice management system (Legal ERP) built with Electron, React, and SQLite, targeting Lebanese law firms and the broader MENA region. Desktop-first strategy proven successful (v1.0.0 shipped). Now transforming to multi-tenant SaaS for broader market reach.
-
-**Key Features:**
-- Bilingual Arabic/English with RTL layout support
-- Client and matter management with conflict checking
-- Court scheduling with Lebanese court system integration
-- Time tracking and sophisticated billing (hourly, fixed, retainer, success, hybrid)
-- Corporate secretary functions (13 Lebanese entity types, share transfers, filings)
-- Financial management (invoices, advances, expenses, reports)
-- Offline-capable desktop application (SQLite)
-- **NEW: Multi-tenant SaaS** (SQL Server, 8-week timeline)
-
----
-
-## Technical Stack
-
-### Desktop (v1.0.0 Shipped)
-- Electron 28.3.3 (desktop app framework)
-- React 18 (frontend UI)
-- SQLite via sql.js (embedded database)
-- Tailwind CSS (styling)
-
-### SaaS (Week 1 Starting Monday)
-**Backend:**
-- Node.js 20+ LTS
-- Express.js 5.x (136 endpoints already coded)
-- SQL Server 2022 (Phase 1 - SmarterASP.NET, $0 cost)
-- mssql package v10+ (connection pooling)
-- JWT + refresh tokens (httpOnly cookies)
-- RBAC with 3 roles (firm_admin, lawyer, staff)
-- **NO Row-Level Security** (use explicit WHERE firm_id = @firmId)
-
-**Frontend:**
-- React 18 (reuse 90% of desktop)
-- React Router v6 (SPA routing)
-- TanStack Query v5 (server state management)
-- Existing api-client.js (2,215 lines, dual-mode already working)
-
-**Development:**
-- Node.js 20+
-- VS Code with PowerShell (Windows)
-- Git for version control
-- electron-builder for desktop distribution
-
----
-
-## Architecture
-
-### Desktop (Current)
-```
-qanuni/
-├── main.js                      # App lifecycle (150 lines)
-├── preload.js                   # IPC bridge
-├── electron/
-│   ├── database.js              # Atomic writes, transactions, integrity (sql.js)
-│   ├── logging.js               # File-based logging (30-day retention)
-│   ├── migrations.js            # 16 versioned migrations
-│   ├── schema.js                # 32 tables + seed data
-│   ├── validation.js            ⚠️ MOVING to shared/ (Week 1 Day 1)
-│   ├── crash-recovery.js        # Crash handling + reports
-│   └── ipc/                     # 22 handler modules, 164 handlers (all complete)
-│       ├── clients.js           # 6 handlers
-│       ├── lawyers.js           # 7 handlers
-│       ├── matters.js           # 6 handlers
-│       ├── invoices.js          # 8 handlers (⚠️ has advance balance bug)
-│       └── ... (18 more)
-├── licensing/                   # License system
-│   ├── license-manager.js      # Runtime validation (ships in installer)
-│   ├── keygen.html             # Admin tool (excluded from build)
-│   └── ...
-├── src/
-│   ├── App.js                   # Main React app (~4,000 lines)
-│   ├── api-client.js            # ✅ 2,215 lines, 150+ methods, dual-mode ready
-│   ├── constants/               # translations.js
-│   ├── utils/                   # validators, formatDate, generateId
-│   └── components/
-│       ├── common/              # Shared components
-│       ├── forms/               # ALL 13 form components (4 need migration)
-│       ├── lists/               # 11 list components
-│       ├── modules/             # Full modules (Dashboard, Calendar, Reports)
-│       └── corporate/           # Corporate Secretary UI
-└── test-integration.js          # 116 integration tests
-```
-
-### SaaS (Starting Week 1)
-```
-qanuni/
-├── electron/                    # Desktop (unchanged, keep working)
-├── src/                         # React (shared by desktop + SaaS)
-│   └── api-client.js           # ✅ Already dual-mode
-├── server/                      # ✅ EXISTS - 136 endpoints coded
-│   ├── api-server.js           # Express skeleton
-│   ├── database.js             # ❌ CREATE - mssql + connection pooling
-│   ├── routes/                 # ✅ 20 files, 136 endpoints to ADAPT
-│   │   ├── clients.js          # 6 endpoints → adapt for SQL Server + auth
-│   │   ├── matters.js          # 7 endpoints → add WHERE firm_id
-│   │   ├── expenses.js         # 6 endpoints → add auth middleware
-│   │   ├── advances.js         # 10 endpoints → convert database calls
-│   │   ├── invoices.js         # 8 endpoints → **FIX ADVANCE BUG HERE**
-│   │   └── ... (15 more)
-│   ├── middleware/             # ❌ CREATE
-│   │   ├── auth.js            # JWT verification
-│   │   ├── roles.js           # RBAC (firm_admin/lawyer/staff)
-│   │   └── audit.js           # Audit logging
-│   └── services/               # ❌ CREATE
-│       ├── emailService.js    # Resend integration (password reset)
-│       └── pdfService.js      # (defer to Phase 2)
-└── shared/                      # ❌ CREATE (Week 1 Day 1)
-    └── validation.js           # ← MOVE from electron/ (zero Electron deps)
-```
-
----
-
-## Database Schema
-
-### Desktop (32 Tables)
-- Core: clients, lawyers, matters, hearings, judgments, deadlines
-- Time & Billing: timesheets, expenses, advances, invoices, invoice_items
-- Organization: tasks, appointments, matter_diary
-- Corporate Secretary: corporate_entities, shareholders, directors, share_transfers, commercial_register_filings, company_meetings
-- Lookups: 6 lookup tables for courts, entity types, etc.
-- System: settings, schema_versions, conflict_check_log, firm_currencies, exchange_rates
-
-### SaaS (32 Desktop + 4 New Tables)
-**New tables (Week 1-2):**
-1. `firms` - Parent of all data (firm_id foreign key)
-2. `users` - Authentication (email, password_hash, role)
-3. `audit_logs` - Compliance tracking (all API calls logged)
-4. `refresh_tokens` - Token revocation support
-
-**Tables needing firm_id added (3 for MVP):**
-- lawyers (add firm_id)
-- deadlines (add firm_id)
-- invoice_items (add firm_id)
-
-**Tables already having firm_id (11 tables):**
-- clients, matters, hearings, judgments, tasks, timesheets, expenses, advances, invoices, appointments, settings
-
-**Key Changes:**
-- Foreign key constraints enabled (same as desktop)
-- Soft deletes (deleted_at column)
-- Multi-tenant isolation via explicit `WHERE firm_id = @firmId`
-- Connection pooling (max: 10, min: 0, idle: 30s)
-- Indexes on all firm_id + primary_key composites
-
----
-
-## IPC Architecture (Desktop - Complete)
-
-**Pattern (all 22 modules follow this):**
+### Handler Pattern (v47.0)
+Every IPC handler follows this structure:
 ```javascript
 ipcMain.handle('channel-name', logger.wrapHandler('channel-name', (event, data) => {
   // 1. Validate input
@@ -281,226 +173,198 @@ ipcMain.handle('channel-name', logger.wrapHandler('channel-name', (event, data) 
 }));
 ```
 
-**All 22 IPC modules:**
-- clients.js (6), lawyers.js (7), matters.js (6), matter-timeline.js (4)
-- diary.js (4), hearings.js (4), judgments.js (4), deadlines.js (6)
-- tasks.js (4), timesheets.js (5), expenses.js (8), advances.js (10)
-- invoices.js (8 - **has advance bug**), appointments.js (4)
-- lookups.js (9), conflict-check.js (2), corporate.js (24)
-- trash.js (5), settings.js (22), reports.js (12), client-imports.js (2)
-- license.js (fail-closed licensing)
+### Database Column Names (INCONSISTENT — Check Every Time!)
+| Table | English | Arabic |
+|-------|---------|--------|
+| lawyers | name | name_arabic |
+| lookup_* | name_en | name_ar |
+| clients | client_name | client_name_arabic |
+| matters | matter_name | matter_name_arabic |
 
-**Total:** 164 handlers (was 163, found client-imports.js in Session 23)
+**Lawyers special case:** DB stores `name`/`name_arabic`, queries alias to `full_name`/`full_name_arabic`, frontend sends `full_name`/`full_name_arabic`, validation schema uses `full_name`.
 
----
+> ⚠️ ALWAYS verify against `CREATE TABLE` in `electron/schema.js` before writing queries.
 
-## REST API Architecture (SaaS - Week 1-8)
+### React Hooks Rule
+ALL hooks must be called BEFORE any early return (`if (!isOpen) return null`).
 
-**Pattern (Week 5-6 adaptation):**
+### Bilingual Display (Inline Ternaries — Current Approach)
 ```javascript
-const { authMiddleware } = require('../middleware/auth');
-const database = require('../database');
+// Lawyers
+{language === 'ar' ? (l.full_name_arabic || l.full_name) : l.full_name}
 
-router.get('/api/clients', authMiddleware, async (req, res) => {
-  const firmId = req.user.firmId; // From JWT
-  
-  const clients = await database.query(
-    `SELECT * FROM clients 
-     WHERE firm_id = @firmId AND deleted_at IS NULL`,
-    { firmId }
-  );
-  
-  res.json(clients);
-});
+// Lookups
+{language === 'ar' ? item.name_ar : item.name_en}
+```
+> Full Arabic UI is deferred. Do NOT attempt centralized i18n extraction.
+
+### Form Locations (v46.56)
+ALL forms live in `src/components/forms/` (13 forms). The old `src/forms/` directory was removed.
+
+## Build Commands
+
+### Desktop
+- `npm run dev` — Development (production DB)
+- `npm run dev:test` — Development (test DB)
+- `npm run dist:clean` — Build for testing
+- `npm run dist` — Build for release
+- `node test-integration.js` — Run 118 integration tests (MANDATORY before commit)
+- `git checkout preload.js` — Restore after dist if modified
+
+### SaaS (Week 1+)
+- `node server/index.js` — Start Express server (after Week 1 Day 2)
+- `node test-mssql-connection.js` — Verify SQL Server connection
+- `npm test` — Run API tests (after Week 2)
+
+## Project Location
+`C:\Projects\qanuni\`
+
+## Architecture
+
+### Desktop (v1.0.0 - Complete)
+```
+electron/
+├── database.js          # SQLite - Atomic writes, safe IDs, transactions
+├── logging.js           # File-based logging (%APPDATA%/Qanuni/logs/)
+├── migrations.js        # Versioned, trackable migrations (16 migrations)
+├── schema.js            # 27 CREATE TABLE statements + seed data
+└── ipc/                 # 21 handler modules (all ✓ complete)
+    ├── clients.js       # 6 handlers
+    ├── license.js       # Fail-closed licensing
+    ├── lawyers.js       # 7 handlers
+    ├── matters.js       # 6 handlers
+    ├── diary.js         # 4 handlers
+    ├── hearings.js      # 4 handlers
+    ├── judgments.js      # 4 handlers
+    ├── deadlines.js     # 6 handlers
+    ├── tasks.js         # 4 handlers
+    ├── timesheets.js    # 5 handlers
+    ├── expenses.js      # 8 handlers
+    ├── advances.js      # 10 handlers
+    ├── invoices.js      # 8 handlers
+    ├── appointments.js  # 4 handlers
+    ├── lookups.js       # 9 handlers
+    ├── conflict-check.js # 2 handlers
+    ├── corporate.js     # 24 handlers
+    ├── trash.js         # 5 handlers
+    ├── settings.js      # ~22 handlers
+    ├── reports.js       # ~12 handlers
+    └── client-imports.js # 2 handlers
+
+src/
+├── App.js              # ~4,000 lines — needs Phase 3 restructuring
+├── constants/          # translations.js (basic, pre-i18n)
+├── utils/              # validators, formatDate, generateId
+└── components/
+    ├── common/         # Shared components (FormField, ExportButtons, etc.)
+    ├── forms/          # ALL 13 form components
+    ├── lists/          # 11 list components
+    ├── modules/        # Full modules (Dashboard, Calendar, Reports, etc.)
+    ├── corporate/      # Corporate Secretary (EntitiesList, EntityForm)
+    └── reports/corporate/  # Corporate report modals
 ```
 
-**All 20 route modules (136 endpoints already coded):**
-- clients.js (6), matters.js (7), lawyers.js (7), timesheets.js (5)
-- expenses.js (6), advances.js (10), invoices.js (8), invoice_items (embedded)
-- hearings.js (4), judgments.js (4), deadlines.js (6), tasks.js (4)
-- appointments.js (4), diary.js (4), lookups.js (9), conflict-check.js (2)
-- corporate.js (25+), trash.js (5), settings.js (14), reports.js (3)
+### SaaS (Week 1+ - In Progress)
+```
+shared/                  # ✅ Week 1 Day 1 - Code shared between Desktop & SaaS
+├── validation.js        # Input validation (moved from electron/)
+└── (future shared utils)
 
-**Total:** 136 endpoints (need SQL Server + auth + firm_id adaptation)
+server/                  # ✅ Week 1 Day 1 - SaaS backend (Express + SQL Server)
+├── database.js          # SQL Server connection + helpers (msnodesqlv8 + tedious)
+├── index.js             # 🔜 Week 1 Day 2 - Express server entry point
+├── routes/              # 🔜 Week 1 Day 2+ - REST API endpoints
+│   ├── auth.js          # Login, registration, JWT
+│   ├── clients.js       # Client CRUD
+│   ├── matters.js       # Matter CRUD
+│   └── (21 route modules total)
+└── middleware/          # 🔜 Week 1 Day 3 - Auth, validation, error handling
 
----
+test-mssql-connection.js # ✅ Week 1 Day 1 - SQL Server verification script
+.env                     # ✅ Week 1 Day 1 - Environment configuration (gitignored)
+```
 
-## Known Limitations
+### SQL Server Configuration (Week 1 Day 1)
+- **Version:** SQL Server 2025 Express (MSSQL17.SQLEXPRESS)
+- **Server:** localhost\SQLEXPRESS
+- **Database:** qanuni (created, empty)
+- **Authentication:** 
+  - Local dev: Windows Auth via msnodesqlv8
+  - Production: SQL Auth via tedious (auto-selected by server/database.js)
+- **Protocols:** TCP/IP enabled, Named Pipes enabled
+- **Connection:** Verified working (3/3 tests passing)
+
+## After Major Changes
+- Run `node test-integration.js` — must pass before commit
+- Run `node test-mssql-connection.js` — verify SQL Server (SaaS work)
+- Update `KNOWN_FIXES.md` for bug fixes
+- Update `CLAUDE.md` for structural changes, phase completions
+- Update `test-integration.js` when adding new IPC handlers
+- Remind user to commit before any dist build
+
+## Safety Rules
+- NEVER use PowerShell for file edits — Claude Code Chat handles file operations
+- NEVER deliver full JS files containing Arabic text — use Node.js scripts with \uXXXX escapes
+- ALWAYS run `node test-integration.js` before committing
+- ALWAYS run `node test-mssql-connection.js` before SaaS commits
+- ALWAYS commit before `npm run dist`
+- After ANY batch file modification, run Arabic integrity scan before proceeding
+- Check `KNOWN_FIXES.md` before refactoring existing components
+- NEVER commit .env file (already gitignored ✅)
+
+## Context Management
+- Proactively report conversation context status (% used) every 5-6 exchanges
+- Alert at 75% to create checkpoint
+- At end of sessions with major structural changes, remind to update CLAUDE.md
+
+## Known Issues
 
 ### Desktop v1.0.0
-- Single-user model (no multi-user collaboration)
-- No cloud sync (offline-only)
-- Windows-only (no Mac/Linux builds yet)
-- **Invoice delete bug:** Doesn't restore advance.balance_remaining
+- **Invoice delete bug:** Doesn't restore advance balance (fix in v1.0.1 or during SaaS Week 5-6)
 
-### SaaS Phase 1 (MVP)
-- 17 tables use AUTOINCREMENT (not UUIDs) - acceptable for MVP, migrate to UUIDs in Phase 2
-- No file uploads (expense receipts text-only) - defer to Phase 2
-- No PDF generation server-side - defer to Phase 2
-- Basic audit logs only (no compliance reports) - enhance in Phase 2
-- SmarterASP.NET capacity: 20-30 users max - migrate to DigitalOcean PostgreSQL when scaling
+### SaaS Decisions
+- **RLS decision:** Skip RLS for Phase 1, use explicit `WHERE firm_id = @firmId` clauses
+- **Database limitation:** SQLite AUTOINCREMENT accepted for MVP, migrate to sequences in Phase 2
+- **Driver architecture:** msnodesqlv8 (local Windows Auth) + tedious (production SQL Auth)
 
----
+### Known Working Configurations
+- **Desktop tests:** 118/118 passing consistently
+- **SQL Server tests:** 3/3 passing with msnodesqlv8
+- **Environment:** .env file with empty DB_USER/DB_PASSWORD = Windows Auth
+- **Validation:** Now in shared/validation.js (imported by 16 IPC files)
 
-## Roadmap
+## Week 1 Progress Tracker
 
-**v1.0.0 (Complete - Feb 13, 2026):**
-- Desktop application shipped (104.64 MB installer)
-- Production licensing system active
-- 116 integration tests passing
-- All hardening phases complete
+### ✅ Day 1 Complete (5 hours)
+- Phase 1: Shared code foundation
+  - Created shared/ directory
+  - Moved validation.js from electron/ to shared/
+  - Updated 16 IPC files to import from ../../shared/validation
+  - Tests: 118/118 passing
+- Phase 2: Database layer foundation
+  - Installed SQL Server 2025 Express
+  - Enabled TCP/IP protocol
+  - Created .env with JWT secrets + SQL Server config
+  - Installed mssql, dotenv, msnodesqlv8 packages
+  - Created server/database.js (dual-driver architecture)
+  - Created test-mssql-connection.js
+  - Tests: 3/3 passing
 
-**v1.0.1 (Optional Desktop Patch):**
-- Fix invoice delete advance balance restoration bug
-- Estimated effort: 30 minutes + testing
-- Priority: MEDIUM (not critical for existing users)
+### 🔜 Day 2 (4 hours) - Next Session
+- Install Express + middleware packages
+- Create server/index.js (Express app)
+- Create server/routes/auth.js (health check endpoint)
+- Test first API call: GET /health
 
-**SaaS MVP (Week 1-8 - Starting Monday):**
-- Week 1-2: Database layer (sql.js → mssql) ← BLOCKER
-- Week 3-4: Auth + RBAC (JWT, users, roles)
-- Week 5-6: REST API adaptation (136 endpoints + **fix invoice bug**)
-- Week 7: Frontend adaptation (React Router, 4 forms)
-- Week 8: Integration testing + deploy
+### 🔜 Day 3 (6 hours)
+- Create middleware (auth, validation, error handling)
+- Add CORS configuration
+- Create login/register endpoints
+- Test authentication flow
 
-**SaaS Phase 2 (Month 2-4):**
-- Stripe billing integration
-- File uploads (expense receipts, documents)
-- PDF generation server-side
-- Remaining 15 modules (hearings, judgments, corporate)
-- Migrate AUTOINCREMENT → UUIDs
-- Enhanced audit logs + compliance reports
+### 🔜 Day 4 (6 hours)
+- Create clients CRUD endpoints
+- Test with Postman/Thunder Client
+- Verify firm_id isolation working
 
-**SaaS Phase 3 (Month 5-6):**
-- Migrate to DigitalOcean + PostgreSQL
-- Native Row-Level Security (RLS)
-- 100+ active users support
-- SOC 2 compliance (if enterprise demand)
-
----
-
-## Success Metrics
-
-**Desktop v1.0.0 (Achieved):**
-- ✅ 104.64 MB installer (was 169 MB before security fixes)
-- ✅ 116/116 integration tests passing
-- ✅ Sub-second response times (5.9ms startup, 86.8ms max module load)
-- ✅ 26,268 test records processed without degradation
-- ✅ Licensing system enforced (machine-bound, 7-day grace)
-
-**SaaS Week 8 (Launch Targets):**
-- 5-10 beta users onboarded
-- 0 data leak incidents (multi-tenancy working)
-- <500ms average API response time
-- 99%+ uptime
-- Arabic text rendering correctly
-- **Advance balance restoration verified (bug fixed)**
-
-**SaaS Month 2 (Post-Launch):**
-- 20+ active users
-- Stripe billing integrated
-- <1% error rate (Sentry)
-- 15 remaining modules shipped
-
-**SaaS Month 5-6 (Scale):**
-- Migrate to PostgreSQL
-- 100+ active users
-- SOC 2 planning
-
----
-
-## Resources
-
-### Strategy Documents
-- **SESSION_23_SAAS_FINAL_ROADMAP_v2.md** - 10/10 verified plan (8-week timeline)
-- **SESSION_24_CHECKPOINT.md** - Full verification journey (7.5 → 10/10)
-- **WEEK_1_IMPLEMENTATION_GUIDE.md** - Tactical Monday reference (to be created)
-- **QANUNI_HARDENING_STRATEGY.md** - Desktop 6-phase improvement plan (complete)
-
-### Code Standards
-- **PATTERNS.md** - Code standards and conventions
-- **KNOWN_FIXES.md** - Bug fixes and solutions (updated with invoice bug)
-
-### Session Reports
-- SESSION_20_SUCCESS_REPORT.md - v1.0.0 production release
-- SESSION_21_CHECKPOINT.md - Production audit
-- SESSION_22_CHECKPOINT.md - SaaS hosting strategy
-- SESSION_23_CHECKPOINT.md - Initial SaaS plan (7.5/10)
-- SESSION_24_CHECKPOINT.md - Final verification (10/10)
-
-### Licensing Tools (Desktop)
-- licensing/keygen.html - HTML UI for generating keys
-- licensing/key-generator.js - CLI backup tool
-- licensing/license-manager.js - Runtime validation
-- All keygen tools excluded from installer (security)
-
----
-
-## Session Notes
-
-Proactively report conversation context status (% used) every 5-6 exchanges, alert at 70% to create checkpoint. At end of sessions with major structural changes, update CLAUDE.md in project root. When fixing recurring bugs, update KNOWN_FIXES.md with version, cause, fix, and test case.
-
-**Session 24 completed SaaS plan verification (10/10).** Four rounds of verification with Claude Code (filesystem access) identified:
-- 136 REST endpoints already coded (not empty stubs)
-- Critical invoice delete bug (advance balance not restored)
-- RLS race condition (decided to skip RLS, use WHERE clauses)
-- Timeline correction (9 weeks → 8 weeks)
-- Minor doc errors (firm_id count, AUTOINCREMENT limitation)
-
-All issues documented in SESSION_23_SAAS_FINAL_ROADMAP_v2.md. Ready for Week 1 implementation Monday.
-
-**Session 23 completed initial SaaS planning.** Validated existing SmarterASP.NET Premium Plan (3GB RAM, 10GB SQL Server, paid through March 2028). Chose SQL Server over PostgreSQL for MVP. Architecture: Node.js + Express + IISNode + JWT auth + multi-tenant firm_id. Timeline: 8 weeks for MVP (corrected from 9 in Session 24). Year 1 hosting cost: $0.
-
-**Session 22 completed SaaS strategy and hosting analysis.** Full SaaS Platform (Option A) chosen over Hybrid model.
-
-**Session 21 completed production audit.** Resolved stale SESSION_20_CHECKPOINT.md discrepancies, confirmed v1.0.0 production-ready.
-
-**Session 19 completed licensing system implementation (v49.8).** All keygen tools excluded from installer for security. Production LICENSE_SALT active - all previous development keys invalidated.
-
----
-
-## v1.0.0 - Production Release (Session 20 - Feb 13, 2026)
-
-**Status:** Production-ready installer created  
-**Installer:** `Qanuni Setup 1.0.0.exe` (104.64 MB)  
-**Tests:** 116/116 passing  
-**Known Issues:** Invoice delete doesn't restore advance balance (fix in v1.0.1 or SaaS Week 5-6)
-
-### Session 20 Accomplishments
-
-**Security Fix:**
-- Fixed critical keygen file inclusion bug
-- Changed `package.json` licensing whitelist from `/**/*` to `/license-manager.js`
-- Verified keygen tools excluded from distribution
-- Installer size reduced to 104.64 MB
-
-**Documentation:**
-- Created `README.txt` (5.8 KB) - User installation and activation guide
-- Created `KEYGEN_USAGE.md` (11.4 KB) - Internal license management workflow
-- README.txt bundled in installer package
-
-**Final Build:**
-- Production NSIS installer created via `npm run dist`
-- Block map generated for auto-updates
-- Security verification: Keygen tools NOT in distribution ✅
-
-### Key Learnings
-- `package.json` build config overrides `electron-builder.yml` when both present
-- Whitelist patterns in files array override blacklist exclusions
-- Must explicitly whitelist only necessary files from sensitive directories
-- Installer size reduction (169 MB → 104 MB) confirms successful exclusions
-
-### Production Checklist ✅
-- [x] All tests passing (116/116)
-- [x] Security verified (keygen excluded)
-- [x] Documentation complete (README + KEYGEN_USAGE)
-- [x] Installer created (104.64 MB)
-- [x] Git history clean
-- [ ] Code signing certificate (optional for v1.0)
-- [ ] Update server configured (optional for v1.0)
-- [ ] Installation tested on clean Windows system (recommended)
-
-**Ready for distribution** to early adopters and beta customers.
-
----
-
-*For detailed session reports, see SESSION_XX_*.md files in project root.*
+**Week 1 Status:** 25% complete (Day 1 of 4), on track

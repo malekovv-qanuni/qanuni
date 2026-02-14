@@ -292,6 +292,32 @@ placeholder="📋"  // Line 156
 
 ---
 
+## Invoice Delete Doesn't Restore Advance Balance
+**Version:** v1.0.0 (desktop), identified in Session 24 (SaaS planning)
+**Severity:** CRITICAL – Financial data loss
+**Status:** Documented, fix scheduled for SaaS Week 5-6 (optional v1.0.1 desktop patch)
+
+**Issue:** When deleting an invoice that used retainer deduction, the function correctly unlinks timesheets and expenses, but **fails to restore the advance balance_remaining**.
+
+**Location:** `electron/ipc/invoices.js` – deleteInvoice handler (desktop)
+**Location:** `server/routes/invoices.js` – DELETE /api/invoices/:id (SaaS)
+
+**Impact:** If an invoice applied $5,000 retainer from a $20,000 advance, deleting that invoice leaves balance_remaining at $15,000 instead of restoring it to $20,000. The $5,000 is permanently lost.
+
+**Root cause:** The deleteInvoice handler unlinks timesheets (→draft), unlinks expenses (→pending), and soft-deletes the invoice, but has **no code to restore advance.balance_remaining**.
+
+**Fix:** Before soft-deleting, query the invoice's `retainer_applied` and `retainer_advance_id`, then `UPDATE advances SET balance_remaining = balance_remaining + retainer_applied WHERE advance_id = retainer_advance_id`.
+
+**Pattern – Always Check Cross-Table Impacts on Delete:**
+1. List ALL tables the entity writes to (not just direct FKs)
+2. For each table, determine if changes are reversible
+3. Implement reverse operations in delete handler
+4. Add integration tests verifying all reversals
+
+**Test:** Create advance ($20k) → Create invoice applying $5k retainer → Delete invoice → Verify advance balance restored to $20k
+
+---
+
 ## How to Use This File
 
 1. **Before refactoring:** Check if the component has known fixes listed here
@@ -303,4 +329,4 @@ placeholder="📋"  // Line 156
 
 ---
 
-*Last updated: v48.2 – February 10, 2026 - Added Pre-Session Baseline Verification process*
+*Last updated: v1.0.0 – February 14, 2026 - Added Invoice Delete advance balance bug (Session 24)*

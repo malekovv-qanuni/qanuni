@@ -237,4 +237,3 @@ contextBridge.exposeInMainWorld('electronAPI', {
   clearLicense: () => ipcRenderer.invoke('license:clear'),
 });
 
-console.log('Preload script loaded - v46.55 with Office File No. uniqueness check');

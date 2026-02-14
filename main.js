@@ -11,7 +11,7 @@
  * All database operations go through electron/database.js
  * All logging goes through electron/logging.js
  * 
- * @version 2.0.0 (Phase 2 Hardening — Complete)
+ * @version 1.0.0 (Production Release)
  */
 
 const { app, BrowserWindow, dialog, shell } = require('electron');
