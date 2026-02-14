@@ -726,6 +726,43 @@ const schemas = {
     is_active: { required: false },
     user_id: { type: 'number' },
     notes: { type: 'string' }
+  },
+
+  // ==================== SaaS HEARING SCHEMA ====================
+  // Separate from desktop 'hearing' schema to avoid conflicts.
+  // firm_id comes from JWT token (req.user.firm_id), not from request body.
+  // matter_id existence is validated in route handler (FK check).
+
+  hearing_saas: {
+    matter_id: {
+      required: true,
+      type: 'number',
+      label: 'Matter'
+    },
+    hearing_date: {
+      required: true,
+      type: 'date',
+      label: 'Hearing date'
+    },
+    hearing_time: {
+      type: 'string',
+      pattern: /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/,
+      patternMessage: 'Hearing time must be HH:MM or HH:MM:SS format'
+    },
+    hearing_type: {
+      type: 'string',
+      oneOf: ['initial', 'status', 'trial', 'sentencing', 'appeal', 'other']
+    },
+    court_name: { type: 'string', maxLength: 200 },
+    court_room: { type: 'string', maxLength: 50 },
+    judge_name: { type: 'string', maxLength: 200 },
+    outcome: {
+      type: 'string',
+      oneOf: ['pending', 'continued', 'decided', 'settled', 'dismissed']
+    },
+    outcome_notes: { type: 'string' },
+    next_hearing_date: { type: 'date' },
+    reminder_days: { type: 'number', min: 0, max: 365 }
   }
 };
 
