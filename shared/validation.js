@@ -746,6 +746,28 @@ const schemas = {
     description: { type: 'string', maxLength: 10000 }
   },
 
+  // ==================== SaaS TASK SCHEMA ====================
+  // Separate from desktop 'task' schema to avoid conflicts.
+  // firm_id comes from JWT token (req.user.firm_id), not from request body.
+  // Optional FKs (matter_id, client_id, hearing_id, assigned_to) validated in route handler.
+
+  task_saas: {
+    title: { required: true, type: 'string', minLength: 2, maxLength: 500, label: 'Task title' },
+    description: { type: 'string', maxLength: 10000 },
+    instructions: { type: 'string', maxLength: 10000 },
+    due_date: { type: 'date', label: 'Due date' },
+    due_time: { type: 'string', label: 'Due time' },
+    time_budget_minutes: { type: 'number', min: 1, max: 9999, label: 'Time budget (minutes)' },
+    priority: { type: 'string', oneOf: ['high', 'medium', 'low'], label: 'Priority' },
+    status: { type: 'string', oneOf: ['assigned', 'in_progress', 'done', 'cancelled'], label: 'Status' },
+    matter_id: { type: 'number', label: 'Matter' },
+    client_id: { type: 'number', label: 'Client' },
+    hearing_id: { type: 'number', label: 'Hearing' },
+    assigned_to: { type: 'number', label: 'Assigned to' },
+    completion_notes: { type: 'string', maxLength: 10000 },
+    notes: { type: 'string', maxLength: 10000 }
+  },
+
   hearing_saas: {
     matter_id: {
       required: true,

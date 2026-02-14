@@ -18,7 +18,7 @@ let failed = 0;
 let totalAssertions = 0;
 
 // Track created resources for cleanup
-const cleanup = { clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
+const cleanup = { tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
 
 // ==================== HTTP Helper ====================
 
@@ -458,6 +458,101 @@ async function testDiary() {
   assert('Deleted entry not in list', !t36list.body.data.find(e => e.diary_id === testDiaryId));
 }
 
+// ==================== Tasks Tests ====================
+
+async function testTasks() {
+  console.log('\n--- TASKS TESTS ---\n');
+
+  // Test 37: Create task (comprehensive - with matter + lawyer)
+  console.log('  Test 37: Create task (comprehensive)');
+  const t37 = await request('POST', '/api/tasks', {
+    title: 'Review contract',
+    description: 'Annual lease agreement',
+    matter_id: cleanup.matters[0],
+    priority: 'high',
+    status: 'assigned',
+    assigned_to: cleanup.lawyers[0],
+    due_date: '2026-03-15'
+  });
+  assert('Status 201', t37.status === 201, 'Got ' + t37.status);
+  assert('Has task object', t37.body.task != null);
+  assert('Has task_id', t37.body.task && t37.body.task.task_id > 0);
+  assert('task_number format', t37.body.task && t37.body.task.task_number && t37.body.task.task_number.startsWith('WA-2026-'));
+  assert('Priority is high', t37.body.task && t37.body.task.priority === 'high');
+  const testTaskId = t37.body.task ? t37.body.task.task_id : null;
+  if (testTaskId) cleanup.tasks.push(testTaskId);
+
+  // Test 38: Create task (minimal - title only)
+  console.log('\n  Test 38: Create task (minimal)');
+  const t38 = await request('POST', '/api/tasks', {
+    title: 'Minimal task'
+  });
+  assert('Status 201', t38.status === 201, 'Got ' + t38.status);
+  assert('Created successfully', t38.body.success === true);
+  assert('Default priority medium', t38.body.task && t38.body.task.priority === 'medium');
+  assert('Default status assigned', t38.body.task && t38.body.task.status === 'assigned');
+  if (t38.body.task) cleanup.tasks.push(t38.body.task.task_id);
+
+  // Test 39: Reject invalid matter_id
+  console.log('\n  Test 39: Reject invalid matter_id');
+  const t39 = await request('POST', '/api/tasks', {
+    title: 'Bad task',
+    matter_id: 99999
+  });
+  assert('Status 404', t39.status === 404, 'Got ' + t39.status);
+  assert('Error mentions Matter', t39.body.error && t39.body.error.includes('Matter not found'));
+
+  // Test 40: List tasks
+  console.log('\n  Test 40: List tasks');
+  const t40 = await request('GET', '/api/tasks');
+  assert('Has data array', Array.isArray(t40.body.data));
+  assert('Has pagination', t40.body.pagination != null);
+  assert('Has at least 2 tasks', t40.body.data.length >= 2, 'Got ' + t40.body.data.length);
+
+  // Test 41: Filter by status
+  console.log('\n  Test 41: Filter by status');
+  const t41 = await request('GET', '/api/tasks?status=assigned');
+  assert('Returns assigned tasks', t41.body.data.length >= 1);
+  assert('All are assigned', t41.body.data.every(t => t.status === 'assigned'));
+
+  // Test 42: Filter by matter_id
+  console.log('\n  Test 42: Filter by matter_id');
+  const t42 = await request('GET', '/api/tasks?matter_id=' + cleanup.matters[0]);
+  assert('Returns tasks for matter', t42.body.data.length >= 1, 'Got ' + t42.body.data.length);
+  assert('All match matter_id', t42.body.data.every(t => t.matter_id === cleanup.matters[0]));
+
+  // Test 43: Get single task
+  console.log('\n  Test 43: Get single task');
+  const t43 = await request('GET', '/api/tasks/' + testTaskId);
+  assert('Status 200', t43.status === 200, 'Got ' + t43.status);
+  assert('Has task object', t43.body.task != null);
+  assert('task_id matches', t43.body.task && t43.body.task.task_id === testTaskId);
+  assert('Has matter_name from JOIN', t43.body.task && t43.body.task.matter_name != null);
+
+  // Test 44: Update task
+  console.log('\n  Test 44: Update task');
+  const t44 = await request('PUT', '/api/tasks/' + testTaskId, {
+    title: 'Updated review contract',
+    status: 'in_progress',
+    priority: 'medium',
+    completion_notes: 'Reviewed sections 1-3'
+  });
+  assert('Status 200', t44.status === 200, 'Got ' + t44.status);
+  assert('Title updated', t44.body.task && t44.body.task.title === 'Updated review contract');
+  assert('Status updated', t44.body.task && t44.body.task.status === 'in_progress');
+
+  // Test 45: Soft delete task
+  console.log('\n  Test 45: Soft delete task');
+  const deleteTaskId = cleanup.tasks[1]; // Delete the minimal task
+  const t45 = await request('DELETE', '/api/tasks/' + deleteTaskId);
+  assert('Status 200', t45.status === 200, 'Got ' + t45.status);
+  assert('Success message', t45.body.message === 'Task deleted successfully');
+
+  // Verify not in list
+  const t45list = await request('GET', '/api/tasks');
+  assert('Deleted task not in list', !t45list.body.data.find(t => t.task_id === deleteTaskId));
+}
+
 // ==================== Cross-Resource Tests ====================
 
 async function testCrossResource() {
@@ -526,7 +621,12 @@ async function testCrossResource() {
 async function cleanupData() {
   console.log('\nCleanup...');
 
-  // Delete in reverse dependency order: diary -> hearings -> matters -> lawyers -> clients
+  // Delete in reverse dependency order: tasks -> diary -> hearings -> matters -> lawyers -> clients
+  for (const id of cleanup.tasks) {
+    await request('DELETE', '/api/tasks/' + id);
+  }
+  console.log('  Deleted ' + cleanup.tasks.length + ' tasks');
+
   for (const id of cleanup.diary) {
     await request('DELETE', '/api/diary/' + id);
   }
@@ -563,6 +663,7 @@ async function run() {
     await testSearch();
     await testFilters();
     await testDiary();
+    await testTasks();
     await testCrossResource();
     await cleanupData();
   } catch (err) {
