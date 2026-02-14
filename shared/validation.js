@@ -689,6 +689,43 @@ const schemas = {
     address_arabic: { type: 'string', maxLength: 500 },
     notes: { type: 'string' },
     is_active: { required: false }
+  },
+
+  // ==================== SaaS LAWYER SCHEMA ====================
+  // Separate from desktop 'lawyer' schema to avoid conflicts.
+  // SaaS uses full_name/full_name_arabic directly in DB columns.
+  // Desktop uses name/name_arabic in DB, aliased to full_name in queries.
+  // firm_id comes from JWT token (req.user.firm_id), not from request body.
+
+  lawyer_saas: {
+    full_name: {
+      required: true,
+      type: 'string',
+      minLength: 2,
+      maxLength: 200,
+      label: 'Lawyer name'
+    },
+    full_name_arabic: {
+      type: 'string',
+      maxLength: 200
+    },
+    email: {
+      type: 'string',
+      maxLength: 255
+    },
+    phone: { type: 'string', maxLength: 50 },
+    mobile: { type: 'string', maxLength: 50 },
+    role: {
+      type: 'string',
+      required: false,
+      oneOf: ['partner', 'senior_associate', 'associate', 'paralegal', 'clerk', 'of_counsel']
+    },
+    hourly_rate: { type: 'number' },
+    hourly_rate_currency: { type: 'string', maxLength: 10 },
+    hire_date: { type: 'string' },
+    is_active: { required: false },
+    user_id: { type: 'number' },
+    notes: { type: 'string' }
   }
 };
 
