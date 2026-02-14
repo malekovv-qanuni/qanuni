@@ -132,13 +132,13 @@ async function run() {
   // Test 5: List lawyers with role filter
   console.log('\nTest 5: List lawyers with role filter');
   const t5all = await request('GET', '/api/lawyers');
-  assert('List returns array', t5all.body.lawyers && Array.isArray(t5all.body.lawyers));
-  assert('Count >= 4', t5all.body.count >= 4, 'Got count ' + t5all.body.count);
-  assert('Sorted by full_name', t5all.body.lawyers.length >= 2 && t5all.body.lawyers[0].full_name <= t5all.body.lawyers[1].full_name);
+  assert('List returns array', t5all.body.data && Array.isArray(t5all.body.data));
+  assert('Count >= 4', t5all.body.pagination.total >= 4, 'Got count ' + t5all.body.pagination.total);
+  assert('Sorted by full_name', t5all.body.data.length >= 2 && t5all.body.data[0].full_name <= t5all.body.data[1].full_name);
 
   const t5role = await request('GET', '/api/lawyers?role=partner');
-  assert('Role filter returns partners only', t5role.body.lawyers && t5role.body.lawyers.every(l => l.role === 'partner'));
-  assert('Partner count is 1', t5role.body.count === 1, 'Got ' + t5role.body.count);
+  assert('Role filter returns partners only', t5role.body.data && t5role.body.data.every(l => l.role === 'partner'));
+  assert('Partner count is 1', t5role.body.pagination.total === 1, 'Got ' + t5role.body.pagination.total);
 
   // Test 6: Update lawyer role and rate
   console.log('\nTest 6: Update lawyer role and hourly_rate');
@@ -159,7 +159,7 @@ async function run() {
 
   // Verify deleted lawyer not in list
   const t7list = await request('GET', '/api/lawyers');
-  const deletedInList = t7list.body.lawyers.find(l => l.lawyer_id === LAWYER_ID);
+  const deletedInList = t7list.body.data.find(l => l.lawyer_id === LAWYER_ID);
   assert('Deleted lawyer not in list', !deletedInList);
 
   // Verify GET /:id returns 404
@@ -169,10 +169,10 @@ async function run() {
   // Cleanup: delete test lawyers
   console.log('\nCleanup...');
   const allLawyers = await request('GET', '/api/lawyers');
-  for (const l of allLawyers.body.lawyers) {
+  for (const l of allLawyers.body.data) {
     await request('DELETE', '/api/lawyers/' + l.lawyer_id);
   }
-  console.log('  Cleaned up ' + allLawyers.body.count + ' test lawyers');
+  console.log('  Cleaned up ' + allLawyers.body.pagination.total + ' test lawyers');
 
   // Summary
   console.log('\n============================================');

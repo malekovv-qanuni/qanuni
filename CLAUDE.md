@@ -4,9 +4,11 @@
 - **Desktop Version:** v1.0.0 (shipped)
 - **Desktop Backend:** Fully modularized — 21 IPC modules, 163 handlers
 - **Desktop Tests:** 118 integration tests passing (`node test-integration.js`)
-- **SaaS Transformation:** Week 1 Day 1 complete (Phase 2: Database layer foundation)
-- **SQL Server:** Configured, tested, Windows Auth working via msnodesqlv8
-- **Next:** Week 1 Day 2 - First REST endpoint (Express + health check)
+- **SaaS Transformation:** Week 2 Complete (100%) - All Core Resources + Pagination + Integration Tests
+- **SQL Server:** 7 tables (firms, users, clients, matters, matter_clients, lawyers, hearings)
+- **API Endpoints:** 34 total (14 auth + 5 clients + 5 matters + 5 lawyers + 5 hearings) - all with pagination/search/filters
+- **SaaS Tests:** 70/70 assertions passing (`node test-integration-saas.js`)
+- **Next:** Week 3 - Additional Resource Endpoints (Diary, Tasks, Judgments)
 
 ## Three-Party Workflow
 
@@ -77,8 +79,8 @@ At the start of EVERY new chat:
 - `preload.js` — if adding new IPC channels
 
 **For SaaS transformation:**
-- SESSION_25_CHECKPOINT.md (or latest session checkpoint)
-- WEEK_1_DAY_X_READY.md — tactical execution plan for current day
+- SESSION_31_CHECKPOINT.md (or latest session checkpoint)
+- WEEK_2_DAY_X_READY.md — tactical execution plan for current day (if exists)
 - SESSION_23_SAAS_FINAL_ROADMAP_v2.md — 10/10 verified strategy (reference)
 
 ## Before Writing New Code
@@ -95,13 +97,15 @@ Please audit the following before we proceed with [task description]:
    - Search electron/ipc/ for: [related handlers]
 
 2. Verify table schema if modifying database:
-   - Review CREATE TABLE statements in electron/schema.js
+   - Review CREATE TABLE statements in electron/schema.js (desktop) or server/schema-*.sql (SaaS)
    - Confirm column names (especially bilingual fields)
    - Check for foreign key relationships
+   - Verify PK naming ({entity}_id pattern for SaaS)
 
 3. Check validation schema if handling new data:
    - Review shared/validation.js schemas
    - Verify required fields and types match database
+   - Confirm format (flat object for SaaS, custom for desktop)
 
 4. Find similar component usage patterns:
    - Search src/components/ for: [similar functionality]
@@ -130,6 +134,8 @@ Please provide:
 - Column name mismatches
 - Breaking existing patterns
 - Missing validation schemas
+- FK reference errors (e.g., firms(id) vs firms(firm_id))
+- Inconsistent timestamp functions (GETDATE vs GETUTCDATE)
 
 ## Critical Rules
 
@@ -183,7 +189,14 @@ ipcMain.handle('channel-name', logger.wrapHandler('channel-name', (event, data) 
 
 **Lawyers special case:** DB stores `name`/`name_arabic`, queries alias to `full_name`/`full_name_arabic`, frontend sends `full_name`/`full_name_arabic`, validation schema uses `full_name`.
 
-> ⚠️ ALWAYS verify against `CREATE TABLE` in `electron/schema.js` before writing queries.
+> ⚠️ ALWAYS verify against `CREATE TABLE` in `electron/schema.js` (desktop) or `server/schema-*.sql` (SaaS) before writing queries.
+
+### SaaS Naming Conventions (Week 2 Learnings)
+- **Primary Keys:** Always `{entity}_id` (e.g., `hearing_id`, `matter_id`, `lawyer_id`)
+- **Foreign Keys:** Reference `{table}({entity}_id)` (e.g., `firms(firm_id)`, not `firms(id)`)
+- **Timestamps:** Always use `GETUTCDATE()` (never `GETDATE()`)
+- **Audit Columns:** Include `created_by INT NOT NULL` with FK to `users(user_id)`
+- **Indexes:** Separate `CREATE INDEX` statements with `GO`, filtered WHERE clauses for soft deletes
 
 ### React Hooks Rule
 ALL hooks must be called BEFORE any early return (`if (!isOpen) return null`).
@@ -205,14 +218,14 @@ ALL forms live in `src/components/forms/` (13 forms). The old `src/forms/` direc
 
 ### Desktop
 - `npm run dev` — Development (production DB)
-- `npm run dev:test` — Development (test DB)
+- `npm run dev:test` — Development (test DB via --test-db)
 - `npm run dist:clean` — Build for testing
 - `npm run dist` — Build for release
-- `node test-integration.js` — Run 118 integration tests (MANDATORY before commit)
-- `git checkout preload.js` — Restore after dist if modified
+- `node test-integration.js` — Run 116 integration tests (MANDATORY before commit)
 
-### SaaS (Week 1+)
-- `node server/index.js` — Start Express server (after Week 1 Day 2)
+### SaaS
+- `npm run server` — Development server (auto-restart via nodemon)
+- `npm run server:prod` — Production server (no auto-restart)
 - `node test-mssql-connection.js` — Verify SQL Server connection
 - `npm test` — Run API tests (after Week 2)
 
@@ -264,30 +277,46 @@ src/
     └── reports/corporate/  # Corporate report modals
 ```
 
-### SaaS (Week 1+ - In Progress)
+### SaaS (Week 2 - In Progress)
 ```
 shared/                  # ✅ Week 1 Day 1 - Code shared between Desktop & SaaS
-├── validation.js        # Input validation (moved from electron/)
+├── validation.js        # Input validation schemas (7 schemas: register, login, user, firm, client_saas, matter_saas, lawyer_saas, hearing_saas)
 └── (future shared utils)
 
-server/                  # ✅ Week 1 Day 1 - SaaS backend (Express + SQL Server)
-├── database.js          # SQL Server connection + helpers (msnodesqlv8 + tedious)
-├── index.js             # 🔜 Week 1 Day 2 - Express server entry point
-├── routes/              # 🔜 Week 1 Day 2+ - REST API endpoints
-│   ├── auth.js          # Login, registration, JWT
-│   ├── clients.js       # Client CRUD
-│   ├── matters.js       # Matter CRUD
-│   └── (21 route modules total)
-└── middleware/          # 🔜 Week 1 Day 3 - Auth, validation, error handling
+server/                  # ✅ SaaS backend (Express + SQL Server)
+├── database.js          # SQL Server connection + helpers + transactions
+├── index.js             # ✅ Week 1 Day 2 - Express server entry point
+├── schema.sql           # ✅ Week 1 Day 3 - SQL Server table definitions (firms, users)
+├── schema-clients.sql   # ✅ Week 1 Day 4 - Clients table definition
+├── schema-matters.sql   # ✅ Week 2 Day 5 - Matters + matter_clients tables
+├── schema-lawyers.sql   # ✅ Week 2 Day 6 - Lawyers table definition
+├── schema-hearings.sql  # ✅ Week 2 Day 7 - Hearings table definition
+├── routes/              # REST API endpoints
+│   ├── auth.js          # ✅ Week 1 Day 3 - Register, login, refresh, me (14 endpoints)
+│   ├── clients.js       # ✅ Week 1 Day 4 + Day 8 - Client CRUD (5 endpoints, pagination/search/filters)
+│   ├── matters.js       # ✅ Week 2 Day 5 + Day 8 - Matter CRUD (5 endpoints, pagination/search/filters)
+│   ├── lawyers.js       # ✅ Week 2 Day 6 + Day 8 - Lawyer CRUD (5 endpoints, pagination/search/filters)
+│   ├── hearings.js      # ✅ Week 2 Day 7 + Day 8 - Hearing CRUD (5 endpoints, pagination/search/filters)
+│   └── (16 more route modules planned)
+├── utils/               # ✅ Week 2 Day 8 - Shared utilities
+│   └── pagination.js    # parsePagination, buildPaginationResponse
+└── middleware/          # ✅ Week 1 Day 3 - Auth, validation
+    ├── auth.js          # JWT generation, verification, authenticate middleware
+    └── validate.js      # Request validation (wraps shared/validation.js)
 
 test-mssql-connection.js # ✅ Week 1 Day 1 - SQL Server verification script
+test-clients-smoke.js    # ✅ Week 1 Day 4 - Client CRUD smoke tests (4 tests)
+test-matters-smoke.js    # ✅ Week 2 Day 5 - Matter CRUD smoke tests (6 tests)
+test-lawyers-smoke.js    # ✅ Week 2 Day 6 - Lawyer CRUD smoke tests (7 tests, 25 assertions)
+test-hearings-smoke.js   # ✅ Week 2 Day 7 - Hearing CRUD smoke tests (7 tests, 28 assertions)
+test-integration-saas.js # ✅ Week 2 Day 8 - Integration tests (27 tests, 70 assertions)
 .env                     # ✅ Week 1 Day 1 - Environment configuration (gitignored)
 ```
 
 ### SQL Server Configuration (Week 1 Day 1)
 - **Version:** SQL Server 2025 Express (MSSQL17.SQLEXPRESS)
 - **Server:** localhost\SQLEXPRESS
-- **Database:** qanuni (created, empty)
+- **Database:** qanuni (created, 7 tables)
 - **Authentication:** 
   - Local dev: Windows Auth via msnodesqlv8
   - Production: SQL Auth via tedious (auto-selected by server/database.js)
@@ -295,8 +324,9 @@ test-mssql-connection.js # ✅ Week 1 Day 1 - SQL Server verification script
 - **Connection:** Verified working (3/3 tests passing)
 
 ## After Major Changes
-- Run `node test-integration.js` — must pass before commit
+- Run `node test-integration.js` — must pass before commit (118/118 desktop)
 - Run `node test-mssql-connection.js` — verify SQL Server (SaaS work)
+- Run `node test-integration-saas.js` — must pass before SaaS commit (70/70 assertions)
 - Update `KNOWN_FIXES.md` for bug fixes
 - Update `CLAUDE.md` for structural changes, phase completions
 - Update `test-integration.js` when adding new IPC handlers
@@ -327,11 +357,17 @@ test-mssql-connection.js # ✅ Week 1 Day 1 - SQL Server verification script
 - **Database limitation:** SQLite AUTOINCREMENT accepted for MVP, migrate to sequences in Phase 2
 - **Driver architecture:** msnodesqlv8 (local Windows Auth) + tedious (production SQL Auth)
 
+### SaaS Learnings (Week 2)
+- **Pre-implementation audits are critical:** Day 7 audit caught 8 issues before implementation (FK refs, PK naming, timestamp functions, missing columns, broken JOINs, validation format)
+- **Desktop ≠ SaaS schema:** Desktop matters has client_id, SaaS uses matter_clients junction - can't assume 1:1 field mapping
+- **Validation format matters:** Desktop uses custom validation.check(), SaaS uses flat object format - never mix schema formats
+- **Always verify FK references:** Column names vary between tables (firms.firm_id, users.user_id, clients.client_id) - never assume
+
 ### Known Working Configurations
 - **Desktop tests:** 118/118 passing consistently
 - **SQL Server tests:** 3/3 passing with msnodesqlv8
 - **Environment:** .env file with empty DB_USER/DB_PASSWORD = Windows Auth
-- **Validation:** Now in shared/validation.js (imported by 16 IPC files)
+- **Validation:** Now in shared/validation.js (imported by 16 desktop IPC files + 5 SaaS routes)
 
 ## Week 1 Progress Tracker
 
@@ -357,18 +393,71 @@ test-mssql-connection.js # ✅ Week 1 Day 1 - SQL Server verification script
 - Test first API call: GET /health
 - Commit: 423b800a (pushed)
 
-### 🔜 Day 3 (6 hours)
-- Create middleware (auth, validation, error handling)
-- Add CORS configuration
-- Create login/register endpoints
-- Test authentication flow
+### ✅ Day 3 Complete (6 hours)
+- Created server/middleware/auth.js (JWT verification + generation)
+- Created server/middleware/validate.js (request validation)
+- Added transaction support to server/database.js
+- Added minLength validation to shared/validation.js
+- Implemented POST /api/auth/register (firm + user creation)
+- Implemented POST /api/auth/login (credential verification)
+- Implemented POST /api/auth/refresh (token refresh)
+- Implemented GET /api/auth/me (protected endpoint demo)
+- Created SQL Server tables: firms, users
+- Tests: 14/14 API endpoints passing
+- Commit: c1762e47 (pushed)
 
-### 🔜 Day 4 (6 hours)
-- Create clients CRUD endpoints
-- Test with Postman/Thunder Client
-- Verify firm_id isolation working
+### ✅ Day 4 Complete (4 hours, ahead of schedule)
+- Created server/schema-clients.sql (standalone SQL table)
+- Created server/routes/clients.js (5 endpoints: GET, GET/:id, POST, PUT, DELETE)
+- Modified shared/validation.js (client_saas schema, separate from desktop)
+- Modified server/index.js (registered /api/clients routes)
+- Features: Firm isolation, JWT auth, soft deletes, bilingual support, client_type
+- Tests: 4/4 smoke tests passing
+- Commit: 7791a2f8 (pushed)
 
-**Week 1 Status:** 50% complete (Day 2 of 4), ahead of schedule ⚡
+**Week 1 Status:** 100% complete (4 days in ~13 hours), ahead of schedule ⚡
+
+## Week 2 Progress Tracker
+
+### ✅ Day 5 Complete (6 hours)
+- Created server/schema-matters.sql (matters + matter_clients tables)
+- Created server/routes/matters.js (5 endpoints: GET, GET/:id, POST, PUT, DELETE)
+- Modified shared/validation.js (matter_saas schema, 18 fields)
+- Modified server/index.js (registered /api/matters routes)
+- Features: Multi-client support, firm isolation, transaction safety, embedded clients via FOR JSON PATH
+- Tests: 6/6 smoke tests passing
+- Commit: 850e794c (pushed)
+
+### ✅ Day 6 Complete (6 hours)
+- Created server/schema-lawyers.sql (lawyers table, 18 columns)
+- Created server/routes/lawyers.js (5 endpoints: GET, GET/:id, POST, PUT, DELETE)
+- Modified shared/validation.js (lawyer_saas schema, 12 fields)
+- Modified server/index.js (registered /api/lawyers routes)
+- Features: Role-based filtering, hourly_rate with currency, filtered unique email index
+- Tests: 25/25 assertions (7 smoke tests) passing
+- Commit: 2b51ae54 (pushed)
+
+### ✅ Day 7 Complete (6 hours)
+- Created server/schema-hearings.sql (hearings table, 17 columns)
+- Created server/routes/hearings.js (5 endpoints: GET, GET/:id, POST, PUT, DELETE)
+- Modified shared/validation.js (hearing_saas schema, 11 fields)
+- Modified server/index.js (registered /api/hearings routes)
+- Features: Matter linkage, date/time tracking, court details, outcome tracking, calendar integration, audit trail
+- **Audit fixes applied:** 8 issues caught before implementation (FK refs, PK naming, GETUTCDATE, created_by, broken JOIN, validation format, outcome default, index pattern)
+- Tests: 28/28 assertions (7 smoke tests) passing
+- Commit: dd60367a (pushed)
+
+### ✅ Day 8 Complete (4 hours)
+- Created server/utils/pagination.js (parsePagination, buildPaginationResponse)
+- Updated 4 route files with pagination + search + filtering
+- Created test-integration-saas.js (27 tests, 70 assertions)
+- **Breaking change:** List endpoints now return `{ data, pagination }` instead of `{ count, <entity> }`
+- Features: Pagination (page/limit/offset), full-text search (LIKE), multi-field filters
+- Skipped: Performance indexes (existing indexes sufficient), performance tests (premature)
+- Tests: 70/70 assertions passing
+- Commit: (pending)
+
+**Week 2 Status:** 100% complete ✅
 
 ### Quick Reference
 **Start Server:**

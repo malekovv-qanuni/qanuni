@@ -13,6 +13,7 @@ const router = express.Router();
 const db = require('../database');
 const { authenticate } = require('../middleware/auth');
 const { validateBody } = require('../middleware/validate');
+const { parsePagination, buildPaginationResponse } = require('../utils/pagination');
 
 // All routes require authentication
 router.use(authenticate);
@@ -23,10 +24,61 @@ router.use(authenticate);
 
 router.get('/', async (req, res) => {
   try {
-    const { matter_id, start_date, end_date, outcome } = req.query;
+    const { search, matter_id, start_date, end_date, outcome, hearing_type } = req.query;
+    const { page, limit, offset } = parsePagination(req.query.page, req.query.limit);
+    const params = { firm_id: req.user.firm_id };
 
-    let query = `
-      SELECT
+    // Build WHERE clauses
+    let where = 'WHERE h.firm_id = @firm_id AND h.is_deleted = 0';
+
+    if (search) {
+      where += ` AND (
+        h.court_name LIKE '%' + @search + '%' OR
+        h.judge_name LIKE '%' + @search + '%' OR
+        h.outcome_notes LIKE '%' + @search + '%'
+      )`;
+      params.search = search;
+    }
+
+    if (matter_id) {
+      const mid = parseInt(matter_id);
+      if (!isNaN(mid)) {
+        where += ' AND h.matter_id = @matter_id';
+        params.matter_id = mid;
+      }
+    }
+
+    if (start_date) {
+      where += ' AND h.hearing_date >= @start_date';
+      params.start_date = start_date;
+    }
+
+    if (end_date) {
+      where += ' AND h.hearing_date <= @end_date';
+      params.end_date = end_date;
+    }
+
+    if (outcome) {
+      where += ' AND h.outcome = @outcome';
+      params.outcome = outcome;
+    }
+
+    if (hearing_type) {
+      where += ' AND h.hearing_type = @hearing_type';
+      params.hearing_type = hearing_type;
+    }
+
+    // Get total count (join needed for firm_id filter correctness)
+    const countResult = await db.getOne(
+      `SELECT COUNT(*) as total FROM hearings h
+      INNER JOIN matters m ON h.matter_id = m.matter_id
+      ${where}`,
+      params
+    );
+    const total = countResult.total;
+
+    const hearings = await db.getAll(
+      `SELECT
         h.hearing_id,
         h.firm_id,
         h.matter_id,
@@ -46,41 +98,16 @@ router.get('/', async (req, res) => {
         m.matter_name_arabic
       FROM hearings h
       INNER JOIN matters m ON h.matter_id = m.matter_id
-      WHERE h.firm_id = @firm_id AND h.is_deleted = 0`;
-
-    const params = { firm_id: req.user.firm_id };
-
-    if (matter_id) {
-      const mid = parseInt(matter_id);
-      if (!isNaN(mid)) {
-        query += ' AND h.matter_id = @matter_id';
-        params.matter_id = mid;
-      }
-    }
-
-    if (start_date) {
-      query += ' AND h.hearing_date >= @start_date';
-      params.start_date = start_date;
-    }
-
-    if (end_date) {
-      query += ' AND h.hearing_date <= @end_date';
-      params.end_date = end_date;
-    }
-
-    if (outcome) {
-      query += ' AND h.outcome = @outcome';
-      params.outcome = outcome;
-    }
-
-    query += ' ORDER BY h.hearing_date DESC';
-
-    const hearings = await db.getAll(query, params);
+      ${where}
+      ORDER BY h.hearing_date DESC
+      OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`,
+      { ...params, offset, limit }
+    );
 
     res.json({
       success: true,
-      count: hearings.length,
-      hearings
+      data: hearings,
+      pagination: buildPaginationResponse(page, limit, total)
     });
 
   } catch (error) {

@@ -147,19 +147,19 @@ async function run() {
   // ==================== Test 4: List hearings with matter_id filter ====================
   console.log('\nTest 4: List hearings with matter_id filter');
   const t4all = await request('GET', '/api/hearings');
-  assert('List returns array', t4all.body.hearings && Array.isArray(t4all.body.hearings));
-  assert('Count >= 2', t4all.body.count >= 2, 'Got count ' + t4all.body.count);
-  assert('Includes matter_name', t4all.body.hearings[0] && t4all.body.hearings[0].matter_name != null);
+  assert('List returns array', t4all.body.data && Array.isArray(t4all.body.data));
+  assert('Count >= 2', t4all.body.pagination.total >= 2, 'Got count ' + t4all.body.pagination.total);
+  assert('Includes matter_name', t4all.body.data[0] && t4all.body.data[0].matter_name != null);
 
   const t4filter = await request('GET', '/api/hearings?matter_id=' + MATTER_ID);
-  assert('Filtered count matches', t4filter.body.count >= 2, 'Got ' + t4filter.body.count);
-  assert('All hearings belong to matter', t4filter.body.hearings && t4filter.body.hearings.every(h => h.matter_id === MATTER_ID));
+  assert('Filtered count matches', t4filter.body.pagination.total >= 2, 'Got ' + t4filter.body.pagination.total);
+  assert('All hearings belong to matter', t4filter.body.data && t4filter.body.data.every(h => h.matter_id === MATTER_ID));
 
   // ==================== Test 5: List hearings with date range filter ====================
   console.log('\nTest 5: List hearings with date range filter');
   const t5 = await request('GET', '/api/hearings?start_date=2026-04-01&end_date=2026-04-30');
-  assert('Date filter returns results', t5.body.hearings && Array.isArray(t5.body.hearings));
-  assert('All in range (April)', t5.body.hearings && t5.body.hearings.every(h => {
+  assert('Date filter returns results', t5.body.data && Array.isArray(t5.body.data));
+  assert('All in range (April)', t5.body.data && t5.body.data.every(h => {
     const d = h.hearing_date.substring(0, 10);
     return d >= '2026-04-01' && d <= '2026-04-30';
   }));
@@ -185,7 +185,7 @@ async function run() {
 
   // Verify deleted hearing not in list
   const t7list = await request('GET', '/api/hearings');
-  const deletedInList = t7list.body.hearings.find(h => h.hearing_id === HEARING_ID);
+  const deletedInList = t7list.body.data.find(h => h.hearing_id === HEARING_ID);
   assert('Deleted hearing not in list', !deletedInList);
 
   // Verify GET /:id returns 404
@@ -195,10 +195,10 @@ async function run() {
   // Cleanup: delete remaining test hearings
   console.log('\nCleanup...');
   const allHearings = await request('GET', '/api/hearings');
-  for (const h of allHearings.body.hearings) {
+  for (const h of allHearings.body.data) {
     await request('DELETE', '/api/hearings/' + h.hearing_id);
   }
-  console.log('  Cleaned up ' + allHearings.body.count + ' test hearings');
+  console.log('  Cleaned up ' + allHearings.body.pagination.total + ' test hearings');
 
   // Cleanup: delete test matter
   if (MATTER_ID) {

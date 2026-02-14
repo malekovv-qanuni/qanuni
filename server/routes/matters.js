@@ -13,6 +13,7 @@ const router = express.Router();
 const db = require('../database');
 const { authenticate } = require('../middleware/auth');
 const { validateBody } = require('../middleware/validate');
+const { parsePagination, buildPaginationResponse } = require('../utils/pagination');
 
 // All routes require authentication
 router.use(authenticate);
@@ -22,6 +23,45 @@ router.use(authenticate);
 
 router.get('/', async (req, res) => {
   try {
+    const { search, matter_status, matter_type, billing_type: billingFilter } = req.query;
+    const { page, limit, offset } = parsePagination(req.query.page, req.query.limit);
+    const params = { firm_id: req.user.firm_id };
+
+    // Build WHERE clauses for matters
+    let where = 'WHERE m.firm_id = @firm_id AND m.is_deleted = 0';
+
+    if (search) {
+      where += ` AND (
+        m.matter_name LIKE '%' + @search + '%' OR
+        m.matter_name_arabic LIKE '%' + @search + '%' OR
+        m.matter_number LIKE '%' + @search + '%'
+      )`;
+      params.search = search;
+    }
+
+    if (matter_status) {
+      where += ' AND m.matter_status = @matter_status';
+      params.matter_status = matter_status;
+    }
+
+    if (matter_type) {
+      where += ' AND m.matter_type = @matter_type';
+      params.matter_type = matter_type;
+    }
+
+    if (billingFilter) {
+      where += ' AND m.billing_type = @billing_type';
+      params.billing_type = billingFilter;
+    }
+
+    // Get total count
+    const countResult = await db.getOne(
+      `SELECT COUNT(*) as total FROM matters m ${where}`,
+      params
+    );
+    const total = countResult.total;
+
+    // Get paginated results with embedded clients
     const matters = await db.getAll(
       `SELECT
         m.matter_id,
@@ -59,9 +99,10 @@ router.get('/', async (req, res) => {
           FOR JSON PATH
         ) AS clients_json
       FROM matters m
-      WHERE m.firm_id = @firm_id AND m.is_deleted = 0
-      ORDER BY m.created_at DESC`,
-      { firm_id: req.user.firm_id }
+      ${where}
+      ORDER BY m.created_at DESC
+      OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`,
+      { ...params, offset, limit }
     );
 
     // Parse clients_json from string to array
@@ -75,8 +116,8 @@ router.get('/', async (req, res) => {
 
     res.json({
       success: true,
-      count: mattersWithClients.length,
-      matters: mattersWithClients
+      data: mattersWithClients,
+      pagination: buildPaginationResponse(page, limit, total)
     });
 
   } catch (error) {

@@ -15,6 +15,7 @@ const router = express.Router();
 const db = require('../database');
 const { authenticate } = require('../middleware/auth');
 const { validateBody } = require('../middleware/validate');
+const { parsePagination, buildPaginationResponse } = require('../utils/pagination');
 
 // All routes require authentication
 router.use(authenticate);
@@ -25,10 +26,40 @@ router.use(authenticate);
 
 router.get('/', async (req, res) => {
   try {
-    const { active_only, role } = req.query;
+    const { search, active_only, role } = req.query;
+    const { page, limit, offset } = parsePagination(req.query.page, req.query.limit);
+    const params = { firm_id: req.user.firm_id };
 
-    let query = `
-      SELECT
+    // Build WHERE clauses
+    let where = 'WHERE firm_id = @firm_id AND is_deleted = 0';
+
+    if (search) {
+      where += ` AND (
+        full_name LIKE '%' + @search + '%' OR
+        full_name_arabic LIKE '%' + @search + '%' OR
+        email LIKE '%' + @search + '%'
+      )`;
+      params.search = search;
+    }
+
+    if (active_only === 'true') {
+      where += ' AND is_active = 1';
+    }
+
+    if (role) {
+      where += ' AND role = @role';
+      params.role = role;
+    }
+
+    // Get total count
+    const countResult = await db.getOne(
+      `SELECT COUNT(*) as total FROM lawyers ${where}`,
+      params
+    );
+    const total = countResult.total;
+
+    const lawyers = await db.getAll(
+      `SELECT
         lawyer_id,
         firm_id,
         full_name,
@@ -46,27 +77,16 @@ router.get('/', async (req, res) => {
         created_at,
         updated_at
       FROM lawyers
-      WHERE firm_id = @firm_id AND is_deleted = 0`;
-
-    const params = { firm_id: req.user.firm_id };
-
-    if (active_only === 'true') {
-      query += ' AND is_active = 1';
-    }
-
-    if (role) {
-      query += ' AND role = @role';
-      params.role = role;
-    }
-
-    query += ' ORDER BY full_name ASC';
-
-    const lawyers = await db.getAll(query, params);
+      ${where}
+      ORDER BY full_name ASC
+      OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`,
+      { ...params, offset, limit }
+    );
 
     res.json({
       success: true,
-      count: lawyers.length,
-      lawyers
+      data: lawyers,
+      pagination: buildPaginationResponse(page, limit, total)
     });
 
   } catch (error) {

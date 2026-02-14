@@ -12,6 +12,7 @@ const router = express.Router();
 const db = require('../database');
 const { authenticate } = require('../middleware/auth');
 const { validateBody } = require('../middleware/validate');
+const { parsePagination, buildPaginationResponse } = require('../utils/pagination');
 
 // All routes require authentication
 router.use(authenticate);
@@ -21,6 +22,39 @@ router.use(authenticate);
 
 router.get('/', async (req, res) => {
   try {
+    const { search, client_type, active_only } = req.query;
+    const { page, limit, offset } = parsePagination(req.query.page, req.query.limit);
+    const params = { firm_id: req.user.firm_id };
+
+    // Build WHERE clauses
+    let where = 'WHERE firm_id = @firm_id AND is_deleted = 0';
+
+    if (search) {
+      where += ` AND (
+        client_name LIKE '%' + @search + '%' OR
+        client_name_arabic LIKE '%' + @search + '%' OR
+        email LIKE '%' + @search + '%' OR
+        phone LIKE '%' + @search + '%'
+      )`;
+      params.search = search;
+    }
+
+    if (client_type) {
+      where += ' AND client_type = @client_type';
+      params.client_type = client_type;
+    }
+
+    if (active_only === 'true') {
+      where += ' AND is_active = 1';
+    }
+
+    // Get total count and page of results
+    const countResult = await db.getOne(
+      `SELECT COUNT(*) as total FROM clients ${where}`,
+      params
+    );
+    const total = countResult.total;
+
     const clients = await db.getAll(
       `SELECT
         client_id,
@@ -38,15 +72,16 @@ router.get('/', async (req, res) => {
         created_at,
         updated_at
       FROM clients
-      WHERE firm_id = @firm_id AND is_deleted = 0
-      ORDER BY client_name`,
-      { firm_id: req.user.firm_id }
+      ${where}
+      ORDER BY client_name
+      OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`,
+      { ...params, offset, limit }
     );
 
     res.json({
       success: true,
-      count: clients.length,
-      clients
+      data: clients,
+      pagination: buildPaginationResponse(page, limit, total)
     });
 
   } catch (error) {
