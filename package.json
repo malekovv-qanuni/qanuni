@@ -9,8 +9,8 @@
     "build": "react-scripts build",
     "electron": "electron .",
     "dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
-    "api": "nodemon server/api-server.js",
-    "dev:web": "concurrently \"npm run api\" \"npm run dev\"",
+    "dev:saas": "cross-env REACT_APP_MODE=saas react-scripts start",
+    "build:web": "cross-env REACT_APP_MODE=saas react-scripts build",
     "dist": "react-scripts build && electron-builder",
     "dist:clean": "react-scripts build && electron-builder --dir",
     "dist:win": "react-scripts build && electron-builder --win",
@@ -40,6 +40,7 @@
   "devDependencies": {
     "autoprefixer": "^10.4.17",
     "concurrently": "^8.2.2",
+    "cross-env": "^10.1.0",
     "electron": "^28.2.0",
     "electron-builder": "^26.7.0",
     "nodemon": "^3.1.11",

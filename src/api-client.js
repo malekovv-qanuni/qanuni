@@ -1,6 +1,6 @@
 // src/api-client.js
 // Dual-mode API client: works in both Electron (IPC) and Web (REST) modes
-// Session 3 - Phase 1 - Step 1: Boilerplate
+// Week 3 Day 9: JWT injection + SaaS response unwrapping
 
 // Environment detection
 const isElectron = () => {
@@ -8,7 +8,24 @@ const isElectron = () => {
          window.electronAPI !== undefined;
 };
 
-// Helper: Fetch API wrapper with error handling
+// JWT token management (SaaS mode only)
+let authToken = null;
+
+export const setAuthToken = (token) => {
+  authToken = token;
+  if (token) {
+    localStorage.setItem('saas_auth_token', token);
+  } else {
+    localStorage.removeItem('saas_auth_token');
+  }
+};
+
+// Load persisted token on module init (SaaS mode only)
+if (typeof window !== 'undefined' && !isElectron()) {
+  authToken = localStorage.getItem('saas_auth_token');
+}
+
+// Helper: Fetch API wrapper with error handling + JWT
 const fetchAPI = async (endpoint, options = {}) => {
   const baseURL = 'http://localhost:3001/api';
   const url = `${baseURL}${endpoint}`;
@@ -17,13 +34,24 @@ const fetchAPI = async (endpoint, options = {}) => {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
+      ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
     },
   };
 
   const config = { ...defaultOptions, ...options };
+  // Merge headers if options provides custom headers
+  if (options.headers) {
+    config.headers = { ...defaultOptions.headers, ...options.headers };
+  }
 
   try {
     const response = await fetch(url, config);
+
+    if (response.status === 401) {
+      setAuthToken(null);
+      throw new Error('Authentication required');
+    }
+
     const data = await response.json();
 
     if (!response.ok) {
@@ -68,14 +96,16 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getAllClients();
     }
-    return await fetchAPI('/clients');
+    const response = await fetchAPI('/clients');
+    return response.data || [];
   },
 
   getAllClients: async () => {
     if (isElectron()) {
       return await window.electronAPI.getAllClients();
     }
-    return await fetchAPI('/clients');
+    const response = await fetchAPI('/clients');
+    return response.data || [];
   },
 
   getClient: async (clientId) => {
@@ -137,7 +167,8 @@ const apiClient = {
         (c.phone || '').includes(query)
       );
     }
-    return await fetchAPI(`/clients/search?q=${encodeURIComponent(query)}`);
+    const response = await fetchAPI(`/clients/search?q=${encodeURIComponent(query)}`);
+    return response.data || [];
   },
 
   // ============================================
@@ -148,14 +179,16 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getAllMatters();
     }
-    return await fetchAPI('/matters');
+    const response = await fetchAPI('/matters');
+    return response.data || [];
   },
 
   getAllMatters: async () => {
     if (isElectron()) {
       return await window.electronAPI.getAllMatters();
     }
-    return await fetchAPI('/matters');
+    const response = await fetchAPI('/matters');
+    return response.data || [];
   },
 
   getMatter: async (matterId) => {
@@ -252,14 +285,16 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getAllHearings();
     }
-    return await fetchAPI('/hearings');
+    const response = await fetchAPI('/hearings');
+    return response.data || [];
   },
 
   getAllHearings: async () => {
     if (isElectron()) {
       return await window.electronAPI.getAllHearings();
     }
-    return await fetchAPI('/hearings');
+    const response = await fetchAPI('/hearings');
+    return response.data || [];
   },
 
   createHearing: async (hearingData) => {
@@ -310,14 +345,16 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getAllTasks();
     }
-    return await fetchAPI('/tasks');
+    const response = await fetchAPI('/tasks');
+    return response.data || [];
   },
 
   getAllTasks: async () => {
     if (isElectron()) {
       return await window.electronAPI.getAllTasks();
     }
-    return await fetchAPI('/tasks');
+    const response = await fetchAPI('/tasks');
+    return response.data || [];
   },
 
   createTask: async (taskData) => {
@@ -362,14 +399,16 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getAllTimesheets();
     }
-    return await fetchAPI('/timesheets');
+    const response = await fetchAPI('/timesheets');
+    return response.data || [];
   },
 
   getAllTimesheets: async () => {
     if (isElectron()) {
       return await window.electronAPI.getAllTimesheets();
     }
-    return await fetchAPI('/timesheets');
+    const response = await fetchAPI('/timesheets');
+    return response.data || [];
   },
 
   createTimesheet: async (timesheetData) => {
@@ -411,7 +450,8 @@ const apiClient = {
       const timesheets = await window.electronAPI.getAllTimesheets();
       return timesheets.filter(t => t.matter_id === matterId);
     }
-    return await fetchAPI(`/timesheets/matter/${matterId}`);
+    const response = await fetchAPI(`/timesheets/matter/${matterId}`);
+    return response.data || [];
   },
 
   // ============================================
@@ -422,14 +462,16 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getAllExpenses();
     }
-    return await fetchAPI('/expenses');
+    const response = await fetchAPI('/expenses');
+    return response.data || [];
   },
 
   getAllExpenses: async () => {
     if (isElectron()) {
       return await window.electronAPI.getAllExpenses();
     }
-    return await fetchAPI('/expenses');
+    const response = await fetchAPI('/expenses');
+    return response.data || [];
   },
 
   createExpense: async (expenseData) => {
@@ -471,14 +513,16 @@ const apiClient = {
       const expenses = await window.electronAPI.getAllExpenses();
       return expenses.filter(e => e.matter_id === matterId);
     }
-    return await fetchAPI(`/expenses/matter/${matterId}`);
+    const response = await fetchAPI(`/expenses/matter/${matterId}`);
+    return response.data || [];
   },
 
   getExpenseCategories: async () => {
     if (isElectron()) {
       return await window.electronAPI.getExpenseCategories();
     }
-    return await fetchAPI('/expenses/categories');
+    const response = await fetchAPI('/expenses/categories');
+    return response.data || [];
   },
 
   createExpenseCategory: async (categoryData) => {
@@ -508,14 +552,16 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getAllAdvances();
     }
-    return await fetchAPI('/advances');
+    const response = await fetchAPI('/advances');
+    return response.data || [];
   },
 
   getAllAdvances: async () => {
     if (isElectron()) {
       return await window.electronAPI.getAllAdvances();
     }
-    return await fetchAPI('/advances');
+    const response = await fetchAPI('/advances');
+    return response.data || [];
   },
 
   createAdvance: async (advanceData) => {
@@ -557,7 +603,8 @@ const apiClient = {
       const advances = await window.electronAPI.getAllAdvances();
       return advances.filter(a => a.matter_id === matterId);
     }
-    return await fetchAPI(`/advances/matter/${matterId}`);
+    const response = await fetchAPI(`/advances/matter/${matterId}`);
+    return response.data || [];
   },
 
   getAdvancesByClient: async (clientId) => {
@@ -565,7 +612,8 @@ const apiClient = {
       const advances = await window.electronAPI.getAllAdvances();
       return advances.filter(a => a.client_id === clientId);
     }
-    return await fetchAPI(`/advances/client/${clientId}`);
+    const response = await fetchAPI(`/advances/client/${clientId}`);
+    return response.data || [];
   },
 
   allocateAdvance: async (allocationData) => {
@@ -584,7 +632,8 @@ const apiClient = {
       console.warn('getAllocations: not available in Electron mode');
       return [];
     }
-    return await fetchAPI(`/advances/${advanceId}/allocations`);
+    const response = await fetchAPI(`/advances/${advanceId}/allocations`);
+    return response.data || [];
   },
 
   deleteAllocation: async (allocationId) => {
@@ -642,14 +691,16 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getAllInvoices();
     }
-    return await fetchAPI('/invoices');
+    const response = await fetchAPI('/invoices');
+    return response.data || [];
   },
 
   getAllInvoices: async () => {
     if (isElectron()) {
       return await window.electronAPI.getAllInvoices();
     }
-    return await fetchAPI('/invoices');
+    const response = await fetchAPI('/invoices');
+    return response.data || [];
   },
 
   createInvoice: async (invoiceData, items) => {
@@ -696,7 +747,8 @@ const apiClient = {
       const invoices = await window.electronAPI.getAllInvoices();
       return invoices.filter(i => i.matter_id === matterId);
     }
-    return await fetchAPI(`/invoices/matter/${matterId}`);
+    const response = await fetchAPI(`/invoices/matter/${matterId}`);
+    return response.data || [];
   },
 
   getInvoicesByClient: async (clientId) => {
@@ -704,7 +756,8 @@ const apiClient = {
       const invoices = await window.electronAPI.getAllInvoices();
       return invoices.filter(i => i.client_id === clientId);
     }
-    return await fetchAPI(`/invoices/client/${clientId}`);
+    const response = await fetchAPI(`/invoices/client/${clientId}`);
+    return response.data || [];
   },
 
   recordPayment: async (paymentData) => {
@@ -734,7 +787,8 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getInvoiceItems(invoiceId);
     }
-    return await fetchAPI(`/invoices/${invoiceId}/items`);
+    const response = await fetchAPI(`/invoices/${invoiceId}/items`);
+    return response.data || [];
   },
 
   generateInvoiceNumber: async () => {
@@ -758,7 +812,8 @@ const apiClient = {
     const params = new URLSearchParams();
     if (clientId) params.append('client_id', clientId);
     if (matterId) params.append('matter_id', matterId);
-    return await fetchAPI(`/timesheets/unbilled?${params.toString()}`);
+    const response = await fetchAPI(`/timesheets/unbilled?${params.toString()}`);
+    return response.data || [];
   },
 
   getUnbilledExpenses: async (clientId, matterId) => {
@@ -768,7 +823,8 @@ const apiClient = {
     const params = new URLSearchParams();
     if (clientId) params.append('client_id', clientId);
     if (matterId) params.append('matter_id', matterId);
-    return await fetchAPI(`/expenses/unbilled?${params.toString()}`);
+    const response = await fetchAPI(`/expenses/unbilled?${params.toString()}`);
+    return response.data || [];
   },
 
   getClientRetainer: async (clientId, matterId) => {
@@ -799,14 +855,16 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getAllJudgments();
     }
-    return await fetchAPI('/judgments');
+    const response = await fetchAPI('/judgments');
+    return response.data || [];
   },
 
   getAllJudgments: async () => {
     if (isElectron()) {
       return await window.electronAPI.getAllJudgments();
     }
-    return await fetchAPI('/judgments');
+    const response = await fetchAPI('/judgments');
+    return response.data || [];
   },
 
   createJudgment: async (judgmentData) => {
@@ -857,14 +915,16 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getAllDeadlines();
     }
-    return await fetchAPI('/deadlines');
+    const response = await fetchAPI('/deadlines');
+    return response.data || [];
   },
 
   getAllDeadlines: async () => {
     if (isElectron()) {
       return await window.electronAPI.getAllDeadlines();
     }
-    return await fetchAPI('/deadlines');
+    const response = await fetchAPI('/deadlines');
+    return response.data || [];
   },
 
   createDeadline: async (deadlineData) => {
@@ -943,14 +1003,16 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getAllAppointments();
     }
-    return await fetchAPI('/appointments');
+    const response = await fetchAPI('/appointments');
+    return response.data || [];
   },
 
   getAllAppointments: async () => {
     if (isElectron()) {
       return await window.electronAPI.getAllAppointments();
     }
-    return await fetchAPI('/appointments');
+    const response = await fetchAPI('/appointments');
+    return response.data || [];
   },
 
   createAppointment: async (appointmentData) => {
@@ -995,7 +1057,8 @@ const apiClient = {
       console.warn('getDiaryEntries: requires matterId in Electron mode');
       return [];
     }
-    return matterId ? await fetchAPI(`/diary/timeline/${matterId}`) : await fetchAPI('/diary');
+    const response = matterId ? await fetchAPI(`/diary/timeline/${matterId}`) : await fetchAPI('/diary');
+    return response.data || [];
   },
 
   createDiaryEntry: async (diaryData) => {
@@ -1035,7 +1098,8 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getLawyers();
     }
-    return await fetchAPI('/lawyers');
+    const response = await fetchAPI('/lawyers');
+    return response.data || [];
   },
 
   createLawyer: async (lawyerData) => {
@@ -1079,7 +1143,8 @@ const apiClient = {
       const matters = await window.electronAPI.getAllMatters();
       return matters.filter(m => m.lawyer_id === lawyerId);
     }
-    return await fetchAPI(`/lawyers/${lawyerId}/matters`);
+    const response = await fetchAPI(`/lawyers/${lawyerId}/matters`);
+    return response.data || [];
   },
 
   getLawyerTimesheets: async (lawyerId) => {
@@ -1087,7 +1152,8 @@ const apiClient = {
       const timesheets = await window.electronAPI.getAllTimesheets();
       return timesheets.filter(t => t.lawyer_id === lawyerId);
     }
-    return await fetchAPI(`/lawyers/${lawyerId}/timesheets`);
+    const response = await fetchAPI(`/lawyers/${lawyerId}/timesheets`);
+    return response.data || [];
   },
 
   // ============================================
@@ -1190,21 +1256,24 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getAllCorporateEntities();
     }
-    return await fetchAPI('/corporate/entities');
+    const response = await fetchAPI('/corporate/entities');
+    return response.data || [];
   },
 
   getAllCorporateEntities: async () => {
     if (isElectron()) {
       return await window.electronAPI.getAllCorporateEntities();
     }
-    return await fetchAPI('/corporate/entities');
+    const response = await fetchAPI('/corporate/entities');
+    return response.data || [];
   },
 
   getCorporateClients: async () => {
     if (isElectron()) {
       return await window.electronAPI.getCorporateClients();
     }
-    return await fetchAPI('/corporate/clients');
+    const response = await fetchAPI('/corporate/clients');
+    return response.data || [];
   },
 
   getEntity: async (entityId) => {
@@ -1247,7 +1316,8 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getShareholders(entityId);
     }
-    return await fetchAPI(`/corporate/entities/${entityId}/shareholders`);
+    const response = await fetchAPI(`/corporate/entities/${entityId}/shareholders`);
+    return response.data || [];
   },
 
   createShareholder: async (shareholderData) => {
@@ -1283,7 +1353,8 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getDirectors(entityId);
     }
-    return await fetchAPI(`/corporate/entities/${entityId}/directors`);
+    const response = await fetchAPI(`/corporate/entities/${entityId}/directors`);
+    return response.data || [];
   },
 
   createDirector: async (directorData) => {
@@ -1319,7 +1390,8 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getMeetings(entityId);
     }
-    return await fetchAPI(`/corporate/entities/${entityId}/board-meetings`);
+    const response = await fetchAPI(`/corporate/entities/${entityId}/board-meetings`);
+    return response.data || [];
   },
 
   createBoardMeeting: async (meetingData) => {
@@ -1359,7 +1431,8 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getShareTransfers(entityId);
     }
-    return await fetchAPI(`/corporate/entities/${entityId}/share-transfers`);
+    const response = await fetchAPI(`/corporate/entities/${entityId}/share-transfers`);
+    return response.data || [];
   },
 
   createShareTransfer: async (transferData) => {
@@ -1395,7 +1468,8 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getFilings(entityId);
     }
-    return await fetchAPI(`/corporate/entities/${entityId}/documents`);
+    const response = await fetchAPI(`/corporate/entities/${entityId}/documents`);
+    return response.data || [];
   },
 
   createCorporateDocument: async (documentData) => {
@@ -1508,7 +1582,8 @@ const apiClient = {
       console.warn('getConflictHistory: not available in Electron mode');
       return [];
     }
-    return await fetchAPI('/conflict-check/history');
+    const response = await fetchAPI('/conflict-check/history');
+    return response.data || [];
   },
 
   // ============================================
@@ -1526,7 +1601,8 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getCurrencies();
     }
-    return await fetchAPI('/settings/currencies');
+    const response = await fetchAPI('/settings/currencies');
+    return response.data || [];
   },
 
   getSettings: async () => {
@@ -1706,7 +1782,8 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getTrashItems();
     }
-    return await fetchAPI('/trash');
+    const response = await fetchAPI('/trash');
+    return response.data || [];
   },
 
   restoreItem: async (itemData) => {
@@ -1977,7 +2054,8 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getCompanyClientsWithoutEntity();
     }
-    return await fetchAPI('/corporate/clients-without-entity');
+    const response = await fetchAPI('/corporate/clients-without-entity');
+    return response.data || [];
   },
 
   // Trash aliases (TrashModule.js uses preload names directly)
@@ -2034,7 +2112,8 @@ const apiClient = {
     if (isElectron()) {
       return await window.electronAPI.getExchangeRates();
     }
-    return await fetchAPI('/settings/exchange-rates');
+    const response = await fetchAPI('/settings/exchange-rates');
+    return response.data || [];
   },
   addCurrency: async (data) => {
     if (isElectron()) {
@@ -2151,7 +2230,8 @@ const apiClient = {
       }
       return [];
     }
-    return await fetchAPI('/invoices?status=pending');
+    const response = await fetchAPI('/invoices?status=pending');
+    return response.data || [];
   },
   getUpcomingCompliance: async () => {
     if (isElectron()) {
@@ -2160,7 +2240,8 @@ const apiClient = {
       }
       return [];
     }
-    return await fetchAPI('/corporate/upcoming-compliance');
+    const response = await fetchAPI('/corporate/upcoming-compliance');
+    return response.data || [];
   },
 
   // Diary/Timeline alias (MatterTimeline.js)
