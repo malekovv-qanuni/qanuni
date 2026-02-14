@@ -350,11 +350,12 @@ test-mssql-connection.js # ✅ Week 1 Day 1 - SQL Server verification script
   - Created test-mssql-connection.js
   - Tests: 3/3 passing
 
-### 🔜 Day 2 (4 hours) - Next Session
+### ✅ Day 2 Complete (2.5 hours)
 - Install Express + middleware packages
 - Create server/index.js (Express app)
 - Create server/routes/auth.js (health check endpoint)
 - Test first API call: GET /health
+- Commit: 423b800a (pushed)
 
 ### 🔜 Day 3 (6 hours)
 - Create middleware (auth, validation, error handling)
@@ -367,4 +368,20 @@ test-mssql-connection.js # ✅ Week 1 Day 1 - SQL Server verification script
 - Test with Postman/Thunder Client
 - Verify firm_id isolation working
 
-**Week 1 Status:** 25% complete (Day 1 of 4), on track
+**Week 1 Status:** 50% complete (Day 2 of 4), ahead of schedule ⚡
+
+### Quick Reference
+**Start Server:**
+```powershell
+npm run server              # Development (auto-restart)
+npm run server:prod         # Production (no auto-restart)
+```
+
+**Test Endpoints:**
+```powershell
+curl.exe http://localhost:3001/health
+curl.exe http://localhost:3001/api/auth/test
+curl.exe -X POST http://localhost:3001/api/auth/login
+```
+
+**Stop Server:** Press Ctrl+C in server window
