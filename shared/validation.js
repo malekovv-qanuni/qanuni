@@ -602,6 +602,41 @@ const schemas = {
       type: 'string',
       label: 'Password'
     }
+  },
+
+  // ==================== SaaS CLIENT SCHEMA ====================
+  // Separate from desktop 'client' schema to avoid conflicts.
+  // firm_id comes from JWT token (req.user.firm_id), not from request body.
+
+  client_saas: {
+    client_name: {
+      required: true,
+      type: 'string',
+      minLength: 2,
+      maxLength: 255,
+      label: 'Client name'
+    },
+    client_name_arabic: {
+      type: 'string',
+      maxLength: 255
+    },
+    client_type: {
+      type: 'string',
+      required: false,
+      oneOf: ['individual', 'legal_entity']
+    },
+    email: {
+      type: 'string',
+      maxLength: 255,
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      patternMessage: 'Invalid email format'
+    },
+    phone: { type: 'string', maxLength: 50 },
+    mobile: { type: 'string', maxLength: 50 },
+    address: { type: 'string', maxLength: 500 },
+    address_arabic: { type: 'string', maxLength: 500 },
+    notes: { type: 'string' },
+    is_active: { required: false }
   }
 };
 
