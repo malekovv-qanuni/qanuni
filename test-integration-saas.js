@@ -18,7 +18,7 @@ let failed = 0;
 let totalAssertions = 0;
 
 // Track created resources for cleanup
-const cleanup = { settings: [], currencies: [], exchangeRates: [], lookups: [], appointments: [], invoices: [], advances: [], expenses: [], timesheets: [], deadlines: [], judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
+const cleanup = { settings: [], currencies: [], exchangeRates: [], lookups: [], appointments: [], invoices: [], advances: [], expenses: [], timesheets: [], deadlines: [], judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [], corporateEntities: [], shareholders: [], directors: [], shareTransfers: [], filings: [], meetings: [] };
 
 // ==================== HTTP Helper ====================
 
@@ -2232,6 +2232,349 @@ async function testSettings() {
 
 // ==================== Cleanup ====================
 
+// ==================== Corporate Secretary Tests ====================
+
+async function testCorporate() {
+  console.log('\n--- Corporate Secretary Tests ---\n');
+
+  // Test 1: List entities (initially empty)
+  console.log('Test: List corporate entities (empty)');
+  const listEmpty = await request('GET', '/api/corporate/entities');
+  assert('Entities list returns success', listEmpty.body.success === true);
+  assert('Entities list is array', Array.isArray(listEmpty.body.data));
+
+  // Test 2: Get corporate clients (legal_entity clients)
+  console.log('Test: Get corporate clients');
+  const corpClients = await request('GET', '/api/corporate/clients');
+  assert('Corporate clients returns success', corpClients.body.success === true);
+  assert('Corporate clients is array', Array.isArray(corpClients.body.data));
+  // Seed data has 3 legal_entity clients (Alpha, Beta, Echo)
+  assert('At least 3 legal_entity clients', corpClients.body.data.length >= 3);
+
+  // Test 3: Get clients without entity
+  console.log('Test: Get clients without entity');
+  const withoutEntity = await request('GET', '/api/corporate/clients-without-entity');
+  assert('Without entity returns success', withoutEntity.body.success === true);
+  assert('Without entity is array', Array.isArray(withoutEntity.body.data));
+
+  // Test 4: Create corporate entity (Alpha Corp = cleanup.clients[0])
+  console.log('Test: Create corporate entity');
+  const createEntity = await request('POST', '/api/corporate/entities', {
+    client_id: cleanup.clients[0],
+    registration_number: 'CR-TEST-001',
+    registration_date: '2020-01-15',
+    registered_address: 'Beirut, Lebanon',
+    share_capital: 100000,
+    share_capital_currency: 'USD',
+    total_shares: 1000,
+    fiscal_year_end: '12/31',
+    tax_id: 'TX-TEST-001',
+    status: 'active'
+  });
+  assert('Create entity returns 201', createEntity.status === 201, 'Got ' + createEntity.status + ': ' + JSON.stringify(createEntity.body));
+  assert('Create entity success', createEntity.body.success === true);
+  assert('Entity has entity_id', createEntity.body.entity && createEntity.body.entity.entity_id > 0);
+  if (createEntity.body.entity) {
+    cleanup.corporateEntities.push(createEntity.body.entity.client_id);
+  }
+
+  // Test 5: Duplicate entity creation (should fail with 409)
+  console.log('Test: Duplicate entity creation');
+  const dupEntity = await request('POST', '/api/corporate/entities', {
+    client_id: cleanup.clients[0],
+    registration_number: 'CR-DUP-001'
+  });
+  assert('Duplicate entity returns 409', dupEntity.status === 409);
+
+  // Test 6: Create entity for individual client (should fail with 400)
+  console.log('Test: Entity for individual client');
+  const individualEntity = await request('POST', '/api/corporate/entities', {
+    client_id: cleanup.clients[2]  // Charlie Smith (individual)
+  });
+  assert('Individual client entity returns 400', individualEntity.status === 400);
+
+  // Test 7: Get entity by client ID
+  console.log('Test: Get entity by client ID');
+  const getEntity = await request('GET', '/api/corporate/entities/' + cleanup.clients[0]);
+  assert('Get entity returns success', getEntity.body.success === true);
+  assert('Entity has registration_number', getEntity.body.entity && getEntity.body.entity.registration_number === 'CR-TEST-001');
+  assert('Entity has client_name', getEntity.body.entity && getEntity.body.entity.client_name != null);
+
+  // Test 8: Update entity
+  console.log('Test: Update corporate entity');
+  const updateEntity = await request('PUT', '/api/corporate/entities/' + cleanup.clients[0], {
+    client_id: cleanup.clients[0],
+    registration_number: 'CR-TEST-001-UPDATED',
+    share_capital: 200000,
+    share_capital_currency: 'USD',
+    total_shares: 2000,
+    status: 'active'
+  });
+  assert('Update entity returns success', updateEntity.body.success === true);
+  assert('Updated registration_number', updateEntity.body.entity && updateEntity.body.entity.registration_number === 'CR-TEST-001-UPDATED');
+  assert('Updated total_shares', updateEntity.body.entity && updateEntity.body.entity.total_shares === 2000);
+
+  // Test 9: Create shareholders
+  console.log('Test: Create shareholders');
+  const sh1 = await request('POST', '/api/corporate/shareholders', {
+    client_id: cleanup.clients[0],
+    name: 'John Doe',
+    nationality: 'US',
+    shares_owned: 600,
+    share_class: 'Ordinary'
+  });
+  assert('Shareholder 1 created (201)', sh1.status === 201);
+  assert('Shareholder 1 has ID', sh1.body.shareholder && sh1.body.shareholder.shareholder_id > 0);
+  const sh1Id = sh1.body.shareholder ? sh1.body.shareholder.shareholder_id : null;
+  if (sh1Id) cleanup.shareholders.push(sh1Id);
+
+  const sh2 = await request('POST', '/api/corporate/shareholders', {
+    client_id: cleanup.clients[0],
+    name: 'Jane Smith',
+    nationality: 'LB',
+    shares_owned: 400,
+    share_class: 'Ordinary'
+  });
+  assert('Shareholder 2 created (201)', sh2.status === 201);
+  const sh2Id = sh2.body.shareholder ? sh2.body.shareholder.shareholder_id : null;
+  if (sh2Id) cleanup.shareholders.push(sh2Id);
+
+  // Test 10: List shareholders
+  console.log('Test: List shareholders');
+  const listSh = await request('GET', '/api/corporate/entities/' + cleanup.clients[0] + '/shareholders');
+  assert('Shareholders list returns success', listSh.body.success === true);
+  assert('2 shareholders returned', listSh.body.data && listSh.body.data.length === 2);
+  assert('Total shares held = 1000', listSh.body.total_shares_held === 1000);
+
+  // Test 11: Update shareholder
+  console.log('Test: Update shareholder');
+  if (sh1Id) {
+    const updateSh = await request('PUT', '/api/corporate/shareholders/' + sh1Id, {
+      client_id: cleanup.clients[0],
+      name: 'John Doe Updated',
+      shares_owned: 700,
+      share_class: 'Ordinary'
+    });
+    assert('Shareholder updated', updateSh.body.success === true);
+    assert('Updated name', updateSh.body.shareholder && updateSh.body.shareholder.name === 'John Doe Updated');
+  }
+
+  // Test 12: Create directors
+  console.log('Test: Create directors');
+  const dir1 = await request('POST', '/api/corporate/directors', {
+    client_id: cleanup.clients[0],
+    name: 'Director One',
+    position: 'Chairman',
+    date_appointed: '2020-01-01',
+    is_signatory: true
+  });
+  assert('Director created (201)', dir1.status === 201);
+  assert('Director has director_id', dir1.body.director && dir1.body.director.director_id > 0);
+  const dir1Id = dir1.body.director ? dir1.body.director.director_id : null;
+  if (dir1Id) cleanup.directors.push(dir1Id);
+
+  // Test 13: List directors
+  console.log('Test: List directors');
+  const listDir = await request('GET', '/api/corporate/entities/' + cleanup.clients[0] + '/directors');
+  assert('Directors list returns success', listDir.body.success === true);
+  assert('1 director returned', listDir.body.data && listDir.body.data.length === 1);
+
+  // Test 14: Update director
+  console.log('Test: Update director');
+  if (dir1Id) {
+    const updateDir = await request('PUT', '/api/corporate/directors/' + dir1Id, {
+      client_id: cleanup.clients[0],
+      name: 'Director One Updated',
+      position: 'Managing Director',
+      date_appointed: '2020-01-01',
+      is_signatory: false
+    });
+    assert('Director updated', updateDir.body.success === true);
+    assert('Updated position', updateDir.body.director && updateDir.body.director.position === 'Managing Director');
+  }
+
+  // Test 15: Create share transfer (issuance)
+  console.log('Test: Create share transfer (issuance)');
+  if (sh1Id) {
+    const transfer1 = await request('POST', '/api/corporate/share-transfers', {
+      client_id: cleanup.clients[0],
+      transfer_type: 'issuance',
+      transfer_date: '2024-06-01',
+      to_shareholder_id: sh1Id,
+      shares_transferred: 100,
+      share_class: 'Ordinary'
+    });
+    assert('Share issuance created (201)', transfer1.status === 201);
+    const t1Id = transfer1.body.transfer ? transfer1.body.transfer.transfer_id : null;
+    if (t1Id) cleanup.shareTransfers.push(t1Id);
+
+    // Verify shareholder balance increased
+    const afterIssuance = await request('GET', '/api/corporate/entities/' + cleanup.clients[0] + '/shareholders');
+    const updatedSh = afterIssuance.body.data ? afterIssuance.body.data.find(s => s.shareholder_id === sh1Id) : null;
+    assert('Shareholder balance updated after issuance', updatedSh && updatedSh.shares_owned === 800, 'Got: ' + (updatedSh ? updatedSh.shares_owned : 'null'));
+  }
+
+  // Test 16: List share transfers
+  console.log('Test: List share transfers');
+  const listTransfers = await request('GET', '/api/corporate/entities/' + cleanup.clients[0] + '/share-transfers');
+  assert('Share transfers list returns success', listTransfers.body.success === true);
+  assert('Share transfers is array', Array.isArray(listTransfers.body.data));
+
+  // Test 17: Create filing/document
+  console.log('Test: Create filing');
+  const filing1 = await request('POST', '/api/corporate/documents', {
+    client_id: cleanup.clients[0],
+    filing_type: 'Annual Return',
+    filing_date: '2024-03-15',
+    filing_description: 'Annual return filing for 2023',
+    filing_reference: 'AR-2023-001',
+    next_due_date: '2025-03-15',
+    reminder_days: 30,
+    status: 'completed'
+  });
+  assert('Filing created (201)', filing1.status === 201);
+  assert('Filing has filing_id', filing1.body.filing && filing1.body.filing.filing_id > 0);
+  const filing1Id = filing1.body.filing ? filing1.body.filing.filing_id : null;
+  if (filing1Id) cleanup.filings.push(filing1Id);
+
+  // Test 18: List filings
+  console.log('Test: List filings/documents');
+  const listFilings = await request('GET', '/api/corporate/entities/' + cleanup.clients[0] + '/documents');
+  assert('Filings list returns success', listFilings.body.success === true);
+  assert('1 filing returned', listFilings.body.data && listFilings.body.data.length === 1);
+
+  // Test 19: Update filing
+  console.log('Test: Update filing');
+  if (filing1Id) {
+    const updateFiling = await request('PUT', '/api/corporate/documents/' + filing1Id, {
+      client_id: cleanup.clients[0],
+      filing_type: 'Annual Return Updated',
+      filing_date: '2024-03-15',
+      status: 'pending'
+    });
+    assert('Filing updated', updateFiling.body.success === true);
+    assert('Updated filing_type', updateFiling.body.filing && updateFiling.body.filing.filing_type === 'Annual Return Updated');
+  }
+
+  // Test 20: Create board meeting
+  console.log('Test: Create board meeting');
+  const meeting1 = await request('POST', '/api/corporate/board-meetings', {
+    client_id: cleanup.clients[0],
+    meeting_type: 'Board Meeting',
+    meeting_date: '2024-06-15',
+    meeting_description: 'Q2 Board Review',
+    attendees: 'Director One, John Doe',
+    status: 'held'
+  });
+  assert('Meeting created (201)', meeting1.status === 201);
+  assert('Meeting has meeting_id', meeting1.body.meeting && meeting1.body.meeting.meeting_id > 0);
+  const meeting1Id = meeting1.body.meeting ? meeting1.body.meeting.meeting_id : null;
+  if (meeting1Id) cleanup.meetings.push(meeting1Id);
+
+  // Test 21: List board meetings
+  console.log('Test: List board meetings');
+  const listMeetings = await request('GET', '/api/corporate/entities/' + cleanup.clients[0] + '/board-meetings');
+  assert('Meetings list returns success', listMeetings.body.success === true);
+  assert('1 meeting returned', listMeetings.body.data && listMeetings.body.data.length === 1);
+
+  // Test 22: Update board meeting
+  console.log('Test: Update board meeting');
+  if (meeting1Id) {
+    const updateMeeting = await request('PUT', '/api/corporate/board-meetings/' + meeting1Id, {
+      client_id: cleanup.clients[0],
+      meeting_type: 'AGM',
+      meeting_date: '2024-06-15',
+      meeting_description: 'Annual General Meeting',
+      status: 'held'
+    });
+    assert('Meeting updated', updateMeeting.body.success === true);
+    assert('Updated meeting_type', updateMeeting.body.meeting && updateMeeting.body.meeting.meeting_type === 'AGM');
+  }
+
+  // Test 23: Cap table
+  console.log('Test: Cap table');
+  const capTable = await request('GET', '/api/corporate/entities/' + cleanup.clients[0] + '/cap-table');
+  assert('Cap table returns success', capTable.body.success === true);
+  assert('Cap table has shareholders', capTable.body.data && Array.isArray(capTable.body.data.shareholders));
+  assert('Cap table has total_authorized_shares', capTable.body.data && capTable.body.data.total_authorized_shares === 2000);
+
+  // Test 24: Timeline
+  console.log('Test: Entity timeline');
+  const timeline = await request('GET', '/api/corporate/entities/' + cleanup.clients[0] + '/timeline');
+  assert('Timeline returns success', timeline.body.success === true);
+  assert('Timeline has events', timeline.body.data && timeline.body.data.length >= 1);
+
+  // Test 25: Company types lookup
+  console.log('Test: Company types lookup');
+  const companyTypes = await request('GET', '/api/corporate/company-types');
+  assert('Company types returns success', companyTypes.body.success === true);
+  assert('Company types is array', Array.isArray(companyTypes.body.data));
+
+  // Test 26: Director roles lookup
+  console.log('Test: Director roles lookup');
+  const directorRoles = await request('GET', '/api/corporate/director-roles');
+  assert('Director roles returns success', directorRoles.body.success === true);
+  assert('Director roles has entries', directorRoles.body.data && directorRoles.body.data.length >= 4);
+
+  // Test 27: Upcoming compliance
+  console.log('Test: Upcoming compliance');
+  const compliance = await request('GET', '/api/corporate/upcoming-compliance');
+  assert('Compliance returns success', compliance.body.success === true);
+  assert('Compliance has filings array', compliance.body.data && Array.isArray(compliance.body.data.filings));
+  assert('Compliance has meetings array', compliance.body.data && Array.isArray(compliance.body.data.meetings));
+
+  // Test 28: Delete shareholder (soft delete)
+  console.log('Test: Delete shareholder');
+  if (sh2Id) {
+    const delSh = await request('DELETE', '/api/corporate/shareholders/' + sh2Id);
+    assert('Shareholder deleted', delSh.body.success === true);
+    // Remove from cleanup since already deleted
+    cleanup.shareholders = cleanup.shareholders.filter(id => id !== sh2Id);
+  }
+
+  // Test 29: Delete director (soft delete)
+  console.log('Test: Delete director');
+  if (dir1Id) {
+    const delDir = await request('DELETE', '/api/corporate/directors/' + dir1Id);
+    assert('Director deleted', delDir.body.success === true);
+    cleanup.directors = cleanup.directors.filter(id => id !== dir1Id);
+  }
+
+  // Test 30: Delete filing (soft delete)
+  console.log('Test: Delete filing');
+  if (filing1Id) {
+    const delFiling = await request('DELETE', '/api/corporate/documents/' + filing1Id);
+    assert('Filing deleted', delFiling.body.success === true);
+    cleanup.filings = cleanup.filings.filter(id => id !== filing1Id);
+  }
+
+  // Test 31: Delete meeting (soft delete)
+  console.log('Test: Delete meeting');
+  if (meeting1Id) {
+    const delMeeting = await request('DELETE', '/api/corporate/board-meetings/' + meeting1Id);
+    assert('Meeting deleted', delMeeting.body.success === true);
+    cleanup.meetings = cleanup.meetings.filter(id => id !== meeting1Id);
+  }
+
+  // Test 32: Delete entity (soft delete)
+  console.log('Test: Delete corporate entity');
+  const delEntity = await request('DELETE', '/api/corporate/entities/' + cleanup.clients[0]);
+  assert('Entity deleted', delEntity.body.success === true);
+  cleanup.corporateEntities = cleanup.corporateEntities.filter(id => id !== cleanup.clients[0]);
+
+  // Verify entity is gone
+  const getDeleted = await request('GET', '/api/corporate/entities/' + cleanup.clients[0]);
+  assert('Deleted entity returns 404', getDeleted.status === 404);
+
+  // Test 33: Unauthenticated access
+  console.log('Test: Unauthenticated access');
+  const oldToken = TOKEN;
+  TOKEN = '';
+  const noAuth = await request('GET', '/api/corporate/entities');
+  assert('No auth returns 401', noAuth.status === 401);
+  TOKEN = oldToken;
+}
+
 async function cleanupData() {
   console.log('\nCleanup...');
 
@@ -2255,6 +2598,37 @@ async function cleanupData() {
     await request('DELETE', '/api/settings/exchange-rates/' + id);
   }
   console.log('  Deleted ' + cleanup.exchangeRates.length + ' exchange rates');
+
+  // Cleanup corporate sub-resources first (before clients)
+  for (const id of cleanup.shareTransfers) {
+    await request('DELETE', '/api/corporate/share-transfers/' + id);
+  }
+  console.log('  Deleted ' + cleanup.shareTransfers.length + ' share transfers');
+
+  for (const id of cleanup.shareholders) {
+    await request('DELETE', '/api/corporate/shareholders/' + id);
+  }
+  console.log('  Deleted ' + cleanup.shareholders.length + ' shareholders');
+
+  for (const id of cleanup.directors) {
+    await request('DELETE', '/api/corporate/directors/' + id);
+  }
+  console.log('  Deleted ' + cleanup.directors.length + ' directors');
+
+  for (const id of cleanup.filings) {
+    await request('DELETE', '/api/corporate/documents/' + id);
+  }
+  console.log('  Deleted ' + cleanup.filings.length + ' filings');
+
+  for (const id of cleanup.meetings) {
+    await request('DELETE', '/api/corporate/board-meetings/' + id);
+  }
+  console.log('  Deleted ' + cleanup.meetings.length + ' meetings');
+
+  for (const clientId of cleanup.corporateEntities) {
+    await request('DELETE', '/api/corporate/entities/' + clientId);
+  }
+  console.log('  Deleted ' + cleanup.corporateEntities.length + ' corporate entities');
 
   // Cleanup lookups first (no dependencies)
   for (const item of cleanup.lookups) {
@@ -2351,6 +2725,7 @@ async function run() {
     await testTrash();
     await testLookups();
     await testSettings();
+    await testCorporate();
     await testCrossResource();
     await cleanupData();
   } catch (err) {

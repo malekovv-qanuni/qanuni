@@ -965,6 +965,89 @@ const schemas = {
     outcome_notes: { type: 'string' },
     next_hearing_date: { type: 'date' },
     reminder_days: { type: 'number', min: 0, max: 365 }
+  },
+
+  // ==================== CORPORATE SAAS SCHEMAS ====================
+
+  corporate_entity_saas: {
+    client_id: { type: 'number', required: true, label: 'Client' },
+    registration_number: { type: 'string', maxLength: 100 },
+    registration_date: { type: 'date' },
+    registered_address: { type: 'string', maxLength: 500 },
+    share_capital: { type: 'number', min: 0 },
+    share_capital_currency: { type: 'string', maxLength: 10 },
+    total_shares: { type: 'number', min: 0 },
+    fiscal_year_end: { type: 'string', maxLength: 10 },
+    tax_id: { type: 'string', maxLength: 100 },
+    commercial_register: { type: 'string', maxLength: 200 },
+    status: { type: 'string', oneOf: ['active', 'inactive', 'dissolved', 'suspended'] },
+    notes: { type: 'string' }
+  },
+
+  shareholder_saas: {
+    client_id: { type: 'number', required: true, label: 'Client' },
+    name: { type: 'string', required: true, maxLength: 200, label: 'Shareholder name' },
+    name_arabic: { type: 'string', maxLength: 200 },
+    id_number: { type: 'string', maxLength: 100 },
+    nationality: { type: 'string', maxLength: 100 },
+    shares_owned: { type: 'number', min: 0, label: 'Shares owned' },
+    share_class: { type: 'string', maxLength: 50 },
+    date_acquired: { type: 'date' },
+    notes: { type: 'string' }
+  },
+
+  director_saas: {
+    client_id: { type: 'number', required: true, label: 'Client' },
+    name: { type: 'string', required: true, maxLength: 200, label: 'Director name' },
+    name_arabic: { type: 'string', maxLength: 200 },
+    id_number: { type: 'string', maxLength: 100 },
+    nationality: { type: 'string', maxLength: 100 },
+    position: { type: 'string', maxLength: 100 },
+    date_appointed: { type: 'date' },
+    date_resigned: { type: 'date' },
+    is_signatory: { type: 'boolean' },
+    notes: { type: 'string' }
+  },
+
+  share_transfer_saas: {
+    client_id: { type: 'number', required: true, label: 'Client' },
+    transfer_type: { type: 'string', required: true, oneOf: ['transfer', 'issuance', 'buyback', 'redemption'], label: 'Transfer type' },
+    transfer_date: { type: 'date', required: true, label: 'Transfer date' },
+    shares_transferred: { type: 'number', required: true, min: 1, label: 'Shares transferred' },
+    from_shareholder_id: { type: 'number' },
+    to_shareholder_id: { type: 'number' },
+    from_shareholder_name: { type: 'string', maxLength: 200 },
+    to_shareholder_name: { type: 'string', maxLength: 200 },
+    price_per_share: { type: 'number', min: 0 },
+    total_consideration: { type: 'number', min: 0 },
+    share_class: { type: 'string', maxLength: 50 },
+    board_resolution: { type: 'string', maxLength: 500 },
+    notes: { type: 'string' }
+  },
+
+  filing_saas: {
+    client_id: { type: 'number', required: true, label: 'Client' },
+    filing_type: { type: 'string', required: true, maxLength: 100, label: 'Filing type' },
+    filing_date: { type: 'date', required: true, label: 'Filing date' },
+    filing_description: { type: 'string', maxLength: 500 },
+    filing_reference: { type: 'string', maxLength: 200 },
+    next_due_date: { type: 'date' },
+    reminder_days: { type: 'number', min: 0, max: 365 },
+    notes: { type: 'string' },
+    status: { type: 'string', oneOf: ['pending', 'completed', 'overdue', 'cancelled'] }
+  },
+
+  meeting_saas: {
+    client_id: { type: 'number', required: true, label: 'Client' },
+    meeting_type: { type: 'string', required: true, maxLength: 100, label: 'Meeting type' },
+    meeting_date: { type: 'date', required: true, label: 'Meeting date' },
+    meeting_description: { type: 'string', maxLength: 500 },
+    meeting_notes: { type: 'string' },
+    attendees: { type: 'string' },
+    next_meeting_date: { type: 'date' },
+    next_meeting_agenda: { type: 'string' },
+    reminder_days: { type: 'number', min: 0, max: 365 },
+    status: { type: 'string', oneOf: ['scheduled', 'held', 'cancelled', 'postponed'] }
   }
 };
 
