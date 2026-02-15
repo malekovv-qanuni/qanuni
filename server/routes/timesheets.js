@@ -3,10 +3,10 @@
  *
  * All endpoints are firm-scoped via JWT token (req.user.firm_id).
  * Uses soft delete (is_deleted flag) instead of hard delete.
- * Optional FKs: matter_id, lawyer_id.
+ * Optional FKs: matter_id, client_id, lawyer_id.
  * Timesheet IDs are INT IDENTITY (SaaS pattern).
  *
- * @version 1.0.0 (Week 3 Day 14)
+ * @version 2.0.0 (Week 4 Day 18 - unbilled + matter + client_id)
  */
 
 const express = require('express');
@@ -18,6 +18,136 @@ const { parsePagination, buildPaginationResponse } = require('../utils/paginatio
 
 // All routes require authentication
 router.use(authenticate);
+
+// ==================== GET /api/timesheets/unbilled ====================
+// Get unbilled time entries for invoicing workflows
+// Query params: ?client_id=123, ?matter_id=456
+
+router.get('/unbilled', async (req, res) => {
+  try {
+    const { client_id, matter_id } = req.query;
+    const params = { firm_id: req.user.firm_id };
+
+    let where = `WHERE t.firm_id = @firm_id
+      AND t.is_deleted = 0
+      AND t.billable = 1
+      AND t.status != 'billed'`;
+
+    if (client_id) {
+      const cid = parseInt(client_id);
+      if (!isNaN(cid)) {
+        where += ' AND t.client_id = @client_id';
+        params.client_id = cid;
+      }
+    }
+
+    if (matter_id) {
+      const mid = parseInt(matter_id);
+      if (!isNaN(mid)) {
+        where += ' AND t.matter_id = @matter_id';
+        params.matter_id = mid;
+      }
+    }
+
+    const timesheets = await db.getAll(
+      `SELECT
+        t.timesheet_id,
+        t.firm_id,
+        t.client_id,
+        t.matter_id,
+        t.lawyer_id,
+        t.entry_date,
+        t.minutes,
+        t.narrative,
+        t.billable,
+        t.rate_per_hour,
+        t.rate_currency,
+        t.status,
+        t.created_at,
+        t.updated_at,
+        m.matter_name,
+        m.matter_number,
+        l.full_name as lawyer_name
+      FROM timesheets t
+      LEFT JOIN matters m ON t.matter_id = m.matter_id
+      LEFT JOIN lawyers l ON t.lawyer_id = l.lawyer_id
+      ${where}
+      ORDER BY t.entry_date ASC`,
+      params
+    );
+
+    res.json({
+      success: true,
+      data: timesheets
+    });
+
+  } catch (error) {
+    console.error('Get unbilled timesheets error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve unbilled timesheets'
+    });
+  }
+});
+
+// ==================== GET /api/timesheets/matter/:matterId ====================
+// Get all timesheets for a specific matter (used by matter detail views)
+
+router.get('/matter/:matterId', async (req, res) => {
+  try {
+    const matterId = parseInt(req.params.matterId);
+    if (isNaN(matterId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid matter ID'
+      });
+    }
+
+    const timesheets = await db.getAll(
+      `SELECT
+        t.timesheet_id,
+        t.firm_id,
+        t.client_id,
+        t.matter_id,
+        t.lawyer_id,
+        t.entry_date,
+        t.minutes,
+        t.narrative,
+        t.billable,
+        t.rate_per_hour,
+        t.rate_currency,
+        t.status,
+        t.created_at,
+        t.updated_at,
+        m.matter_name,
+        m.matter_number,
+        l.full_name as lawyer_name
+      FROM timesheets t
+      LEFT JOIN matters m ON t.matter_id = m.matter_id
+      LEFT JOIN lawyers l ON t.lawyer_id = l.lawyer_id
+      WHERE t.firm_id = @firm_id
+        AND t.matter_id = @matter_id
+        AND t.is_deleted = 0
+      ORDER BY t.entry_date DESC, t.created_at DESC`,
+      {
+        firm_id: req.user.firm_id,
+        matter_id: matterId
+      }
+    );
+
+    res.json({
+      success: true,
+      data: timesheets
+    });
+
+  } catch (error) {
+    console.error('Get matter timesheets error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve matter timesheets'
+    });
+  }
+});
 
 // ==================== GET /api/timesheets ====================
 // List all timesheets for the user's firm
@@ -76,6 +206,7 @@ router.get('/', async (req, res) => {
       `SELECT
         t.timesheet_id,
         t.firm_id,
+        t.client_id,
         t.matter_id,
         t.lawyer_id,
         t.entry_date,
@@ -131,6 +262,7 @@ router.get('/:id', async (req, res) => {
       `SELECT
         t.timesheet_id,
         t.firm_id,
+        t.client_id,
         t.matter_id,
         t.lawyer_id,
         t.entry_date,
@@ -180,11 +312,12 @@ router.get('/:id', async (req, res) => {
 });
 
 // ==================== POST /api/timesheets ====================
-// Create new timesheet (optional matter_id + lawyer_id FK validation)
+// Create new timesheet (optional matter_id + client_id + lawyer_id FK validation)
 
 router.post('/', validateBody('timesheet_saas'), async (req, res) => {
   const {
     matter_id,
+    client_id,
     lawyer_id,
     entry_date,
     minutes,
@@ -212,6 +345,20 @@ router.post('/', validateBody('timesheet_saas'), async (req, res) => {
       }
     }
 
+    // Validate client_id (if provided)
+    if (client_id) {
+      const client = await db.getOne(
+        'SELECT client_id FROM clients WHERE client_id = @client_id AND firm_id = @firm_id AND is_deleted = 0',
+        { client_id, firm_id }
+      );
+      if (!client) {
+        return res.status(404).json({
+          success: false,
+          error: 'Client not found or does not belong to your firm'
+        });
+      }
+    }
+
     // Validate lawyer_id (if provided)
     if (lawyer_id) {
       const lawyer = await db.getOne(
@@ -230,6 +377,7 @@ router.post('/', validateBody('timesheet_saas'), async (req, res) => {
       `INSERT INTO timesheets (
         firm_id,
         matter_id,
+        client_id,
         lawyer_id,
         entry_date,
         minutes,
@@ -244,6 +392,7 @@ router.post('/', validateBody('timesheet_saas'), async (req, res) => {
         INSERTED.timesheet_id,
         INSERTED.firm_id,
         INSERTED.matter_id,
+        INSERTED.client_id,
         INSERTED.lawyer_id,
         INSERTED.entry_date,
         INSERTED.minutes,
@@ -257,6 +406,7 @@ router.post('/', validateBody('timesheet_saas'), async (req, res) => {
       VALUES (
         @firm_id,
         @matter_id,
+        @client_id,
         @lawyer_id,
         @entry_date,
         @minutes,
@@ -270,6 +420,7 @@ router.post('/', validateBody('timesheet_saas'), async (req, res) => {
       {
         firm_id,
         matter_id: matter_id || null,
+        client_id: client_id || null,
         lawyer_id: lawyer_id || null,
         entry_date,
         minutes: parseInt(minutes),
@@ -302,6 +453,7 @@ router.post('/', validateBody('timesheet_saas'), async (req, res) => {
 router.put('/:id', validateBody('timesheet_saas'), async (req, res) => {
   const {
     matter_id,
+    client_id,
     lawyer_id,
     entry_date,
     minutes,
@@ -350,6 +502,20 @@ router.put('/:id', validateBody('timesheet_saas'), async (req, res) => {
       }
     }
 
+    // Validate client_id (if provided)
+    if (client_id) {
+      const client = await db.getOne(
+        'SELECT client_id FROM clients WHERE client_id = @client_id AND firm_id = @firm_id AND is_deleted = 0',
+        { client_id, firm_id }
+      );
+      if (!client) {
+        return res.status(404).json({
+          success: false,
+          error: 'Client not found or does not belong to your firm'
+        });
+      }
+    }
+
     // Validate lawyer_id (if provided)
     if (lawyer_id) {
       const lawyer = await db.getOne(
@@ -368,6 +534,7 @@ router.put('/:id', validateBody('timesheet_saas'), async (req, res) => {
       `UPDATE timesheets
       SET
         matter_id = @matter_id,
+        client_id = @client_id,
         lawyer_id = @lawyer_id,
         entry_date = @entry_date,
         minutes = @minutes,
@@ -381,6 +548,7 @@ router.put('/:id', validateBody('timesheet_saas'), async (req, res) => {
         INSERTED.timesheet_id,
         INSERTED.firm_id,
         INSERTED.matter_id,
+        INSERTED.client_id,
         INSERTED.lawyer_id,
         INSERTED.entry_date,
         INSERTED.minutes,
@@ -395,6 +563,7 @@ router.put('/:id', validateBody('timesheet_saas'), async (req, res) => {
         timesheet_id: id,
         firm_id,
         matter_id: matter_id || null,
+        client_id: client_id || null,
         lawyer_id: lawyer_id || null,
         entry_date,
         minutes: parseInt(minutes),

@@ -923,6 +923,38 @@ async function testTimesheets() {
   // Verify not in list
   const t79list = await request('GET', '/api/timesheets');
   assert('Deleted timesheet not in list', !t79list.body.data.find(t => t.timesheet_id === deleteTimesheetId));
+
+  // Test 79a: Get unbilled time (all)
+  console.log('\n  Test 79a: Get unbilled timesheets');
+  const t79a = await request('GET', '/api/timesheets/unbilled');
+  assert('Status 200', t79a.status === 200, 'Got ' + t79a.status);
+  assert('Has data array', Array.isArray(t79a.body.data));
+  assert('Includes test timesheet', t79a.body.data.some(t => t.timesheet_id === testTimesheetId));
+  assert('All are billable', t79a.body.data.every(t => t.billable === true || t.billable === 1));
+  assert('None are billed', t79a.body.data.every(t => t.status !== 'billed'));
+
+  // Test 79b: Get unbilled time filtered by matter_id
+  console.log('\n  Test 79b: Get unbilled timesheets by matter');
+  const t79b = await request('GET', '/api/timesheets/unbilled?matter_id=' + cleanup.matters[0]);
+  assert('Status 200', t79b.status === 200, 'Got ' + t79b.status);
+  assert('Has data array', Array.isArray(t79b.body.data));
+  assert('All match matter_id', t79b.body.data.every(t => t.matter_id === cleanup.matters[0]));
+
+  // Test 79c: Get timesheets by matter route
+  console.log('\n  Test 79c: Get timesheets by matter route');
+  const t79c = await request('GET', '/api/timesheets/matter/' + cleanup.matters[0]);
+  assert('Status 200', t79c.status === 200, 'Got ' + t79c.status);
+  assert('Has data array', Array.isArray(t79c.body.data));
+  assert('Includes test timesheet', t79c.body.data.some(t => t.timesheet_id === testTimesheetId));
+  assert('All match matter_id', t79c.body.data.every(t => t.matter_id === cleanup.matters[0]));
+
+  // Test 79d: Get lawyer timesheets
+  console.log('\n  Test 79d: Get lawyer timesheets');
+  const t79d = await request('GET', '/api/lawyers/' + cleanup.lawyers[0] + '/timesheets');
+  assert('Status 200', t79d.status === 200, 'Got ' + t79d.status);
+  assert('Has data array', Array.isArray(t79d.body.data));
+  assert('Includes test timesheet', t79d.body.data.some(t => t.timesheet_id === testTimesheetId));
+  assert('All match lawyer_id', t79d.body.data.every(t => t.lawyer_id === cleanup.lawyers[0]));
 }
 
 // ==================== Expenses Tests ====================

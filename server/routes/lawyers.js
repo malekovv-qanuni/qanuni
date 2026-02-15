@@ -384,6 +384,65 @@ router.put('/:id', validateBody('lawyer_saas'), async (req, res) => {
   }
 });
 
+// ==================== GET /api/lawyers/:id/timesheets ====================
+// Get all timesheets for a specific lawyer (sub-resource pattern)
+
+router.get('/:id/timesheets', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid lawyer ID'
+      });
+    }
+
+    const timesheets = await db.getAll(
+      `SELECT
+        t.timesheet_id,
+        t.firm_id,
+        t.client_id,
+        t.matter_id,
+        t.lawyer_id,
+        t.entry_date,
+        t.minutes,
+        t.narrative,
+        t.billable,
+        t.rate_per_hour,
+        t.rate_currency,
+        t.status,
+        t.created_at,
+        t.updated_at,
+        m.matter_name,
+        m.matter_number,
+        l.full_name as lawyer_name
+      FROM timesheets t
+      LEFT JOIN matters m ON t.matter_id = m.matter_id
+      LEFT JOIN lawyers l ON t.lawyer_id = l.lawyer_id
+      WHERE t.firm_id = @firm_id
+        AND t.lawyer_id = @lawyer_id
+        AND t.is_deleted = 0
+      ORDER BY t.entry_date DESC, t.created_at DESC`,
+      {
+        firm_id: req.user.firm_id,
+        lawyer_id: id
+      }
+    );
+
+    res.json({
+      success: true,
+      data: timesheets
+    });
+
+  } catch (error) {
+    console.error('Get lawyer timesheets error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve lawyer timesheets'
+    });
+  }
+});
+
 // ==================== DELETE /api/lawyers/:id ====================
 // Soft delete lawyer (firm-scoped)
 

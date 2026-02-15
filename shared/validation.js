@@ -803,6 +803,7 @@ const schemas = {
 
   timesheet_saas: {
     matter_id: { type: 'number', label: 'Matter' },
+    client_id: { type: 'number', label: 'Client' },
     lawyer_id: { type: 'number', label: 'Lawyer' },
     entry_date: { required: true, type: 'date', label: 'Date' },
     minutes: { required: true, type: 'number', min: 1, max: 1440, label: 'Minutes' },

@@ -21,6 +21,7 @@ CREATE TABLE timesheets (
   timesheet_id          INT IDENTITY(1,1) PRIMARY KEY,
   firm_id               INT             NOT NULL,
   matter_id             INT,
+  client_id             INT,
   lawyer_id             INT,
 
   -- Time entry details
@@ -43,6 +44,7 @@ CREATE TABLE timesheets (
   -- Foreign keys
   CONSTRAINT FK_timesheets_firm FOREIGN KEY (firm_id) REFERENCES firms(firm_id),
   CONSTRAINT FK_timesheets_matter FOREIGN KEY (matter_id) REFERENCES matters(matter_id),
+  CONSTRAINT FK_timesheets_client FOREIGN KEY (client_id) REFERENCES clients(client_id),
   CONSTRAINT FK_timesheets_lawyer FOREIGN KEY (lawyer_id) REFERENCES lawyers(lawyer_id),
   CONSTRAINT FK_timesheets_created_by FOREIGN KEY (created_by) REFERENCES users(user_id),
 
@@ -59,6 +61,9 @@ CREATE NONCLUSTERED INDEX IX_timesheets_firm_status ON timesheets(firm_id, statu
 GO
 
 CREATE NONCLUSTERED INDEX IX_timesheets_matter ON timesheets(matter_id) WHERE is_deleted = 0;
+GO
+
+CREATE NONCLUSTERED INDEX IX_timesheets_client ON timesheets(client_id) WHERE is_deleted = 0;
 GO
 
 CREATE NONCLUSTERED INDEX IX_timesheets_lawyer ON timesheets(lawyer_id) WHERE is_deleted = 0;
