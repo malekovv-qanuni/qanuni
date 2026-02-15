@@ -18,7 +18,7 @@ let failed = 0;
 let totalAssertions = 0;
 
 // Track created resources for cleanup
-const cleanup = { judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
+const cleanup = { deadlines: [], judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
 
 // ==================== HTTP Helper ====================
 
@@ -668,6 +668,132 @@ async function testJudgments() {
   assert('Deleted judgment not in list', !t55list.body.data.find(j => j.judgment_id === deleteJudgmentId));
 }
 
+// ==================== Deadlines Tests ====================
+
+async function testDeadlines() {
+  console.log('\n--- DEADLINES TESTS ---\n');
+
+  // Test 56: Create deadline (comprehensive - with matter + judgment)
+  console.log('  Test 56: Create deadline (comprehensive)');
+  const t56 = await request('POST', '/api/deadlines', {
+    matter_id: cleanup.matters[0],
+    judgment_id: cleanup.judgments[0],
+    title: 'File appeal brief',
+    deadline_date: '2026-04-15',
+    reminder_days: 14,
+    priority: 'high',
+    status: 'pending',
+    notes: 'Must file before appeal deadline'
+  });
+  assert('Status 201', t56.status === 201, 'Got ' + t56.status);
+  assert('Has deadline object', t56.body.deadline != null);
+  assert('Has deadline_id', t56.body.deadline && t56.body.deadline.deadline_id > 0);
+  assert('Priority is high', t56.body.deadline && t56.body.deadline.priority === 'high');
+  assert('Status is pending', t56.body.deadline && t56.body.deadline.status === 'pending');
+  assert('Reminder days is 14', t56.body.deadline && t56.body.deadline.reminder_days === 14);
+  const testDeadlineId = t56.body.deadline ? t56.body.deadline.deadline_id : null;
+  if (testDeadlineId) cleanup.deadlines.push(testDeadlineId);
+
+  // Test 57: Create deadline (minimal - matter_id + title + date only)
+  console.log('\n  Test 57: Create deadline (minimal)');
+  const t57 = await request('POST', '/api/deadlines', {
+    matter_id: cleanup.matters[1],
+    title: 'Submit documents',
+    deadline_date: '2026-05-01'
+  });
+  assert('Status 201', t57.status === 201, 'Got ' + t57.status);
+  assert('Created successfully', t57.body.success === true);
+  assert('Default priority medium', t57.body.deadline && t57.body.deadline.priority === 'medium');
+  assert('Default status pending', t57.body.deadline && t57.body.deadline.status === 'pending');
+  assert('Default reminder 7', t57.body.deadline && t57.body.deadline.reminder_days === 7);
+  if (t57.body.deadline) cleanup.deadlines.push(t57.body.deadline.deadline_id);
+
+  // Test 58: Reject invalid matter_id
+  console.log('\n  Test 58: Reject invalid matter_id');
+  const t58 = await request('POST', '/api/deadlines', {
+    matter_id: 99999,
+    title: 'Should fail',
+    deadline_date: '2026-04-01'
+  });
+  assert('Status 404', t58.status === 404, 'Got ' + t58.status);
+  assert('Error mentions Matter', t58.body.error && t58.body.error.includes('Matter not found'));
+
+  // Test 59: Reject invalid judgment_id
+  console.log('\n  Test 59: Reject invalid judgment_id');
+  const t59 = await request('POST', '/api/deadlines', {
+    matter_id: cleanup.matters[0],
+    judgment_id: 99999,
+    title: 'Should fail',
+    deadline_date: '2026-04-01'
+  });
+  assert('Status 404', t59.status === 404, 'Got ' + t59.status);
+  assert('Error mentions Judgment', t59.body.error && t59.body.error.includes('Judgment not found'));
+
+  // Test 60: List deadlines
+  console.log('\n  Test 60: List deadlines');
+  const t60 = await request('GET', '/api/deadlines');
+  assert('Has data array', Array.isArray(t60.body.data));
+  assert('Has pagination', t60.body.pagination != null);
+  assert('Has at least 2 deadlines', t60.body.data.length >= 2, 'Got ' + t60.body.data.length);
+
+  // Test 61: Filter by status
+  console.log('\n  Test 61: Filter by status');
+  const t61 = await request('GET', '/api/deadlines?status=pending');
+  assert('Returns pending deadlines', t61.body.data.length >= 1);
+  assert('All are pending', t61.body.data.every(d => d.status === 'pending'));
+
+  // Test 62: Filter by matter_id
+  console.log('\n  Test 62: Filter by matter_id');
+  const t62 = await request('GET', '/api/deadlines?matter_id=' + cleanup.matters[0]);
+  assert('Returns deadlines for matter', t62.body.data.length >= 1, 'Got ' + t62.body.data.length);
+  assert('All match matter_id', t62.body.data.every(d => d.matter_id === cleanup.matters[0]));
+
+  // Test 63: Filter by priority
+  console.log('\n  Test 63: Filter by priority');
+  const t63 = await request('GET', '/api/deadlines?priority=high');
+  assert('Returns high priority deadlines', t63.body.data.length >= 1);
+  assert('All are high priority', t63.body.data.every(d => d.priority === 'high'));
+
+  // Test 64: Search deadlines
+  console.log('\n  Test 64: Search deadlines');
+  const t64 = await request('GET', '/api/deadlines?search=appeal');
+  assert('Finds appeal deadline', t64.body.data.length >= 1);
+
+  // Test 65: Get single deadline
+  console.log('\n  Test 65: Get single deadline');
+  const t65 = await request('GET', '/api/deadlines/' + testDeadlineId);
+  assert('Status 200', t65.status === 200, 'Got ' + t65.status);
+  assert('Has deadline object', t65.body.deadline != null);
+  assert('deadline_id matches', t65.body.deadline && t65.body.deadline.deadline_id === testDeadlineId);
+  assert('Has matter_name from JOIN', t65.body.deadline && t65.body.deadline.matter_name != null);
+
+  // Test 66: Update deadline
+  console.log('\n  Test 66: Update deadline');
+  const t66 = await request('PUT', '/api/deadlines/' + testDeadlineId, {
+    matter_id: cleanup.matters[0],
+    title: 'Updated: File appeal brief',
+    deadline_date: '2026-04-20',
+    priority: 'urgent',
+    status: 'completed',
+    notes: 'Filed successfully'
+  });
+  assert('Status 200', t66.status === 200, 'Got ' + t66.status);
+  assert('Title updated', t66.body.deadline && t66.body.deadline.title === 'Updated: File appeal brief');
+  assert('Priority updated to urgent', t66.body.deadline && t66.body.deadline.priority === 'urgent');
+  assert('Status updated to completed', t66.body.deadline && t66.body.deadline.status === 'completed');
+
+  // Test 67: Soft delete deadline
+  console.log('\n  Test 67: Soft delete deadline');
+  const deleteDeadlineId = cleanup.deadlines[1]; // Delete the minimal deadline
+  const t67 = await request('DELETE', '/api/deadlines/' + deleteDeadlineId);
+  assert('Status 200', t67.status === 200, 'Got ' + t67.status);
+  assert('Success message', t67.body.message === 'Deadline deleted successfully');
+
+  // Verify not in list
+  const t67list = await request('GET', '/api/deadlines');
+  assert('Deleted deadline not in list', !t67list.body.data.find(d => d.deadline_id === deleteDeadlineId));
+}
+
 // ==================== Cross-Resource Tests ====================
 
 async function testCrossResource() {
@@ -736,7 +862,12 @@ async function testCrossResource() {
 async function cleanupData() {
   console.log('\nCleanup...');
 
-  // Delete in reverse dependency order: judgments -> tasks -> diary -> hearings -> matters -> lawyers -> clients
+  // Delete in reverse dependency order: deadlines -> judgments -> tasks -> diary -> hearings -> matters -> lawyers -> clients
+  for (const id of cleanup.deadlines) {
+    await request('DELETE', '/api/deadlines/' + id);
+  }
+  console.log('  Deleted ' + cleanup.deadlines.length + ' deadlines');
+
   for (const id of cleanup.judgments) {
     await request('DELETE', '/api/judgments/' + id);
   }
@@ -785,6 +916,7 @@ async function run() {
     await testDiary();
     await testTasks();
     await testJudgments();
+    await testDeadlines();
     await testCrossResource();
     await cleanupData();
   } catch (err) {

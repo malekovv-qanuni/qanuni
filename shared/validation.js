@@ -790,6 +790,17 @@ const schemas = {
     notes: { type: 'string', maxLength: 10000 }
   },
 
+  deadline_saas: {
+    matter_id: { required: true, type: 'number', label: 'Matter' },
+    judgment_id: { type: 'number', label: 'Judgment' },
+    title: { required: true, type: 'string', minLength: 1, label: 'Title' },
+    deadline_date: { required: true, type: 'date', label: 'Deadline date' },
+    reminder_days: { type: 'number', min: 0, max: 365, label: 'Reminder days' },
+    priority: { type: 'string', oneOf: ['low', 'medium', 'high', 'urgent'], label: 'Priority' },
+    status: { type: 'string', oneOf: ['pending', 'completed', 'overdue', 'cancelled'], label: 'Status' },
+    notes: { type: 'string', maxLength: 10000 }
+  },
+
   hearing_saas: {
     matter_id: {
       required: true,
