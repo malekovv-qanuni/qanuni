@@ -1,4 +1,5 @@
 import React from 'react';
+import { AuthProvider } from './AuthContext';
 import { NotificationProvider } from './NotificationContext';
 import { TimerProvider } from './TimerContext';
 import { AppProvider } from './AppContext';
@@ -10,6 +11,7 @@ import { DialogProvider } from './DialogContext';
 import { CalendarProvider } from './CalendarContext';
 
 // Export all hooks for easy importing
+export { useAuth } from './AuthContext';
 export { useNotification } from './NotificationContext';
 export { useTimer } from './TimerContext';
 export { useApp } from './AppContext';
@@ -23,24 +25,26 @@ export { useCalendar } from './CalendarContext';
 // Combined provider wrapper - nests all context providers
 export const ContextProviders = ({ children }) => {
   return (
-    <AppProvider>
-      <DataProvider>
-        <NotificationProvider>
-          <UIProvider>
-            <FilterProvider>
-              <ReportProvider>
-                <DialogProvider>
-                  <CalendarProvider>
-                    <TimerProvider>
-                      {children}
-                    </TimerProvider>
-                  </CalendarProvider>
-                </DialogProvider>
-              </ReportProvider>
-            </FilterProvider>
-          </UIProvider>
-        </NotificationProvider>
-      </DataProvider>
-    </AppProvider>
+    <AuthProvider>
+      <AppProvider>
+        <DataProvider>
+          <NotificationProvider>
+            <UIProvider>
+              <FilterProvider>
+                <ReportProvider>
+                  <DialogProvider>
+                    <CalendarProvider>
+                      <TimerProvider>
+                        {children}
+                      </TimerProvider>
+                    </CalendarProvider>
+                  </DialogProvider>
+                </ReportProvider>
+              </FilterProvider>
+            </UIProvider>
+          </NotificationProvider>
+        </DataProvider>
+      </AppProvider>
+    </AuthProvider>
   );
 };

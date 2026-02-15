@@ -14,7 +14,7 @@ import ConfirmDialog from './components/common/ConfirmDialog';
 import LicenseScreen from './components/common/LicenseScreen';
 import LicenseWarningBanner from './components/common/LicenseWarningBanner';
 import ErrorBoundary from './components/common/ErrorBoundary';
-import { useNotification, useTimer, useUI, useReport, useDialog, useApp, useData, useCalendar } from './contexts';
+import { useNotification, useTimer, useUI, useReport, useDialog, useApp, useData, useCalendar, useAuth } from './contexts';
 import { useUIModal } from './hooks/useUIModal';
 
 // Extracted corporate components (v42.0.3)
@@ -50,6 +50,8 @@ const App = () => {
     licenseChecked, setLicenseChecked,
     machineId, setMachineId
   } = useApp();
+  // Auth state (SaaS mode)
+  const { user: authUser, logout: authLogout } = useAuth();
   // Data state (migrated to DataContext)
   const {
     clients, setClients, matters, setMatters, lawyers, setLawyers,
@@ -1032,6 +1034,17 @@ const App = () => {
             </button>
             <h1 className="text-2xl font-bold text-blue-600">Qanuni</h1>
           </div>
+          {!apiClient.isElectron && authUser && (
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600">{authUser.full_name || authUser.email}</span>
+              <button
+                onClick={authLogout}
+                className="text-sm text-gray-500 hover:text-red-600 transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

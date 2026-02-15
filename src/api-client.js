@@ -20,6 +20,12 @@ export const setAuthToken = (token) => {
   }
 };
 
+export const logout = () => {
+  authToken = null;
+  localStorage.removeItem('saas_auth_token');
+  localStorage.removeItem('saas_refresh_token');
+};
+
 // Load persisted token on module init (SaaS mode only)
 if (typeof window !== 'undefined' && !isElectron()) {
   authToken = localStorage.getItem('saas_auth_token');
@@ -49,6 +55,7 @@ const fetchAPI = async (endpoint, options = {}) => {
 
     if (response.status === 401) {
       setAuthToken(null);
+      localStorage.removeItem('saas_refresh_token');
       throw new Error('Authentication required');
     }
 
@@ -76,6 +83,58 @@ const apiClient = {
   isElectron: isElectron(),
 
   // Methods will be added incrementally in Steps 2-15
+
+  // ============================================
+  // AUTH METHODS (SaaS only) (4)
+  // ============================================
+
+  login: async (email, password) => {
+    const response = await fetchAPI('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    if (response.token) {
+      setAuthToken(response.token);
+      if (response.refreshToken) {
+        localStorage.setItem('saas_refresh_token', response.refreshToken);
+      }
+    }
+    return response;
+  },
+
+  register: async (email, password, firm_name, full_name) => {
+    const response = await fetchAPI('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, firm_name, full_name }),
+    });
+    if (response.token) {
+      setAuthToken(response.token);
+      if (response.refreshToken) {
+        localStorage.setItem('saas_refresh_token', response.refreshToken);
+      }
+    }
+    return response;
+  },
+
+  refreshAuthToken: async () => {
+    const refreshToken = localStorage.getItem('saas_refresh_token');
+    if (!refreshToken) throw new Error('No refresh token');
+    const response = await fetchAPI('/auth/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (response.token) {
+      setAuthToken(response.token);
+      if (response.refreshToken) {
+        localStorage.setItem('saas_refresh_token', response.refreshToken);
+      }
+    }
+    return response;
+  },
+
+  getMe: async () => {
+    return await fetchAPI('/auth/me');
+  },
 
   // ============================================
   // DASHBOARD METHODS (1)
