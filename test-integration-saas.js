@@ -18,7 +18,7 @@ let failed = 0;
 let totalAssertions = 0;
 
 // Track created resources for cleanup
-const cleanup = { lookups: [], appointments: [], invoices: [], advances: [], expenses: [], timesheets: [], deadlines: [], judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
+const cleanup = { settings: [], currencies: [], exchangeRates: [], lookups: [], appointments: [], invoices: [], advances: [], expenses: [], timesheets: [], deadlines: [], judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
 
 // ==================== HTTP Helper ====================
 
@@ -1986,10 +1986,275 @@ async function testLookups() {
   assert('Error mentions /api/lawyers', lawyerCreate.body.error.includes('/api/lawyers'));
 }
 
+// ==================== Settings Tests ====================
+
+async function testSettings() {
+  console.log('\n\u2699\uFE0F  Testing Settings Module...');
+  let currencyId, exchangeRateId;
+
+  // Test 1-2: Get settings (empty initially)
+  console.log('\n  Test: Get all settings (initially empty)');
+  const emptySettings = await request('GET', '/api/settings');
+  assert('Get settings succeeds', emptySettings.status === 200 && emptySettings.body.success);
+  assert('Settings is array', Array.isArray(emptySettings.body.data));
+
+  // Test 3-4: Save single setting via POST
+  console.log('\n  Test: Save single setting');
+  const saveSetting = await request('POST', '/api/settings', {
+    key: 'test_setting',
+    value: 'test_value',
+    type: 'string',
+    category: 'general'
+  });
+  assert('Save setting succeeds', saveSetting.status === 200 && saveSetting.body.success);
+  cleanup.settings.push('test_setting');
+
+  const getSetting = await request('GET', '/api/settings/by-key/test_setting');
+  assert('Get setting by key succeeds', getSetting.status === 200 && getSetting.body.success);
+  assert('Setting value matches', getSetting.body.data.setting_value === 'test_value');
+
+  // Test 5-6: Batch update settings via PUT
+  console.log('\n  Test: Batch update settings');
+  const batchUpdate = await request('PUT', '/api/settings', {
+    setting1: 'value1',
+    setting2: 'value2',
+    setting3: 'value3'
+  });
+  assert('Batch update succeeds', batchUpdate.status === 200 && batchUpdate.body.success);
+  cleanup.settings.push('setting1', 'setting2', 'setting3');
+
+  const allSettings = await request('GET', '/api/settings');
+  assert('Should have at least 4 settings', allSettings.body.data.length >= 4);
+
+  // Test 7-9: Firm info
+  console.log('\n  Test: Firm info CRUD');
+  const firmInfo = await request('PUT', '/api/settings/firm-info', {
+    firm_name: 'Test Law Firm',
+    firm_email: 'info@testlaw.com',
+    firm_phone: '+961 1 234567',
+    default_currency: 'USD'
+  });
+  assert('Update firm info succeeds', firmInfo.status === 200 && firmInfo.body.success);
+  cleanup.settings.push('firm_name', 'firm_email', 'firm_phone', 'default_currency');
+
+  const getFirmInfo = await request('GET', '/api/settings/firm-info');
+  assert('Get firm info succeeds', getFirmInfo.status === 200 && getFirmInfo.body.success);
+  assert('Firm name matches', getFirmInfo.body.data.firm_name === 'Test Law Firm');
+  assert('Default currency matches', getFirmInfo.body.data.default_currency === 'USD');
+
+  // Test 10-12: Currencies (system + custom)
+  console.log('\n  Test: Get system currencies');
+  const currencies = await request('GET', '/api/settings/currencies');
+  assert('Get currencies succeeds', currencies.status === 200 && currencies.body.success);
+  assert('Has at least 6 system currencies', currencies.body.data.length >= 6);
+  const usd = currencies.body.data.find(c => c.code === 'USD');
+  assert('USD exists with correct symbol', usd && usd.symbol === '$');
+
+  // Test 13-14: Create custom currency (use unique code per run for re-runnability)
+  console.log('\n  Test: Create custom currency');
+  const testCurrencyCode = 'TC' + String(Date.now()).slice(-4);
+  const newCurrency = await request('POST', '/api/settings/currencies', {
+    code: testCurrencyCode,
+    name: 'Test Currency',
+    name_ar: '\u0639\u0645\u0644\u0629 \u062a\u062c\u0631\u064a\u0628\u064a\u0629',
+    symbol: 'T',
+    sort_order: 10
+  });
+  assert('Create currency succeeds', newCurrency.status === 200 && newCurrency.body.success);
+  assert('Returns currency ID', newCurrency.body.id > 0);
+  currencyId = newCurrency.body.id;
+  cleanup.currencies.push(currencyId);
+
+  const updatedCurrencies = await request('GET', '/api/settings/currencies');
+  const testCur = updatedCurrencies.body.data.find(c => c.code === testCurrencyCode);
+  assert('Custom currency appears in list', !!testCur);
+
+  // Test 15-16: Update currency
+  console.log('\n  Test: Update currency');
+  const updateCurrency = await request('PUT', '/api/settings/currencies/' + currencyId, {
+    code: testCurrencyCode,
+    name: 'Test Currency (Updated)',
+    name_ar: '\u0639\u0645\u0644\u0629 \u0645\u062d\u062f\u062b\u0629',
+    symbol: 'T',
+    sort_order: 11
+  });
+  assert('Update currency succeeds', updateCurrency.status === 200 && updateCurrency.body.success);
+
+  const verifyUpdate = await request('GET', '/api/settings/currencies');
+  const updatedCur = verifyUpdate.body.data.find(c => c.id === currencyId);
+  assert('Currency name updated', updatedCur && updatedCur.name === 'Test Currency (Updated)');
+  assert('Sort order updated', updatedCur && updatedCur.sort_order === 11);
+
+  // Test 17-18: Delete currency (soft delete)
+  console.log('\n  Test: Delete currency (soft delete)');
+  const deleteCurrency = await request('DELETE', '/api/settings/currencies/' + currencyId);
+  assert('Delete currency succeeds', deleteCurrency.status === 200 && deleteCurrency.body.success);
+
+  const afterDelete = await request('GET', '/api/settings/currencies');
+  const deletedJpy = afterDelete.body.data.find(c => c.id === currencyId);
+  assert('Deleted currency not in list', !deletedJpy);
+  // Remove from cleanup since already soft-deleted
+  cleanup.currencies = cleanup.currencies.filter(id => id !== currencyId);
+
+  // Test 19-21: Exchange rates
+  console.log('\n  Test: Exchange rate CRUD');
+  const emptyRates = await request('GET', '/api/settings/exchange-rates');
+  assert('Get exchange rates succeeds', emptyRates.status === 200 && emptyRates.body.success);
+  assert('Exchange rates is array', Array.isArray(emptyRates.body.data));
+
+  const createRate = await request('POST', '/api/settings/exchange-rates', {
+    from_currency: 'USD',
+    to_currency: 'LBP',
+    rate: 89500,
+    effective_date: '2025-02-15',
+    notes: 'Official rate'
+  });
+  assert('Create exchange rate succeeds', createRate.status === 200 && createRate.body.success);
+  assert('Returns rate ID', createRate.body.id > 0);
+  exchangeRateId = createRate.body.id;
+  cleanup.exchangeRates.push(exchangeRateId);
+
+  const rates = await request('GET', '/api/settings/exchange-rates');
+  assert('Has 1 exchange rate', rates.body.data.length >= 1);
+
+  // Test 22-23: Update exchange rate
+  console.log('\n  Test: Update exchange rate');
+  const updateRate = await request('PUT', '/api/settings/exchange-rates/' + exchangeRateId, {
+    from_currency: 'USD',
+    to_currency: 'LBP',
+    rate: 90000,
+    effective_date: '2025-02-16',
+    notes: 'Updated rate'
+  });
+  assert('Update exchange rate succeeds', updateRate.status === 200 && updateRate.body.success);
+
+  const verifyRateUpdate = await request('GET', '/api/settings/exchange-rates');
+  const updatedRate = verifyRateUpdate.body.data.find(r => r.rate_id === exchangeRateId);
+  assert('Rate updated', updatedRate && updatedRate.notes === 'Updated rate');
+
+  // Test 24-25: Get exchange rate for date
+  console.log('\n  Test: Exchange rate for date lookup');
+  const rateForDate = await request('GET', '/api/settings/exchange-rates/for-date?from=USD&to=LBP&date=2025-02-16');
+  assert('Get rate for date succeeds', rateForDate.status === 200 && rateForDate.body.success);
+  assert('Returns correct rate', rateForDate.body.data.rate == 90000);
+
+  const futureRate = await request('GET', '/api/settings/exchange-rates/for-date?from=USD&to=LBP&date=2025-12-31');
+  assert('Returns rate for future date', futureRate.status === 200 && futureRate.body.success);
+  assert('Uses latest available rate', futureRate.body.data.rate == 90000);
+
+  // Test 26: Delete exchange rate (HARD delete)
+  console.log('\n  Test: Delete exchange rate (hard delete)');
+  const deleteRate = await request('DELETE', '/api/settings/exchange-rates/' + exchangeRateId);
+  assert('Delete exchange rate succeeds', deleteRate.status === 200 && deleteRate.body.success);
+
+  const afterRateDelete = await request('GET', '/api/settings/exchange-rates');
+  assert('Exchange rates empty after delete', afterRateDelete.body.data.length === 0);
+  // Remove from cleanup since already deleted
+  cleanup.exchangeRates = cleanup.exchangeRates.filter(id => id !== exchangeRateId);
+
+  // Test 27-29: Invoice settings (JSON blob)
+  console.log('\n  Test: Invoice settings JSON');
+  const invoiceSettings = await request('PUT', '/api/settings/invoice', {
+    includeVAT: true,
+    vatRate: 11,
+    termsAndConditions: 'Payment due within 30 days'
+  });
+  assert('Update invoice settings succeeds', invoiceSettings.status === 200 && invoiceSettings.body.success);
+  cleanup.settings.push('invoice_settings');
+
+  const getInvoiceSettings = await request('GET', '/api/settings/invoice');
+  assert('Get invoice settings succeeds', getInvoiceSettings.status === 200 && getInvoiceSettings.body.success);
+  assert('Invoice VAT setting matches', getInvoiceSettings.body.data.includeVAT === true);
+  assert('Invoice VAT rate matches', getInvoiceSettings.body.data.vatRate === 11);
+
+  // Test 30-31: Timesheet settings (JSON blob)
+  console.log('\n  Test: Timesheet settings JSON');
+  const timesheetSettings = await request('PUT', '/api/settings/timesheet', {
+    roundingInterval: 15,
+    defaultBillable: true
+  });
+  assert('Update timesheet settings succeeds', timesheetSettings.status === 200 && timesheetSettings.body.success);
+  cleanup.settings.push('timesheet_settings');
+
+  const getTimesheetSettings = await request('GET', '/api/settings/timesheet');
+  assert('Get timesheet settings succeeds', getTimesheetSettings.status === 200 && getTimesheetSettings.body.success);
+  assert('Timesheet rounding interval matches', getTimesheetSettings.body.data.roundingInterval === 15);
+
+  // Test 32-33: Invoice number generation
+  console.log('\n  Test: Invoice number generation');
+  const invoiceNumber = await request('GET', '/api/settings/next-invoice-number');
+  assert('Get next invoice number succeeds', invoiceNumber.status === 200 && invoiceNumber.body.success);
+  assert('Invoice number has correct format', invoiceNumber.body.number && invoiceNumber.body.number.startsWith('INV-'));
+
+  const incrementInvoice = await request('POST', '/api/settings/increment-invoice-number');
+  assert('Increment invoice number succeeds', incrementInvoice.status === 200 && incrementInvoice.body.success);
+  assert('Returns invoice number', !!incrementInvoice.body.number);
+
+  // Test 34-36: Receipt number generation
+  // First, reset receipt number to a known state for re-runnability
+  console.log('\n  Test: Receipt number generation');
+  await request('POST', '/api/settings', {
+    key: 'next_receipt_number',
+    value: 'RCPT-2026-0050',
+    type: 'string',
+    category: 'general'
+  });
+
+  const receiptNumber = await request('GET', '/api/settings/next-receipt-number');
+  assert('Get next receipt number succeeds', receiptNumber.status === 200 && receiptNumber.body.success);
+  assert('Receipt number has correct format', receiptNumber.body.number === 'RCPT-2026-0050');
+
+  const incrementReceipt = await request('POST', '/api/settings/increment-receipt-number');
+  assert('Increment receipt number succeeds', incrementReceipt.status === 200 && incrementReceipt.body.success);
+  assert('Returns receipt number', incrementReceipt.body.number === 'RCPT-2026-0051');
+  cleanup.settings.push('next_receipt_number');
+
+  const verifyIncrement = await request('GET', '/api/settings/next-receipt-number');
+  assert('Verify receipt number incremented', verifyIncrement.body.number === 'RCPT-2026-0051');
+
+  // Test 37-38: Validation tests
+  console.log('\n  Test: Validation');
+  const invalidCurrency = await request('POST', '/api/settings/currencies', {
+    code: '',
+    name: 'Invalid'
+  });
+  assert('Empty currency code rejected', !invalidCurrency.body.success);
+
+  const invalidRate = await request('POST', '/api/settings/exchange-rates', {
+    from_currency: 'USD',
+    rate: 1.5
+    // Missing to_currency and effective_date
+  });
+  assert('Incomplete exchange rate rejected', !invalidRate.body.success);
+
+  console.log('\n  \u2705 All settings tests passed');
+}
+
 // ==================== Cleanup ====================
 
 async function cleanupData() {
   console.log('\nCleanup...');
+
+  // Cleanup settings - delete rows via POST with special _delete marker
+  // Settings don't have a DELETE endpoint, so we upsert them to empty values
+  // (They're firm-scoped and test auth creates unique firm, so no conflict on re-run)
+  for (const key of cleanup.settings) {
+    await request('POST', '/api/settings', { key, value: '', type: 'string', category: 'general' });
+  }
+  console.log('  Cleaned ' + cleanup.settings.length + ' settings keys');
+
+  // Cleanup custom currencies - these need hard delete for unique constraint
+  // Soft-deleted currencies still block UNIQUE(firm_id, code)
+  for (const id of cleanup.currencies) {
+    await request('DELETE', '/api/settings/currencies/' + id);
+  }
+  console.log('  Deleted ' + cleanup.currencies.length + ' custom currencies');
+
+  // Cleanup exchange rates (hard delete)
+  for (const id of cleanup.exchangeRates) {
+    await request('DELETE', '/api/settings/exchange-rates/' + id);
+  }
+  console.log('  Deleted ' + cleanup.exchangeRates.length + ' exchange rates');
 
   // Cleanup lookups first (no dependencies)
   for (const item of cleanup.lookups) {
@@ -2085,6 +2350,7 @@ async function run() {
     await testConflictCheck();
     await testTrash();
     await testLookups();
+    await testSettings();
     await testCrossResource();
     await cleanupData();
   } catch (err) {

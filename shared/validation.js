@@ -552,6 +552,24 @@ const schemas = {
       type: 'string',
       maxLength: 100,
       label: 'Currency name'
+    },
+    name_ar: {
+      required: false,
+      type: 'string',
+      maxLength: 100,
+      label: 'Currency name (Arabic)'
+    },
+    symbol: {
+      required: false,
+      type: 'string',
+      maxLength: 10,
+      label: 'Currency symbol'
+    },
+    sort_order: {
+      required: false,
+      type: 'number',
+      min: 0,
+      label: 'Sort order'
     }
   },
 
