@@ -13,9 +13,20 @@ require('dotenv').config();
 const useWindowsAuth = !process.env.DB_USER || !process.env.DB_PASSWORD;
 
 // Load the correct driver
-const sql = useWindowsAuth
-  ? require('mssql/msnodesqlv8')
-  : require('mssql');
+// Production (SQL Auth): uses tedious (pure JS, works on Linux/Azure)
+// Development (Windows Auth): uses msnodesqlv8 (native, requires ODBC Driver 17)
+let sql;
+if (useWindowsAuth) {
+  try {
+    sql = require('mssql/msnodesqlv8');
+  } catch (e) {
+    console.warn('msnodesqlv8 not available — falling back to tedious driver.');
+    console.warn('Set DB_USER and DB_PASSWORD in .env for SQL Auth.');
+    sql = require('mssql');
+  }
+} else {
+  sql = require('mssql');
+}
 
 // Connection configuration
 const config = {

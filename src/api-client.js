@@ -27,7 +27,7 @@ if (typeof window !== 'undefined' && !isElectron()) {
 
 // Helper: Fetch API wrapper with error handling + JWT
 const fetchAPI = async (endpoint, options = {}) => {
-  const baseURL = 'http://localhost:3001/api';
+  const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
   const url = `${baseURL}${endpoint}`;
 
   const defaultOptions = {
