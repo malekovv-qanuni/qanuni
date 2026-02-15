@@ -4,11 +4,11 @@
 - **Desktop Version:** v1.0.0 (shipped)
 - **Desktop Backend:** Fully modularized — 21 IPC modules, 163 handlers
 - **Desktop Tests:** 118 integration tests passing (`node test-integration.js`)
-- **SaaS Transformation:** Week 3 Day 15 Complete (87.5%) - Expenses CRUD Endpoints
-- **SQL Server:** 13 tables (firms, users, clients, matters, matter_clients, lawyers, hearings, diary, tasks, judgments, deadlines, timesheets, expenses)
-- **API Endpoints:** 59 total (4 auth + 5 clients + 5 matters + 5 lawyers + 5 hearings + 5 diary + 5 tasks + 5 judgments + 5 deadlines + 5 timesheets + 5 expenses)
+- **SaaS Transformation:** Week 3 Day 16 Complete (100%) - Advances CRUD Endpoints
+- **SQL Server:** 14 tables (firms, users, clients, matters, matter_clients, lawyers, hearings, diary, tasks, judgments, deadlines, timesheets, expenses, advances)
+- **API Endpoints:** 64 total (4 auth + 5×12 business entities)
 - **Frontend Bridge:** JWT auth + SaaS response unwrapping (53 methods in api-client.js)
-- **Next:** Week 3 Day 16 - Advances CRUD Endpoints
+- **Next:** Week 4 Day 17 - TBD (Week 3 Complete)
 
 ## Three-Party Workflow
 
@@ -217,7 +217,7 @@ ALL forms live in `src/components/forms/` (13 forms). The old `src/forms/` direc
 - `npm run dist:clean` — Build for testing
 - `npm run dist` — Build for release
 - `node test-integration.js` — Run 118 integration tests (MANDATORY before commit)
-- `node test-integration-saas.js` — Run 266 SaaS integration tests
+- `node test-integration-saas.js` — Run 313 SaaS integration tests
 - `node test-mssql-connection.js` — Verify SQL Server connection (3 tests)
 - `git checkout preload.js` — Restore after dist if modified
 
@@ -328,12 +328,12 @@ src/
 ### Known Working Configurations
 - **Desktop tests:** 118/118 passing consistently
 - **SQL Server tests:** 3/3 passing with msnodesqlv8
-- **SaaS integration tests:** 266/266 passing (was 121/121, +145 assertions from Days 12-15)
+- **SaaS integration tests:** 313/313 passing (was 266/266, +47 assertions from Day 16)
 - **Diary smoke tests:** 36/36 assertions passing (11 test scenarios)
 - **Environment:** .env file with empty DB_USER/DB_PASSWORD = Windows Auth
-- **Validation:** Now in shared/validation.js (imported by 16 desktop IPC files + 11 SaaS routes)
-- **Total API endpoints:** 59 (4 auth + 5×11 business entities)
-- **Total test coverage:** 387 assertions (118 desktop + 266 SaaS integration + 3 connection)
+- **Validation:** Now in shared/validation.js (imported by 16 desktop IPC files + 12 SaaS routes)
+- **Total API endpoints:** 64 (4 auth + 5×12 business entities)
+- **Total test coverage:** 434 assertions (118 desktop + 313 SaaS integration + 3 connection)
 
 ## Week 1 Progress Tracker
 
@@ -508,10 +508,20 @@ src/
 - Tests: 266/266 SaaS integration tests passing (was 227/227)
 - Commit: 3b2b83f3 (pushed)
 
-**Week 3 Status:** 87.5% complete (Day 15 of 8 days done) - Next: Day 16 (Advances CRUD) 🎯
+### ✅ Day 16 Complete (3 hours)
+- Created server/schema-advances.sql (advances table, 20 columns, 5 FKs, 3 CHECK constraints)
+- Rewrote server/routes/advances.js (5 endpoints: GET, GET/:id, POST, PUT, DELETE)
+- Modified shared/validation.js (advance_saas schema, 13 fields)
+- Modified server/index.js (registered /api/advances routes)
+- Modified test-integration-saas.js (added 15 advance tests, 47 assertions)
+- **Audit-First Success:** Full codebase audit caught broken legacy routes file (imported Electron modules), rewrote from scratch
+- **Business rule enforcement:** lawyer_advance requires lawyer_id (no client/matter), client types require client_id
+- **Balance auto-tracking:** balance_remaining = amount for retainers/advances, NULL for fee payments
+- Features: 3 advance categories, conditional FK validation, 6 query filters, balance tracking
+- Tests: 313/313 SaaS integration tests passing (was 266/266)
+- Commit: 268fdb36 (pushed)
 
-### 🔜 Remaining Week 3 Days
-- Day 16: Advances CRUD
+**Week 3 Status:** 100% complete (Days 9-16 done) ✅
 
 ### Quick Reference
 **Start Server:**

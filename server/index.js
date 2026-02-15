@@ -41,6 +41,7 @@ const deadlinesRoutes = require('./routes/deadlines');
 const timesheetsRoutes = require('./routes/timesheets');
 const expensesRoutes = require('./routes/expenses');
 const advancesRoutes = require('./routes/advances');
+const invoicesRoutes = require('./routes/invoices');
 app.use('/api/auth', authRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/matters', matterRoutes);
@@ -53,6 +54,7 @@ app.use('/api/deadlines', deadlinesRoutes);
 app.use('/api/timesheets', timesheetsRoutes);
 app.use('/api/expenses', expensesRoutes);
 app.use('/api/advances', advancesRoutes);
+app.use('/api/invoices', invoicesRoutes);
 
 // Health check endpoint (root)
 app.get('/health', async (req, res) => {

@@ -852,6 +852,31 @@ const schemas = {
     status: { type: 'string', oneOf: ['active', 'depleted', 'refunded'], label: 'Status' }
   },
 
+  invoice_saas: {
+    client_id: { required: true, type: 'number', label: 'Client' },
+    matter_id: { type: 'number', label: 'Matter' },
+    invoice_number: { type: 'string', maxLength: 50, label: 'Invoice number' },
+    invoice_content_type: { type: 'string', oneOf: ['combined', 'time_only', 'expense_only', 'separate'], label: 'Content type' },
+    issue_date: { required: true, type: 'date', label: 'Issue date' },
+    due_date: { type: 'date', label: 'Due date' },
+    period_start: { type: 'date', label: 'Period start' },
+    period_end: { type: 'date', label: 'Period end' },
+    subtotal: { type: 'number', min: 0, label: 'Subtotal' },
+    discount_type: { type: 'string', oneOf: ['none', 'percentage', 'fixed'], label: 'Discount type' },
+    discount_value: { type: 'number', min: 0, label: 'Discount value' },
+    discount_amount: { type: 'number', min: 0, label: 'Discount amount' },
+    retainer_applied: { type: 'number', min: 0, label: 'Retainer applied' },
+    taxable_amount: { type: 'number', min: 0, label: 'Taxable amount' },
+    vat_rate: { type: 'number', min: 0, max: 100, label: 'VAT rate' },
+    vat_amount: { type: 'number', min: 0, label: 'VAT amount' },
+    total: { required: true, type: 'number', min: 0, label: 'Total' },
+    currency: { type: 'string', maxLength: 3, label: 'Currency' },
+    status: { type: 'string', oneOf: ['draft', 'sent', 'viewed', 'partial', 'paid', 'overdue', 'cancelled', 'written_off'], label: 'Status' },
+    client_reference: { type: 'string', maxLength: 200, label: 'Client reference' },
+    notes_to_client: { type: 'string', maxLength: 10000, label: 'Notes to client' },
+    internal_notes: { type: 'string', maxLength: 10000, label: 'Internal notes' }
+  },
+
   hearing_saas: {
     matter_id: {
       required: true,

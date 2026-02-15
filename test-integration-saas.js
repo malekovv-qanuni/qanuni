@@ -18,7 +18,7 @@ let failed = 0;
 let totalAssertions = 0;
 
 // Track created resources for cleanup
-const cleanup = { advances: [], expenses: [], timesheets: [], deadlines: [], judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
+const cleanup = { invoices: [], advances: [], expenses: [], timesheets: [], deadlines: [], judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
 
 // ==================== HTTP Helper ====================
 
@@ -1237,6 +1237,169 @@ async function testAdvances() {
   assert('Deleted advance not in list', !t106list.body.data.find(a => a.advance_id === deleteAdvanceId));
 }
 
+// ==================== Invoices Tests ====================
+
+async function testInvoices() {
+  console.log('\n--- INVOICES TESTS ---\n');
+
+  // Test 107: Generate next invoice number
+  console.log('  Test 107: Generate next invoice number');
+  const t107 = await request('GET', '/api/invoices/next-number');
+  assert('Status 200', t107.status === 200, 'Got ' + t107.status);
+  assert('Has invoice_number', t107.body.invoice_number != null);
+  assert('Starts with INV-', t107.body.invoice_number && t107.body.invoice_number.startsWith('INV-'));
+
+  // Test 108: Create invoice (comprehensive - with matter + items)
+  console.log('\n  Test 108: Create invoice (comprehensive)');
+  const t108 = await request('POST', '/api/invoices', {
+    client_id: cleanup.clients[0],
+    matter_id: cleanup.matters[0],
+    invoice_number: 'INV-TEST-001',
+    issue_date: '2026-02-15',
+    due_date: '2026-03-15',
+    period_start: '2026-01-01',
+    period_end: '2026-01-31',
+    subtotal: 5000,
+    discount_type: 'percentage',
+    discount_value: 10,
+    discount_amount: 500,
+    taxable_amount: 4500,
+    vat_rate: 11,
+    vat_amount: 495,
+    total: 4995,
+    currency: 'USD',
+    status: 'draft',
+    client_reference: 'PO-12345',
+    notes_to_client: 'Payment due within 30 days',
+    internal_notes: 'First invoice for this client',
+    items: [
+      { item_type: 'time', item_date: '2026-01-15', description: 'Legal research', quantity: 5, unit: 'hours', rate: 200, amount: 1000 },
+      { item_type: 'time', item_date: '2026-01-20', description: 'Contract review', quantity: 10, unit: 'hours', rate: 250, amount: 2500 },
+      { item_type: 'expense', item_date: '2026-01-25', description: 'Court filing fee', amount: 500 },
+      { item_type: 'fixed_fee', description: 'Consultation fee', amount: 1000 }
+    ]
+  });
+  assert('Status 201', t108.status === 201, 'Got ' + t108.status);
+  assert('Has invoice object', t108.body.invoice != null);
+  assert('Has invoice_id', t108.body.invoice && t108.body.invoice.invoice_id > 0);
+  assert('Invoice number matches', t108.body.invoice && t108.body.invoice.invoice_number === 'INV-TEST-001');
+  assert('Total is 4995', t108.body.invoice && t108.body.invoice.total === 4995);
+  assert('Status is draft', t108.body.invoice && t108.body.invoice.status === 'draft');
+  assert('Currency is USD', t108.body.invoice && t108.body.invoice.currency === 'USD');
+  assert('Discount type is percentage', t108.body.invoice && t108.body.invoice.discount_type === 'percentage');
+  const testInvoiceId = t108.body.invoice ? t108.body.invoice.invoice_id : null;
+  if (testInvoiceId) cleanup.invoices.push(testInvoiceId);
+
+  // Test 109: Create invoice (minimal - auto-generated number)
+  console.log('\n  Test 109: Create invoice (minimal, auto number)');
+  const t109 = await request('POST', '/api/invoices', {
+    client_id: cleanup.clients[0],
+    issue_date: '2026-02-16',
+    total: 100
+  });
+  assert('Status 201', t109.status === 201, 'Got ' + t109.status);
+  assert('Created successfully', t109.body.success === true);
+  assert('Auto-generated number', t109.body.invoice && t109.body.invoice.invoice_number && t109.body.invoice.invoice_number.startsWith('INV-'));
+  assert('Default status draft', t109.body.invoice && t109.body.invoice.status === 'draft');
+  assert('Default currency USD', t109.body.invoice && t109.body.invoice.currency === 'USD');
+  if (t109.body.invoice) cleanup.invoices.push(t109.body.invoice.invoice_id);
+
+  // Test 110: Reject invalid client_id
+  console.log('\n  Test 110: Reject invalid client_id');
+  const t110 = await request('POST', '/api/invoices', {
+    client_id: 99999,
+    issue_date: '2026-02-15',
+    total: 100
+  });
+  assert('Status 404', t110.status === 404, 'Got ' + t110.status);
+  assert('Error mentions Client', t110.body.error && t110.body.error.includes('Client not found'));
+
+  // Test 111: Reject invalid matter_id
+  console.log('\n  Test 111: Reject invalid matter_id');
+  const t111 = await request('POST', '/api/invoices', {
+    client_id: cleanup.clients[0],
+    matter_id: 99999,
+    issue_date: '2026-02-15',
+    total: 100
+  });
+  assert('Status 404', t111.status === 404, 'Got ' + t111.status);
+  assert('Error mentions Matter', t111.body.error && t111.body.error.includes('Matter not found'));
+
+  // Test 112: List invoices
+  console.log('\n  Test 112: List invoices');
+  const t112 = await request('GET', '/api/invoices');
+  assert('Has data array', Array.isArray(t112.body.data));
+  assert('Has pagination', t112.body.pagination != null);
+  assert('Has at least 2 invoices', t112.body.data.length >= 2, 'Got ' + t112.body.data.length);
+
+  // Test 113: Filter by status
+  console.log('\n  Test 113: Filter by status');
+  const t113 = await request('GET', '/api/invoices?status=draft');
+  assert('Returns draft invoices', t113.body.data.length >= 1);
+  assert('All are draft', t113.body.data.every(inv => inv.status === 'draft'));
+
+  // Test 114: Filter by client_id
+  console.log('\n  Test 114: Filter by client_id');
+  const t114 = await request('GET', '/api/invoices?client_id=' + cleanup.clients[0]);
+  assert('Returns invoices for client', t114.body.data.length >= 1, 'Got ' + t114.body.data.length);
+  assert('All match client_id', t114.body.data.every(inv => inv.client_id === cleanup.clients[0]));
+
+  // Test 115: Search invoices
+  console.log('\n  Test 115: Search invoices');
+  const t115 = await request('GET', '/api/invoices?search=INV-TEST');
+  assert('Finds invoice by number', t115.body.data.length >= 1);
+
+  // Test 116: Get single invoice (with embedded items)
+  console.log('\n  Test 116: Get single invoice with items');
+  const t116 = await request('GET', '/api/invoices/' + testInvoiceId);
+  assert('Status 200', t116.status === 200, 'Got ' + t116.status);
+  assert('Has invoice object', t116.body.invoice != null);
+  assert('invoice_id matches', t116.body.invoice && t116.body.invoice.invoice_id === testInvoiceId);
+  assert('Has client_name from JOIN', t116.body.invoice && t116.body.invoice.client_name != null);
+  assert('Has matter_name from JOIN', t116.body.invoice && t116.body.invoice.matter_name != null);
+  assert('Has items array', t116.body.invoice && Array.isArray(t116.body.invoice.items));
+  assert('Has 4 items', t116.body.invoice && t116.body.invoice.items && t116.body.invoice.items.length === 4);
+  assert('First item is time type', t116.body.invoice && t116.body.invoice.items && t116.body.invoice.items[0].item_type === 'time');
+  assert('Items sorted by sort_order', t116.body.invoice && t116.body.invoice.items && t116.body.invoice.items[0].sort_order === 0);
+
+  // Test 117: Update invoice (with item replacement)
+  console.log('\n  Test 117: Update invoice');
+  const t117 = await request('PUT', '/api/invoices/' + testInvoiceId, {
+    client_id: cleanup.clients[0],
+    matter_id: cleanup.matters[0],
+    invoice_number: 'INV-TEST-001',
+    issue_date: '2026-02-15',
+    due_date: '2026-03-15',
+    subtotal: 6000,
+    total: 6000,
+    currency: 'EUR',
+    status: 'sent',
+    items: [
+      { item_type: 'time', item_date: '2026-01-15', description: 'Updated research', quantity: 8, unit: 'hours', rate: 250, amount: 2000 },
+      { item_type: 'fixed_fee', description: 'Updated consultation', amount: 4000 }
+    ]
+  });
+  assert('Status 200', t117.status === 200, 'Got ' + t117.status);
+  assert('Total updated to 6000', t117.body.invoice && t117.body.invoice.total === 6000);
+  assert('Currency updated to EUR', t117.body.invoice && t117.body.invoice.currency === 'EUR');
+  assert('Status updated to sent', t117.body.invoice && t117.body.invoice.status === 'sent');
+
+  // Verify items were replaced
+  const t117verify = await request('GET', '/api/invoices/' + testInvoiceId);
+  assert('Items replaced - now 2', t117verify.body.invoice && t117verify.body.invoice.items && t117verify.body.invoice.items.length === 2);
+
+  // Test 118: Soft delete invoice
+  console.log('\n  Test 118: Soft delete invoice');
+  const deleteInvoiceId = cleanup.invoices[1]; // Delete the minimal invoice
+  const t118 = await request('DELETE', '/api/invoices/' + deleteInvoiceId);
+  assert('Status 200', t118.status === 200, 'Got ' + t118.status);
+  assert('Success message', t118.body.message === 'Invoice deleted successfully');
+
+  // Verify not in list
+  const t118list = await request('GET', '/api/invoices');
+  assert('Deleted invoice not in list', !t118list.body.data.find(inv => inv.invoice_id === deleteInvoiceId));
+}
+
 // ==================== Cross-Resource Tests ====================
 
 async function testCrossResource() {
@@ -1305,7 +1468,12 @@ async function testCrossResource() {
 async function cleanupData() {
   console.log('\nCleanup...');
 
-  // Delete in reverse dependency order: advances -> expenses -> timesheets -> deadlines -> judgments -> tasks -> diary -> hearings -> matters -> lawyers -> clients
+  // Delete in reverse dependency order: invoices -> advances -> expenses -> timesheets -> deadlines -> judgments -> tasks -> diary -> hearings -> matters -> lawyers -> clients
+  for (const id of cleanup.invoices) {
+    await request('DELETE', '/api/invoices/' + id);
+  }
+  console.log('  Deleted ' + cleanup.invoices.length + ' invoices');
+
   for (const id of cleanup.advances) {
     await request('DELETE', '/api/advances/' + id);
   }
@@ -1378,6 +1546,7 @@ async function run() {
     await testTimesheets();
     await testExpenses();
     await testAdvances();
+    await testInvoices();
     await testCrossResource();
     await cleanupData();
   } catch (err) {
