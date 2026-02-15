@@ -2,8 +2,8 @@
 
 > **Purpose:** Single source of truth for product direction. Update this doc, not session checkpoints.
 > **Last Updated:** 2026-02-15
-> **Current Phase:** Phase 1 — Make It Sellable
-> **Hosting Platform:** Azure App Service + Azure SQL (confirmed after code audit)
+> **Current Phase:** Phase 1 — Make It Sellable (Week 3 Day 2 Complete)
+> **Hosting Platform:** Azure App Service (B1 $13/mo, West Europe) + Azure SQL (Basic $5/mo, UAE North)
 
 ---
 
@@ -33,8 +33,8 @@
 ## Phase 1: Make It Sellable (Target: 3 weeks)
 
 **Goal:** A deployed web app that a law firm can sign up for and use.
-**Platform:** Azure App Service (API) + Azure SQL (DB) + Azure Static Web Apps (frontend)
-**Cost:** $0 for first 3 months (free tiers), ~$28/month at scale
+**Platform:** Azure App Service (API + frontend) + Azure SQL (DB) — single deployment model
+**Cost:** ~$18/month (B1 App Service $13 + Basic SQL $5)
 
 ### Week 1: Pre-Deployment Code Prep
 
@@ -84,21 +84,24 @@
 
 ### Week 3: Deployment & Live Testing
 
-**Day 1-2: Deploy API**
-- [ ] Create Azure App Service (Node.js 20 LTS, Linux, F1 free tier)
-- [ ] Configure environment variables (DB_SERVER, JWT_SECRET, etc.)
-- [ ] Deploy via `az webapp up` or GitHub Actions
-- [ ] Verify: `curl https://yourapp.azurewebsites.net/health`
-- [ ] Set up SSL (automatic on *.azurewebsites.net)
+**Day 1-2: Deploy API + Frontend** ✅
+- [x] Created Azure App Service (Node.js 20 LTS, Linux, B1 tier, West Europe)
+- [x] Changed `npm start` to run Express API (required for Azure)
+- [x] Added CORS origin restriction with ALLOWED_ORIGINS env var
+- [x] Added body-parser size limits (5mb) and static file serving with SPA fallback
+- [x] Configured environment variables (DB_SERVER, JWT_SECRET, ALLOWED_ORIGINS, etc.)
+- [x] Built React frontend with `npm run build:web` (196KB gzipped)
+- [x] Deployed via Azure Management API zipdeploy (code-only zip + remote npm install)
+- [x] SSL automatic on *.azurewebsites.net
+- [x] Verified health: `{"status":"ok","database":"connected"}`
+- [x] Upgraded F1 → B1 ($13/mo) for dedicated CPU + always-on
+- [x] Enabled always-on (prevents cold starts)
+- [x] Tested registration: HTTP 201 in ~11s (was 125s on F1)
+- [x] Tested login: HTTP 200 in ~2.5s
+- [x] Single-deployment model: Express serves both API (/api/*) and React build (/*) — no separate Static Web Apps needed
 
-**Day 3-4: Deploy Web Frontend**
-- [ ] `npm run build:web` with production REACT_APP_API_URL
-- [ ] Deploy build/ to Azure Static Web Apps (free tier)
-- [ ] Configure custom domain (or use *.azurestaticapps.net)
-- [ ] CORS: whitelist frontend domain on API
-
-**Day 5: End-to-End Integration Testing**
-- [ ] Register new firm via web UI
+**Day 3: End-to-End Integration Testing**
+- [ ] Register new firm via web UI (browser)
 - [ ] Login, create client, create matter
 - [ ] Test all 21 modules in browser
 - [ ] Test Arabic text input (bilingual fields)
@@ -109,7 +112,6 @@
 - A lawyer can visit the URL, register a firm, log in, and manage clients/matters/cases
 - All 21 modules functional via web browser
 - HTTPS, proper auth, data isolation between firms
-- Zero cost (Azure free tiers)
 
 ---
 
@@ -120,8 +122,8 @@
 ### 2.1 Security & Hardening
 - [ ] Rate limiting on auth endpoints
 - [ ] Input sanitization audit (XSS, SQL injection)
-- [ ] CORS configuration (whitelist production domain only)
-- [ ] Request size limits
+- [x] CORS configuration (whitelist production domain only) — done in Phase 1 Week 3
+- [x] Request size limits (5mb) — done in Phase 1 Week 3
 - [ ] Helmet.js security headers
 - [ ] API request logging & monitoring
 
@@ -194,6 +196,10 @@
 | 2026-02-15 | ForgotPassword as placeholder (not full flow) | No backend endpoint yet; build UI now, wire later; users expect the link on login page |
 | 2026-02-15 | Azure SQL Basic tier ($5/mo) not free tier | Predictable performance; free tier has vCore-second metering that can surprise |
 | 2026-02-15 | UAE North region for Azure SQL | Closest to MENA target market (Lebanon, UAE, Saudi Arabia) |
+| 2026-02-15 | Single-deployment model (Express serves API + frontend) | Eliminates CORS complexity; no need for separate Static Web Apps; simpler deployment pipeline |
+| 2026-02-15 | B1 App Service ($13/mo) over F1 free tier | F1 caused 125s response times (shared CPU + cold starts); B1 gives dedicated CPU, always-on, 2.5s login |
+| 2026-02-15 | West Europe for App Service (not UAE North) | UAE North has Basic VM quota limit (0); West Europe available immediately; cross-region latency acceptable (~2.5s login) |
+| 2026-02-15 | Kudu command API for remote npm install | Zipdeploy with SCM_DO_BUILD_DURING_DEPLOYMENT didn't trigger Oryx; deploying code-only zip + running `npm install` via Kudu API works reliably |
 
 ---
 
@@ -203,12 +209,13 @@
 |------|--------|------------|
 | 9 components with direct electronAPI break in browser | Medium | Week 1 Day 3-5 refactor; pattern is mechanical find/replace |
 | msnodesqlv8 blocks npm install on Linux/Azure | High | Move to optionalDependencies; production uses tedious (pure JS) |
-| Azure free tier limits hit | Low | F1 has 60min/day CPU; upgrade to B1 ($13/mo) when needed |
-| SQL Server hosting costs | Low | Azure SQL free tier: 32GB, DTU-5; sufficient for first 100 firms |
+| ~~Azure free tier limits hit~~ | ~~Low~~ | ~~RESOLVED: Upgraded to B1 ($13/mo); always-on enabled~~ |
+| SQL Server hosting costs | Low | Azure SQL Basic tier: $5/mo, 2GB; sufficient for first 100 firms |
 | No customers sign up | High | Start with personal network, Lebanese legal community |
 | Competitor launches Arabic tool | Medium | Move fast on Phase 1; corporate module is differentiator |
 | Single developer bottleneck | High | Keep architecture simple; avoid over-engineering |
-| CORS issues between static frontend and API | Low | Configure ALLOWED_ORIGINS env var on API; test in Week 3 |
+| ~~CORS issues between static frontend and API~~ | ~~Low~~ | ~~RESOLVED: Single-deployment model eliminates CORS; ALLOWED_ORIGINS configured for safety~~ |
+| Cross-region latency (App: West Europe, DB: UAE North) | Medium | ~2.5s login, ~11s registration; acceptable for MVP; request UAE North B1 quota later |
 
 ---
 

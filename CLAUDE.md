@@ -10,8 +10,10 @@
 - **Frontend Bridge:** JWT auth + SaaS response unwrapping (dual-mode ready)
 - **Auth UI:** Login, Register, ForgotPassword pages + ProtectedRoute + React Router v6
 - **Azure SQL:** Basic tier ($5/mo), UAE North, SQL Auth (user: Malek)
-- **Phase 1 Progress:** Week 2 Complete — Auth pages + Azure SQL provisioned
-- **Next:** Phase 1 Week 3 — Deploy API + Frontend to Azure
+- **Azure App Service:** B1 tier ($13/mo), West Europe, Node.js 20 LTS, Linux, always-on
+- **Live URL:** https://qanuni-api.azurewebsites.net (API + frontend, single deployment)
+- **Phase 1 Progress:** Week 3 Day 2 Complete — API + frontend deployed, B1 upgraded
+- **Next:** Phase 1 Week 3 Day 3 — Browser end-to-end testing of all 21 modules
 
 ## Three-Party Workflow
 
@@ -352,6 +354,11 @@ src/
 - **Auth UI:** react-router-dom v6, AuthContext, LoginPage, RegisterPage, ForgotPasswordPage, ProtectedRoute
 - **Web build:** 196KB gzipped (npm run build:web)
 - **Schema deployment:** run-azure-schema.js (18 files + 6 system currencies seed)
+- **Azure App Service:** B1 tier, West Europe, Node.js 20 LTS, always-on enabled
+- **Live URL:** https://qanuni-api.azurewebsites.net (health check + registration + login verified)
+- **Production response times:** ~0.6s health, ~2.5s login, ~11s registration (cross-region DB)
+- **Deployment method:** Code-only zip via Azure Management API + remote `npm install` via Kudu command API
+- **Monthly cost:** ~$18 (B1 App Service $13 + Basic SQL $5)
 
 ## Week 1 Progress Tracker
 
@@ -636,6 +643,30 @@ src/
 **Week 5 Status:** 100% complete (Days 22-24 done) ✅
 **SaaS Transformation: 21/21 modules converted — 100% COMPLETE** 🎉
 
+## Phase 1 Week 3 Progress Tracker (Deployment)
+
+### ✅ Day 1-2 Complete
+- Created Azure App Service: `qanuni-api` (Node.js 20 LTS, Linux)
+- Changed `npm start` from React dev server to Express API (`node server/index.js`)
+- Added CORS origin restriction (ALLOWED_ORIGINS env var, origin-based filtering)
+- Added body-parser size limits (5mb) + static file serving + SPA fallback
+- Configured 10 environment variables (DB creds, JWT secrets, NODE_ENV, ALLOWED_ORIGINS)
+- Added Azure SQL firewall rule for Azure services (0.0.0.0)
+- Built React frontend: `npm run build:web` (196KB gzipped)
+- Deployed code-only zip via Azure Management API zipdeploy
+- Ran `npm install --omit=dev` remotely via Kudu command API (243 packages)
+- Verified health check: `{"status":"ok","database":"connected"}`
+- Upgraded F1 → B1 ($13/mo) for dedicated CPU
+- Enabled always-on (prevents cold starts)
+- Tested registration (HTTP 201, ~11s) and login (HTTP 200, ~2.5s)
+- Cleaned up 34 temp deployment helper scripts
+- **Deployment approach:** Single-deployment model (Express serves API at /api/* and React build at /*)
+- **Key learnings:** F1 free tier unusable (125s responses), PowerShell Compress-Archive unreliable for large zips, Oryx build (SCM_DO_BUILD_DURING_DEPLOYMENT) didn't trigger — manual npm install via Kudu API is the reliable path
+- Tests: 118/118 desktop passing
+- Commits: 2e60e7cc
+
+**Phase 1 Week 3 Status:** Day 2 complete, Day 3 (browser E2E testing) remaining
+
 ### Quick Reference
 **Start Server:**
 ```powershell
@@ -651,3 +682,18 @@ curl.exe -X POST http://localhost:3001/api/auth/login
 ```
 
 **Stop Server:** Press Ctrl+C in server window
+
+**Azure Production:**
+```powershell
+# Health check
+curl.exe https://qanuni-api.azurewebsites.net/health
+
+# View logs
+az webapp log tail --name qanuni-api --resource-group qanuni-rg
+
+# Restart app
+az webapp restart --name qanuni-api --resource-group qanuni-rg
+
+# SSH into container
+az webapp ssh --name qanuni-api --resource-group qanuni-rg
+```
