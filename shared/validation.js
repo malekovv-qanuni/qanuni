@@ -801,6 +801,18 @@ const schemas = {
     notes: { type: 'string', maxLength: 10000 }
   },
 
+  timesheet_saas: {
+    matter_id: { type: 'number', label: 'Matter' },
+    lawyer_id: { type: 'number', label: 'Lawyer' },
+    entry_date: { required: true, type: 'date', label: 'Date' },
+    minutes: { required: true, type: 'number', min: 1, max: 1440, label: 'Minutes' },
+    narrative: { required: true, type: 'string', minLength: 1, label: 'Narrative' },
+    billable: { type: 'boolean', label: 'Billable' },
+    rate_per_hour: { type: 'number', min: 0, label: 'Rate per hour' },
+    rate_currency: { type: 'string', maxLength: 10, label: 'Currency' },
+    status: { type: 'string', oneOf: ['draft', 'submitted', 'approved', 'billed'], label: 'Status' }
+  },
+
   hearing_saas: {
     matter_id: {
       required: true,

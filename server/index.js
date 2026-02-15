@@ -38,6 +38,7 @@ const diaryRoutes = require('./routes/diary');
 const tasksRoutes = require('./routes/tasks');
 const judgmentsRoutes = require('./routes/judgments');
 const deadlinesRoutes = require('./routes/deadlines');
+const timesheetsRoutes = require('./routes/timesheets');
 app.use('/api/auth', authRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/matters', matterRoutes);
@@ -47,6 +48,7 @@ app.use('/api/diary', diaryRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/judgments', judgmentsRoutes);
 app.use('/api/deadlines', deadlinesRoutes);
+app.use('/api/timesheets', timesheetsRoutes);
 
 // Health check endpoint (root)
 app.get('/health', async (req, res) => {

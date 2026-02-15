@@ -18,7 +18,7 @@ let failed = 0;
 let totalAssertions = 0;
 
 // Track created resources for cleanup
-const cleanup = { deadlines: [], judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
+const cleanup = { timesheets: [], deadlines: [], judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
 
 // ==================== HTTP Helper ====================
 
@@ -794,6 +794,137 @@ async function testDeadlines() {
   assert('Deleted deadline not in list', !t67list.body.data.find(d => d.deadline_id === deleteDeadlineId));
 }
 
+// ==================== Timesheets Tests ====================
+
+async function testTimesheets() {
+  console.log('\n--- TIMESHEETS TESTS ---\n');
+
+  // Test 68: Create timesheet (comprehensive - with matter + lawyer)
+  console.log('  Test 68: Create timesheet (comprehensive)');
+  const t68 = await request('POST', '/api/timesheets', {
+    matter_id: cleanup.matters[0],
+    lawyer_id: cleanup.lawyers[0],
+    entry_date: '2026-02-14',
+    minutes: 120,
+    narrative: 'Drafted motion for summary judgment',
+    billable: true,
+    rate_per_hour: 250,
+    rate_currency: 'USD',
+    status: 'draft'
+  });
+  assert('Status 201', t68.status === 201, 'Got ' + t68.status);
+  assert('Has timesheet object', t68.body.timesheet != null);
+  assert('Has timesheet_id', t68.body.timesheet && t68.body.timesheet.timesheet_id > 0);
+  assert('Minutes is 120', t68.body.timesheet && t68.body.timesheet.minutes === 120);
+  assert('Status is draft', t68.body.timesheet && t68.body.timesheet.status === 'draft');
+  assert('Rate is 250', t68.body.timesheet && t68.body.timesheet.rate_per_hour === 250);
+  const testTimesheetId = t68.body.timesheet ? t68.body.timesheet.timesheet_id : null;
+  if (testTimesheetId) cleanup.timesheets.push(testTimesheetId);
+
+  // Test 69: Create timesheet (minimal - date + minutes + narrative only)
+  console.log('\n  Test 69: Create timesheet (minimal)');
+  const t69 = await request('POST', '/api/timesheets', {
+    entry_date: '2026-02-15',
+    minutes: 30,
+    narrative: 'Client phone call'
+  });
+  assert('Status 201', t69.status === 201, 'Got ' + t69.status);
+  assert('Created successfully', t69.body.success === true);
+  assert('Default status draft', t69.body.timesheet && t69.body.timesheet.status === 'draft');
+  assert('Default billable true', t69.body.timesheet && t69.body.timesheet.billable === true);
+  assert('Default currency USD', t69.body.timesheet && t69.body.timesheet.rate_currency === 'USD');
+  if (t69.body.timesheet) cleanup.timesheets.push(t69.body.timesheet.timesheet_id);
+
+  // Test 70: Reject invalid matter_id
+  console.log('\n  Test 70: Reject invalid matter_id');
+  const t70 = await request('POST', '/api/timesheets', {
+    matter_id: 99999,
+    entry_date: '2026-02-14',
+    minutes: 60,
+    narrative: 'Should fail'
+  });
+  assert('Status 404', t70.status === 404, 'Got ' + t70.status);
+  assert('Error mentions Matter', t70.body.error && t70.body.error.includes('Matter not found'));
+
+  // Test 71: Reject invalid lawyer_id
+  console.log('\n  Test 71: Reject invalid lawyer_id');
+  const t71 = await request('POST', '/api/timesheets', {
+    lawyer_id: 99999,
+    entry_date: '2026-02-14',
+    minutes: 60,
+    narrative: 'Should fail'
+  });
+  assert('Status 404', t71.status === 404, 'Got ' + t71.status);
+  assert('Error mentions Lawyer', t71.body.error && t71.body.error.includes('Lawyer not found'));
+
+  // Test 72: List timesheets
+  console.log('\n  Test 72: List timesheets');
+  const t72 = await request('GET', '/api/timesheets');
+  assert('Has data array', Array.isArray(t72.body.data));
+  assert('Has pagination', t72.body.pagination != null);
+  assert('Has at least 2 timesheets', t72.body.data.length >= 2, 'Got ' + t72.body.data.length);
+
+  // Test 73: Filter by status
+  console.log('\n  Test 73: Filter by status');
+  const t73 = await request('GET', '/api/timesheets?status=draft');
+  assert('Returns draft timesheets', t73.body.data.length >= 1);
+  assert('All are draft', t73.body.data.every(t => t.status === 'draft'));
+
+  // Test 74: Filter by matter_id
+  console.log('\n  Test 74: Filter by matter_id');
+  const t74 = await request('GET', '/api/timesheets?matter_id=' + cleanup.matters[0]);
+  assert('Returns timesheets for matter', t74.body.data.length >= 1, 'Got ' + t74.body.data.length);
+  assert('All match matter_id', t74.body.data.every(t => t.matter_id === cleanup.matters[0]));
+
+  // Test 75: Filter by lawyer_id
+  console.log('\n  Test 75: Filter by lawyer_id');
+  const t75 = await request('GET', '/api/timesheets?lawyer_id=' + cleanup.lawyers[0]);
+  assert('Returns timesheets for lawyer', t75.body.data.length >= 1);
+  assert('All match lawyer_id', t75.body.data.every(t => t.lawyer_id === cleanup.lawyers[0]));
+
+  // Test 76: Search timesheets
+  console.log('\n  Test 76: Search timesheets');
+  const t76 = await request('GET', '/api/timesheets?search=motion');
+  assert('Finds motion timesheet', t76.body.data.length >= 1);
+
+  // Test 77: Get single timesheet
+  console.log('\n  Test 77: Get single timesheet');
+  const t77 = await request('GET', '/api/timesheets/' + testTimesheetId);
+  assert('Status 200', t77.status === 200, 'Got ' + t77.status);
+  assert('Has timesheet object', t77.body.timesheet != null);
+  assert('timesheet_id matches', t77.body.timesheet && t77.body.timesheet.timesheet_id === testTimesheetId);
+  assert('Has matter_name from JOIN', t77.body.timesheet && t77.body.timesheet.matter_name != null);
+  assert('Has lawyer_name from JOIN', t77.body.timesheet && t77.body.timesheet.lawyer_name != null);
+
+  // Test 78: Update timesheet
+  console.log('\n  Test 78: Update timesheet');
+  const t78 = await request('PUT', '/api/timesheets/' + testTimesheetId, {
+    matter_id: cleanup.matters[0],
+    lawyer_id: cleanup.lawyers[0],
+    entry_date: '2026-02-14',
+    minutes: 180,
+    narrative: 'Updated: Drafted and reviewed motion',
+    billable: true,
+    rate_per_hour: 300,
+    status: 'submitted'
+  });
+  assert('Status 200', t78.status === 200, 'Got ' + t78.status);
+  assert('Minutes updated to 180', t78.body.timesheet && t78.body.timesheet.minutes === 180);
+  assert('Status updated to submitted', t78.body.timesheet && t78.body.timesheet.status === 'submitted');
+  assert('Rate updated to 300', t78.body.timesheet && t78.body.timesheet.rate_per_hour === 300);
+
+  // Test 79: Soft delete timesheet
+  console.log('\n  Test 79: Soft delete timesheet');
+  const deleteTimesheetId = cleanup.timesheets[1]; // Delete the minimal timesheet
+  const t79 = await request('DELETE', '/api/timesheets/' + deleteTimesheetId);
+  assert('Status 200', t79.status === 200, 'Got ' + t79.status);
+  assert('Success message', t79.body.message === 'Timesheet deleted successfully');
+
+  // Verify not in list
+  const t79list = await request('GET', '/api/timesheets');
+  assert('Deleted timesheet not in list', !t79list.body.data.find(t => t.timesheet_id === deleteTimesheetId));
+}
+
 // ==================== Cross-Resource Tests ====================
 
 async function testCrossResource() {
@@ -862,7 +993,12 @@ async function testCrossResource() {
 async function cleanupData() {
   console.log('\nCleanup...');
 
-  // Delete in reverse dependency order: deadlines -> judgments -> tasks -> diary -> hearings -> matters -> lawyers -> clients
+  // Delete in reverse dependency order: timesheets -> deadlines -> judgments -> tasks -> diary -> hearings -> matters -> lawyers -> clients
+  for (const id of cleanup.timesheets) {
+    await request('DELETE', '/api/timesheets/' + id);
+  }
+  console.log('  Deleted ' + cleanup.timesheets.length + ' timesheets');
+
   for (const id of cleanup.deadlines) {
     await request('DELETE', '/api/deadlines/' + id);
   }
@@ -917,6 +1053,7 @@ async function run() {
     await testTasks();
     await testJudgments();
     await testDeadlines();
+    await testTimesheets();
     await testCrossResource();
     await cleanupData();
   } catch (err) {
