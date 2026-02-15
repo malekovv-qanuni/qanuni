@@ -18,7 +18,7 @@ let failed = 0;
 let totalAssertions = 0;
 
 // Track created resources for cleanup
-const cleanup = { invoices: [], advances: [], expenses: [], timesheets: [], deadlines: [], judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
+const cleanup = { appointments: [], invoices: [], advances: [], expenses: [], timesheets: [], deadlines: [], judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
 
 // ==================== HTTP Helper ====================
 
@@ -1495,12 +1495,300 @@ async function testCrossResource() {
   assert('Deleted client returns 404', clientCheck.status === 404);
 }
 
+// ==================== Appointments Tests ====================
+
+async function testAppointments() {
+  console.log('\n--- Appointments Tests ---');
+
+  // Test: Create appointment (required fields only)
+  console.log('\n  Test: Create appointment (required fields)');
+  const apt1 = await request('POST', '/api/appointments', {
+    title: 'Initial Consultation',
+    appointment_date: '2026-03-15'
+  });
+  assert('Create appointment status 201', apt1.status === 201);
+  assert('Appointment has ID', apt1.body.appointment && apt1.body.appointment.appointment_id > 0);
+  assert('Appointment title correct', apt1.body.appointment.title === 'Initial Consultation');
+  assert('Default type is client_meeting', apt1.body.appointment.appointment_type === 'client_meeting');
+  assert('Default status is scheduled', apt1.body.appointment.status === 'scheduled');
+  cleanup.appointments.push(apt1.body.appointment.appointment_id);
+
+  // Test: Create appointment with all fields
+  console.log('\n  Test: Create appointment (all fields)');
+  const apt2 = await request('POST', '/api/appointments', {
+    title: 'Court Hearing Prep',
+    appointment_date: '2026-04-01',
+    appointment_type: 'court_appearance',
+    description: 'Prepare for trial hearing',
+    start_time: '09:00',
+    end_time: '11:00',
+    all_day: false,
+    location_type: 'court',
+    location_details: 'Downtown Court Room 3',
+    client_id: cleanup.clients[0],
+    matter_id: cleanup.matters[0],
+    billable: true,
+    attendees: JSON.stringify(['John Doe', 'Jane Smith']),
+    notes: 'Bring all case files',
+    status: 'scheduled'
+  });
+  assert('Full appointment created', apt2.status === 201);
+  assert('Appointment type court_appearance', apt2.body.appointment.appointment_type === 'court_appearance');
+  assert('Has client_id', apt2.body.appointment.client_id === cleanup.clients[0]);
+  assert('Has matter_id', apt2.body.appointment.matter_id === cleanup.matters[0]);
+  cleanup.appointments.push(apt2.body.appointment.appointment_id);
+
+  // Test: Get appointment list
+  console.log('\n  Test: Get appointment list');
+  const list = await request('GET', '/api/appointments');
+  assert('List status 200', list.status === 200);
+  assert('List has data array', Array.isArray(list.body.data));
+  assert('List has pagination', list.body.pagination && list.body.pagination.total >= 2);
+
+  // Test: Get appointment by ID
+  console.log('\n  Test: Get appointment by ID');
+  const get1 = await request('GET', '/api/appointments/' + apt2.body.appointment.appointment_id);
+  assert('Get by ID status 200', get1.status === 200);
+  assert('Has appointment object', get1.body.appointment && get1.body.appointment.title === 'Court Hearing Prep');
+  assert('Has client_name from JOIN', get1.body.appointment.client_name != null);
+  assert('Has matter_name from JOIN', get1.body.appointment.matter_name != null);
+
+  // Test: Update appointment
+  console.log('\n  Test: Update appointment');
+  const upd = await request('PUT', '/api/appointments/' + apt1.body.appointment.appointment_id, {
+    title: 'Updated Consultation',
+    appointment_date: '2026-03-20',
+    status: 'rescheduled'
+  });
+  assert('Update status 200', upd.status === 200);
+  assert('Title updated', upd.body.appointment.title === 'Updated Consultation');
+  assert('Status updated', upd.body.appointment.status === 'rescheduled');
+
+  // Test: Filter by client_id
+  console.log('\n  Test: Filter by client_id');
+  const byClient = await request('GET', '/api/appointments?client_id=' + cleanup.clients[0]);
+  assert('Filter by client_id returns data', byClient.status === 200);
+  assert('Filter returns correct count', byClient.body.data.length >= 1);
+
+  // Test: Filter by matter_id
+  console.log('\n  Test: Filter by matter_id');
+  const byMatter = await request('GET', '/api/appointments?matter_id=' + cleanup.matters[0]);
+  assert('Filter by matter_id returns data', byMatter.status === 200);
+  assert('Filter returns correct count', byMatter.body.data.length >= 1);
+
+  // Test: Filter by status
+  console.log('\n  Test: Filter by status');
+  const byStatus = await request('GET', '/api/appointments?status=rescheduled');
+  assert('Filter by status returns data', byStatus.status === 200);
+  assert('Rescheduled appointment found', byStatus.body.data.length >= 1);
+
+  // Test: Search by title
+  console.log('\n  Test: Search by title');
+  const bySearch = await request('GET', '/api/appointments?search=Court');
+  assert('Search returns data', bySearch.status === 200);
+  assert('Search finds Court Hearing Prep', bySearch.body.data.length >= 1);
+
+  // Test: FK validation - invalid client_id
+  console.log('\n  Test: FK validation - invalid client_id');
+  const badClient = await request('POST', '/api/appointments', {
+    title: 'Bad Client Test',
+    appointment_date: '2026-05-01',
+    client_id: 999999
+  });
+  assert('Invalid client_id returns 404', badClient.status === 404);
+
+  // Test: FK validation - invalid matter_id
+  console.log('\n  Test: FK validation - invalid matter_id');
+  const badMatter = await request('POST', '/api/appointments', {
+    title: 'Bad Matter Test',
+    appointment_date: '2026-05-01',
+    matter_id: 999999
+  });
+  assert('Invalid matter_id returns 404', badMatter.status === 404);
+
+  // Test: Delete appointment (soft delete)
+  console.log('\n  Test: Delete appointment');
+  const del = await request('DELETE', '/api/appointments/' + apt1.body.appointment.appointment_id);
+  assert('Delete status 200', del.status === 200);
+  const afterDel = await request('GET', '/api/appointments/' + apt1.body.appointment.appointment_id);
+  assert('Deleted appointment returns 404', afterDel.status === 404);
+  // Remove from cleanup since already deleted
+  cleanup.appointments = cleanup.appointments.filter(id => id !== apt1.body.appointment.appointment_id);
+}
+
+// ==================== Conflict Check Tests ====================
+
+async function testConflictCheck() {
+  console.log('\n--- Conflict Check Tests ---');
+
+  // Test: Search with client name match
+  console.log('\n  Test: Search with client name match');
+  const nameSearch = await request('POST', '/api/conflict-check/search', {
+    name: 'Alpha'
+  });
+  assert('Conflict search status 200', nameSearch.status === 200);
+  assert('Has data object', nameSearch.body.data != null);
+  assert('Has results array', Array.isArray(nameSearch.body.data.results));
+  assert('Found Alpha client', nameSearch.body.data.results.some(r => r.type === 'client' && r.name === 'Alpha Corp'));
+  assert('Has searches_performed', Array.isArray(nameSearch.body.data.searches_performed));
+  assert('Has searches_deferred', nameSearch.body.data.searches_deferred.length === 5);
+  assert('Has total_matches', nameSearch.body.data.total_matches >= 1);
+
+  // Test: Search with client email match
+  console.log('\n  Test: Search with client email match');
+  // We know clients were created with emails like 'alpha<ts>@test.com'
+  const emailSearch = await request('POST', '/api/conflict-check/search', {
+    email: 'alpha'
+  });
+  assert('Email search status 200', emailSearch.status === 200);
+  assert('Email search found results', emailSearch.body.data.total_matches >= 1);
+  assert('Email search performed', emailSearch.body.data.searches_performed.includes('client_email'));
+
+  // Test: Search with no matches
+  console.log('\n  Test: Search with no matches');
+  const noMatch = await request('POST', '/api/conflict-check/search', {
+    name: 'ZZZNONEXISTENT999'
+  });
+  assert('No match search status 200', noMatch.status === 200);
+  assert('No match returns 0 results', noMatch.body.data.total_matches === 0);
+
+  // Test: Search with searchTerms wrapper (second body format)
+  console.log('\n  Test: Search with searchTerms wrapper');
+  const wrappedSearch = await request('POST', '/api/conflict-check/search', {
+    searchTerms: { name: 'Beta' }
+  });
+  assert('Wrapped search status 200', wrappedSearch.status === 200);
+  assert('Wrapped search found Beta', wrappedSearch.body.data.results.some(r => r.name === 'Beta Holdings'));
+
+  // Test: Log conflict check
+  console.log('\n  Test: Log conflict check');
+  const logResult = await request('POST', '/api/conflict-check/log', {
+    search_terms: 'Alpha Corp test',
+    results_count: 2
+  });
+  assert('Log status 201', logResult.status === 201);
+  assert('Log has log_id', logResult.body.log && logResult.body.log.log_id > 0);
+
+  // Test: Get conflict check history
+  console.log('\n  Test: Get conflict check history');
+  const history = await request('GET', '/api/conflict-check/history');
+  assert('History status 200', history.status === 200);
+  assert('History has data array', Array.isArray(history.body.data));
+  assert('History has pagination', history.body.pagination != null);
+  assert('History contains our log', history.body.data.length >= 1);
+}
+
+// ==================== Trash Tests ====================
+
+async function testTrash() {
+  console.log('\n--- Trash Tests ---');
+
+  // Create a client specifically for trash testing
+  const ts = Date.now();
+  const trashClient = await request('POST', '/api/clients', {
+    client_name: 'Trash Test Client ' + ts,
+    client_type: 'individual',
+    email: 'trash.client.' + ts + '@test.com'
+  });
+  assert('Create trash test client', trashClient.status === 201);
+  const trashClientId = trashClient.body.client.client_id;
+
+  // Create a matter for trash testing
+  const trashMatter = await request('POST', '/api/matters', {
+    matter_number: 'TRASH-M-' + ts,
+    matter_name: 'Trash Test Matter',
+    matter_type: 'litigation',
+    matter_status: 'active'
+  });
+  assert('Create trash test matter', trashMatter.status === 201);
+  const trashMatterId = trashMatter.body.matter_id;
+
+  // Test: Delete client -> appears in trash
+  console.log('\n  Test: Delete client -> appears in trash');
+  const delClient = await request('DELETE', '/api/clients/' + trashClientId);
+  assert('Soft delete client', delClient.status === 200);
+
+  // Test: Get trash list
+  console.log('\n  Test: Get trash list');
+  const trashList = await request('GET', '/api/trash');
+  assert('Trash list status 200', trashList.status === 200);
+  assert('Trash list has data', Array.isArray(trashList.body.data));
+  assert('Deleted client in trash', trashList.body.data.some(i => i.type === 'client' && i.id === trashClientId));
+
+  // Test: Get trash count
+  console.log('\n  Test: Get trash count');
+  const trashCount = await request('GET', '/api/trash/count');
+  assert('Trash count status 200', trashCount.status === 200);
+  assert('Has counts object', trashCount.body.counts != null);
+  assert('Client count >= 1', trashCount.body.counts.client >= 1);
+  assert('Has total', trashCount.body.total >= 1);
+
+  // Test: Restore client
+  console.log('\n  Test: Restore client');
+  const restoreResult = await request('POST', '/api/trash/restore', {
+    type: 'client',
+    id: trashClientId
+  });
+  assert('Restore status 200', restoreResult.status === 200);
+
+  // Verify restored client is accessible
+  const restoredClient = await request('GET', '/api/clients/' + trashClientId);
+  assert('Restored client accessible', restoredClient.status === 200);
+  assert('Restored client is_active', restoredClient.body.client.is_active === true || restoredClient.body.client.is_active === 1);
+
+  // Test: Delete matter and verify in trash
+  console.log('\n  Test: Delete matter -> appears in trash');
+  const delMatter = await request('DELETE', '/api/matters/' + trashMatterId);
+  assert('Soft delete matter', delMatter.status === 200);
+
+  const trashList2 = await request('GET', '/api/trash');
+  assert('Matter in trash', trashList2.body.data.some(i => i.type === 'matter' && i.id === trashMatterId));
+
+  // Test: Permanent delete matter
+  console.log('\n  Test: Permanent delete matter');
+  const permDel = await request('POST', '/api/trash/permanent-delete', {
+    type: 'matter',
+    id: trashMatterId
+  });
+  assert('Permanent delete status 200', permDel.status === 200);
+
+  // Verify 404 on GET
+  const checkDeleted = await request('GET', '/api/matters/' + trashMatterId);
+  assert('Permanently deleted matter returns 404', checkDeleted.status === 404);
+
+  // Test: Empty trash
+  console.log('\n  Test: Empty trash');
+  // Delete the client again so it goes to trash
+  await request('DELETE', '/api/clients/' + trashClientId);
+
+  const emptyResult = await request('POST', '/api/trash/empty');
+  assert('Empty trash status 200', emptyResult.status === 200);
+  assert('Has deleted_count', emptyResult.body.deleted_count >= 0);
+
+  // Verify trash is empty (for our test items)
+  const trashAfterEmpty = await request('GET', '/api/trash/count');
+  assert('Trash count after empty', trashAfterEmpty.body.total >= 0);
+
+  // Test: Invalid entity type
+  console.log('\n  Test: Invalid entity type');
+  const badType = await request('POST', '/api/trash/restore', {
+    type: 'invalid_type',
+    id: 1
+  });
+  assert('Invalid type returns 400', badType.status === 400);
+}
+
 // ==================== Cleanup ====================
 
 async function cleanupData() {
   console.log('\nCleanup...');
 
-  // Delete in reverse dependency order: invoices -> advances -> expenses -> timesheets -> deadlines -> judgments -> tasks -> diary -> hearings -> matters -> lawyers -> clients
+  // Delete in reverse dependency order: appointments -> invoices -> advances -> expenses -> timesheets -> deadlines -> judgments -> tasks -> diary -> hearings -> matters -> lawyers -> clients
+  for (const id of cleanup.appointments) {
+    await request('DELETE', '/api/appointments/' + id);
+  }
+  console.log('  Deleted ' + cleanup.appointments.length + ' appointments');
+
   for (const id of cleanup.invoices) {
     await request('DELETE', '/api/invoices/' + id);
   }
@@ -1579,6 +1867,9 @@ async function run() {
     await testExpenses();
     await testAdvances();
     await testInvoices();
+    await testAppointments();
+    await testConflictCheck();
+    await testTrash();
     await testCrossResource();
     await cleanupData();
   } catch (err) {

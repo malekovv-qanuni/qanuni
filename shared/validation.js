@@ -878,6 +878,24 @@ const schemas = {
     internal_notes: { type: 'string', maxLength: 10000, label: 'Internal notes' }
   },
 
+  appointment_saas: {
+    title: { type: 'string', required: true, label: 'Title', maxLength: 500 },
+    appointment_date: { type: 'string', required: true, label: 'Date' },
+    appointment_type: { type: 'string', required: false, label: 'Type' },
+    description: { type: 'string', required: false, label: 'Description' },
+    start_time: { type: 'string', required: false, label: 'Start Time' },
+    end_time: { type: 'string', required: false, label: 'End Time' },
+    all_day: { type: 'boolean', required: false, label: 'All Day' },
+    location_type: { type: 'string', required: false, label: 'Location Type' },
+    location_details: { type: 'string', required: false, label: 'Location Details', maxLength: 500 },
+    client_id: { type: 'number', required: false, label: 'Client' },
+    matter_id: { type: 'number', required: false, label: 'Matter' },
+    billable: { type: 'boolean', required: false, label: 'Billable' },
+    attendees: { type: 'string', required: false, label: 'Attendees' },
+    notes: { type: 'string', required: false, label: 'Notes' },
+    status: { type: 'string', required: false, label: 'Status' }
+  },
+
   hearing_saas: {
     matter_id: {
       required: true,
