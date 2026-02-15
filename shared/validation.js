@@ -813,6 +813,23 @@ const schemas = {
     status: { type: 'string', oneOf: ['draft', 'submitted', 'approved', 'billed'], label: 'Status' }
   },
 
+  expense_saas: {
+    matter_id: { type: 'number', label: 'Matter' },
+    lawyer_id: { type: 'number', label: 'Lawyer' },
+    expense_type: { type: 'string', oneOf: ['client', 'firm', 'personal'], label: 'Expense type' },
+    date: { required: true, type: 'date', label: 'Date' },
+    amount: { required: true, type: 'number', min: 0.01, label: 'Amount' },
+    currency: { type: 'string', maxLength: 10, label: 'Currency' },
+    description: { required: true, type: 'string', minLength: 1, maxLength: 1000, label: 'Description' },
+    category: { type: 'string', maxLength: 100, label: 'Category' },
+    billable: { type: 'boolean', label: 'Billable' },
+    markup_percent: { type: 'number', min: 0, max: 100, label: 'Markup percent' },
+    paid_by_firm: { type: 'boolean', label: 'Paid by firm' },
+    paid_by_lawyer_id: { type: 'number', label: 'Paid by lawyer' },
+    status: { type: 'string', oneOf: ['pending', 'approved', 'reimbursed', 'billed', 'rejected'], label: 'Status' },
+    notes: { type: 'string', maxLength: 10000, label: 'Notes' }
+  },
+
   hearing_saas: {
     matter_id: {
       required: true,

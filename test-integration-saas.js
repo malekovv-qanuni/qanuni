@@ -18,7 +18,7 @@ let failed = 0;
 let totalAssertions = 0;
 
 // Track created resources for cleanup
-const cleanup = { timesheets: [], deadlines: [], judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
+const cleanup = { expenses: [], timesheets: [], deadlines: [], judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
 
 // ==================== HTTP Helper ====================
 
@@ -925,6 +925,147 @@ async function testTimesheets() {
   assert('Deleted timesheet not in list', !t79list.body.data.find(t => t.timesheet_id === deleteTimesheetId));
 }
 
+// ==================== Expenses Tests ====================
+
+async function testExpenses() {
+  console.log('\n--- EXPENSES TESTS ---\n');
+
+  // Test 80: Create expense (comprehensive - with matter + lawyer)
+  console.log('  Test 80: Create expense (comprehensive)');
+  const t80 = await request('POST', '/api/expenses', {
+    matter_id: cleanup.matters[0],
+    lawyer_id: cleanup.lawyers[0],
+    expense_type: 'client',
+    date: '2026-02-14',
+    amount: 150.50,
+    currency: 'USD',
+    description: 'Court filing fees',
+    category: 'Filing',
+    billable: true,
+    markup_percent: 10,
+    paid_by_firm: true,
+    status: 'pending',
+    notes: 'Reimbursable by client'
+  });
+  assert('Status 201', t80.status === 201, 'Got ' + t80.status);
+  assert('Has expense object', t80.body.expense != null);
+  assert('Has expense_id', t80.body.expense && t80.body.expense.expense_id > 0);
+  assert('Amount is 150.50', t80.body.expense && t80.body.expense.amount === 150.50);
+  assert('Status is pending', t80.body.expense && t80.body.expense.status === 'pending');
+  assert('Type is client', t80.body.expense && t80.body.expense.expense_type === 'client');
+  assert('Markup is 10', t80.body.expense && t80.body.expense.markup_percent === 10);
+  const testExpenseId = t80.body.expense ? t80.body.expense.expense_id : null;
+  if (testExpenseId) cleanup.expenses.push(testExpenseId);
+
+  // Test 81: Create expense (minimal - date + amount + description only)
+  console.log('\n  Test 81: Create expense (minimal)');
+  const t81 = await request('POST', '/api/expenses', {
+    date: '2026-02-15',
+    amount: 25,
+    description: 'Parking fee'
+  });
+  assert('Status 201', t81.status === 201, 'Got ' + t81.status);
+  assert('Created successfully', t81.body.success === true);
+  assert('Default status pending', t81.body.expense && t81.body.expense.status === 'pending');
+  assert('Default billable true', t81.body.expense && t81.body.expense.billable === true);
+  assert('Default currency USD', t81.body.expense && t81.body.expense.currency === 'USD');
+  assert('Default type client', t81.body.expense && t81.body.expense.expense_type === 'client');
+  if (t81.body.expense) cleanup.expenses.push(t81.body.expense.expense_id);
+
+  // Test 82: Reject invalid matter_id
+  console.log('\n  Test 82: Reject invalid matter_id');
+  const t82 = await request('POST', '/api/expenses', {
+    matter_id: 99999,
+    date: '2026-02-14',
+    amount: 50,
+    description: 'Should fail'
+  });
+  assert('Status 404', t82.status === 404, 'Got ' + t82.status);
+  assert('Error mentions Matter', t82.body.error && t82.body.error.includes('Matter not found'));
+
+  // Test 83: Reject invalid lawyer_id
+  console.log('\n  Test 83: Reject invalid lawyer_id');
+  const t83 = await request('POST', '/api/expenses', {
+    lawyer_id: 99999,
+    date: '2026-02-14',
+    amount: 50,
+    description: 'Should fail'
+  });
+  assert('Status 404', t83.status === 404, 'Got ' + t83.status);
+  assert('Error mentions Lawyer', t83.body.error && t83.body.error.includes('Lawyer not found'));
+
+  // Test 84: List expenses
+  console.log('\n  Test 84: List expenses');
+  const t84 = await request('GET', '/api/expenses');
+  assert('Has data array', Array.isArray(t84.body.data));
+  assert('Has pagination', t84.body.pagination != null);
+  assert('Has at least 2 expenses', t84.body.data.length >= 2, 'Got ' + t84.body.data.length);
+
+  // Test 85: Filter by status
+  console.log('\n  Test 85: Filter by status');
+  const t85 = await request('GET', '/api/expenses?status=pending');
+  assert('Returns pending expenses', t85.body.data.length >= 1);
+  assert('All are pending', t85.body.data.every(e => e.status === 'pending'));
+
+  // Test 86: Filter by matter_id
+  console.log('\n  Test 86: Filter by matter_id');
+  const t86 = await request('GET', '/api/expenses?matter_id=' + cleanup.matters[0]);
+  assert('Returns expenses for matter', t86.body.data.length >= 1, 'Got ' + t86.body.data.length);
+  assert('All match matter_id', t86.body.data.every(e => e.matter_id === cleanup.matters[0]));
+
+  // Test 87: Filter by expense_type
+  console.log('\n  Test 87: Filter by expense_type');
+  const t87 = await request('GET', '/api/expenses?expense_type=client');
+  assert('Returns client expenses', t87.body.data.length >= 1);
+  assert('All are client type', t87.body.data.every(e => e.expense_type === 'client'));
+
+  // Test 88: Search expenses
+  console.log('\n  Test 88: Search expenses');
+  const t88 = await request('GET', '/api/expenses?search=filing');
+  assert('Finds filing expense', t88.body.data.length >= 1);
+
+  // Test 89: Get single expense
+  console.log('\n  Test 89: Get single expense');
+  const t89 = await request('GET', '/api/expenses/' + testExpenseId);
+  assert('Status 200', t89.status === 200, 'Got ' + t89.status);
+  assert('Has expense object', t89.body.expense != null);
+  assert('expense_id matches', t89.body.expense && t89.body.expense.expense_id === testExpenseId);
+  assert('Has matter_name from JOIN', t89.body.expense && t89.body.expense.matter_name != null);
+  assert('Has lawyer_name from JOIN', t89.body.expense && t89.body.expense.lawyer_name != null);
+
+  // Test 90: Update expense
+  console.log('\n  Test 90: Update expense');
+  const t90 = await request('PUT', '/api/expenses/' + testExpenseId, {
+    matter_id: cleanup.matters[0],
+    lawyer_id: cleanup.lawyers[0],
+    expense_type: 'client',
+    date: '2026-02-14',
+    amount: 200.75,
+    currency: 'USD',
+    description: 'Updated: Court filing fees + service fees',
+    category: 'Filing',
+    billable: true,
+    markup_percent: 15,
+    paid_by_firm: true,
+    status: 'approved'
+  });
+  assert('Status 200', t90.status === 200, 'Got ' + t90.status);
+  assert('Amount updated to 200.75', t90.body.expense && t90.body.expense.amount === 200.75);
+  assert('Status updated to approved', t90.body.expense && t90.body.expense.status === 'approved');
+  assert('Markup updated to 15', t90.body.expense && t90.body.expense.markup_percent === 15);
+
+  // Test 91: Soft delete expense
+  console.log('\n  Test 91: Soft delete expense');
+  const deleteExpenseId = cleanup.expenses[1]; // Delete the minimal expense
+  const t91 = await request('DELETE', '/api/expenses/' + deleteExpenseId);
+  assert('Status 200', t91.status === 200, 'Got ' + t91.status);
+  assert('Success message', t91.body.message === 'Expense deleted successfully');
+
+  // Verify not in list
+  const t91list = await request('GET', '/api/expenses');
+  assert('Deleted expense not in list', !t91list.body.data.find(e => e.expense_id === deleteExpenseId));
+}
+
 // ==================== Cross-Resource Tests ====================
 
 async function testCrossResource() {
@@ -993,7 +1134,12 @@ async function testCrossResource() {
 async function cleanupData() {
   console.log('\nCleanup...');
 
-  // Delete in reverse dependency order: timesheets -> deadlines -> judgments -> tasks -> diary -> hearings -> matters -> lawyers -> clients
+  // Delete in reverse dependency order: expenses -> timesheets -> deadlines -> judgments -> tasks -> diary -> hearings -> matters -> lawyers -> clients
+  for (const id of cleanup.expenses) {
+    await request('DELETE', '/api/expenses/' + id);
+  }
+  console.log('  Deleted ' + cleanup.expenses.length + ' expenses');
+
   for (const id of cleanup.timesheets) {
     await request('DELETE', '/api/timesheets/' + id);
   }
@@ -1054,6 +1200,7 @@ async function run() {
     await testJudgments();
     await testDeadlines();
     await testTimesheets();
+    await testExpenses();
     await testCrossResource();
     await cleanupData();
   } catch (err) {
