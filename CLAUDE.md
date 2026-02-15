@@ -4,11 +4,11 @@
 - **Desktop Version:** v1.0.0 (shipped)
 - **Desktop Backend:** Fully modularized — 21 IPC modules, 163 handlers
 - **Desktop Tests:** 118 integration tests passing (`node test-integration.js`)
-- **SaaS Transformation:** Week 2 Complete (100%) - All Core Resources + Pagination + Integration Tests
-- **SQL Server:** 7 tables (firms, users, clients, matters, matter_clients, lawyers, hearings)
-- **API Endpoints:** 34 total (14 auth + 5 clients + 5 matters + 5 lawyers + 5 hearings) - all with pagination/search/filters
-- **SaaS Tests:** 70/70 assertions passing (`node test-integration-saas.js`)
-- **Next:** Week 3 - Additional Resource Endpoints (Diary, Tasks, Judgments)
+- **SaaS Transformation:** Week 3 Day 15 Complete (87.5%) - Expenses CRUD Endpoints
+- **SQL Server:** 13 tables (firms, users, clients, matters, matter_clients, lawyers, hearings, diary, tasks, judgments, deadlines, timesheets, expenses)
+- **API Endpoints:** 59 total (4 auth + 5 clients + 5 matters + 5 lawyers + 5 hearings + 5 diary + 5 tasks + 5 judgments + 5 deadlines + 5 timesheets + 5 expenses)
+- **Frontend Bridge:** JWT auth + SaaS response unwrapping (53 methods in api-client.js)
+- **Next:** Week 3 Day 16 - Advances CRUD Endpoints
 
 ## Three-Party Workflow
 
@@ -70,7 +70,8 @@ At the start of EVERY new chat:
 1. Check what phase/day of work we're on
 2. Run `node test-integration.js` to confirm baseline (118/118 passing)
 3. Run `node test-mssql-connection.js` to verify SQL Server (if SaaS work)
-4. Request the files needed for that phase
+4. Run `node test-integration-saas.js` to verify SaaS baseline (266/266 passing)
+5. Request the files needed for that phase
 
 **For Desktop work:**
 - `App.js` — main React app
@@ -79,8 +80,8 @@ At the start of EVERY new chat:
 - `preload.js` — if adding new IPC channels
 
 **For SaaS transformation:**
-- SESSION_31_CHECKPOINT.md (or latest session checkpoint)
-- WEEK_2_DAY_X_READY.md — tactical execution plan for current day (if exists)
+- SESSION_33_CHECKPOINT.md (or latest session checkpoint)
+- WEEK_3_DAY_X_READY.md — tactical execution plan for current day (if exists)
 - SESSION_23_SAAS_FINAL_ROADMAP_v2.md — 10/10 verified strategy (reference)
 
 ## Before Writing New Code
@@ -147,6 +148,9 @@ node test-integration.js    # Must show 0 failures (currently 118/118)
 # For SaaS work, also verify SQL Server connection
 node test-mssql-connection.js    # Must show 3/3 passing
 
+# For SaaS work, verify integration tests
+node test-integration-saas.js    # Must show 266/266 passing
+
 # After ANY backend change, run tests before UI testing
 # After adding new IPC handlers, add test cases to test-integration.js
 ```
@@ -189,14 +193,7 @@ ipcMain.handle('channel-name', logger.wrapHandler('channel-name', (event, data) 
 
 **Lawyers special case:** DB stores `name`/`name_arabic`, queries alias to `full_name`/`full_name_arabic`, frontend sends `full_name`/`full_name_arabic`, validation schema uses `full_name`.
 
-> ⚠️ ALWAYS verify against `CREATE TABLE` in `electron/schema.js` (desktop) or `server/schema-*.sql` (SaaS) before writing queries.
-
-### SaaS Naming Conventions (Week 2 Learnings)
-- **Primary Keys:** Always `{entity}_id` (e.g., `hearing_id`, `matter_id`, `lawyer_id`)
-- **Foreign Keys:** Reference `{table}({entity}_id)` (e.g., `firms(firm_id)`, not `firms(id)`)
-- **Timestamps:** Always use `GETUTCDATE()` (never `GETDATE()`)
-- **Audit Columns:** Include `created_by INT NOT NULL` with FK to `users(user_id)`
-- **Indexes:** Separate `CREATE INDEX` statements with `GO`, filtered WHERE clauses for soft deletes
+> ⚠️ ALWAYS verify against `CREATE TABLE` in `electron/schema.js` before writing queries.
 
 ### React Hooks Rule
 ALL hooks must be called BEFORE any early return (`if (!isOpen) return null`).
@@ -215,30 +212,24 @@ ALL hooks must be called BEFORE any early return (`if (!isOpen) return null`).
 ALL forms live in `src/components/forms/` (13 forms). The old `src/forms/` directory was removed.
 
 ## Build Commands
-
-### Desktop
 - `npm run dev` — Development (production DB)
-- `npm run dev:test` — Development (test DB via --test-db)
+- `npm run dev:test` — Development (test DB)
 - `npm run dist:clean` — Build for testing
 - `npm run dist` — Build for release
-- `node test-integration.js` — Run 116 integration tests (MANDATORY before commit)
-
-### SaaS
-- `npm run server` — Development server (auto-restart via nodemon)
-- `npm run server:prod` — Production server (no auto-restart)
-- `node test-mssql-connection.js` — Verify SQL Server connection
-- `npm test` — Run API tests (after Week 2)
+- `node test-integration.js` — Run 118 integration tests (MANDATORY before commit)
+- `node test-integration-saas.js` — Run 266 SaaS integration tests
+- `node test-mssql-connection.js` — Verify SQL Server connection (3 tests)
+- `git checkout preload.js` — Restore after dist if modified
 
 ## Project Location
 `C:\Projects\qanuni\`
 
-## Architecture
-
-### Desktop (v1.0.0 - Complete)
+## Architecture (v47.0)
 ```
 electron/
-├── database.js          # SQLite - Atomic writes, safe IDs, transactions
-├── logging.js           # File-based logging (%APPDATA%/Qanuni/logs/)
+├── database.js          # Atomic writes, safe IDs, transactions, WAL mode, integrity checks
+├── logging.js           # File-based logging (%APPDATA%/Qanuni/logs/), crash handlers, IPC wrapper
+├── validation.js        # Input validation schemas for 16 entity types
 ├── migrations.js        # Versioned, trackable migrations (16 migrations)
 ├── schema.js            # 27 CREATE TABLE statements + seed data
 └── ipc/                 # 21 handler modules (all ✓ complete)
@@ -263,7 +254,10 @@ electron/
     ├── settings.js      # ~22 handlers
     ├── reports.js       # ~12 handlers
     └── client-imports.js # 2 handlers
+```
 
+## Frontend Structure (Unchanged During Hardening)
+```
 src/
 ├── App.js              # ~4,000 lines — needs Phase 3 restructuring
 ├── constants/          # translations.js (basic, pre-i18n)
@@ -277,59 +271,13 @@ src/
     └── reports/corporate/  # Corporate report modals
 ```
 
-### SaaS (Week 2 - In Progress)
-```
-shared/                  # ✅ Week 1 Day 1 - Code shared between Desktop & SaaS
-├── validation.js        # Input validation schemas (7 schemas: register, login, user, firm, client_saas, matter_saas, lawyer_saas, hearing_saas)
-└── (future shared utils)
-
-server/                  # ✅ SaaS backend (Express + SQL Server)
-├── database.js          # SQL Server connection + helpers + transactions
-├── index.js             # ✅ Week 1 Day 2 - Express server entry point
-├── schema.sql           # ✅ Week 1 Day 3 - SQL Server table definitions (firms, users)
-├── schema-clients.sql   # ✅ Week 1 Day 4 - Clients table definition
-├── schema-matters.sql   # ✅ Week 2 Day 5 - Matters + matter_clients tables
-├── schema-lawyers.sql   # ✅ Week 2 Day 6 - Lawyers table definition
-├── schema-hearings.sql  # ✅ Week 2 Day 7 - Hearings table definition
-├── routes/              # REST API endpoints
-│   ├── auth.js          # ✅ Week 1 Day 3 - Register, login, refresh, me (14 endpoints)
-│   ├── clients.js       # ✅ Week 1 Day 4 + Day 8 - Client CRUD (5 endpoints, pagination/search/filters)
-│   ├── matters.js       # ✅ Week 2 Day 5 + Day 8 - Matter CRUD (5 endpoints, pagination/search/filters)
-│   ├── lawyers.js       # ✅ Week 2 Day 6 + Day 8 - Lawyer CRUD (5 endpoints, pagination/search/filters)
-│   ├── hearings.js      # ✅ Week 2 Day 7 + Day 8 - Hearing CRUD (5 endpoints, pagination/search/filters)
-│   └── (16 more route modules planned)
-├── utils/               # ✅ Week 2 Day 8 - Shared utilities
-│   └── pagination.js    # parsePagination, buildPaginationResponse
-└── middleware/          # ✅ Week 1 Day 3 - Auth, validation
-    ├── auth.js          # JWT generation, verification, authenticate middleware
-    └── validate.js      # Request validation (wraps shared/validation.js)
-
-test-mssql-connection.js # ✅ Week 1 Day 1 - SQL Server verification script
-test-clients-smoke.js    # ✅ Week 1 Day 4 - Client CRUD smoke tests (4 tests)
-test-matters-smoke.js    # ✅ Week 2 Day 5 - Matter CRUD smoke tests (6 tests)
-test-lawyers-smoke.js    # ✅ Week 2 Day 6 - Lawyer CRUD smoke tests (7 tests, 25 assertions)
-test-hearings-smoke.js   # ✅ Week 2 Day 7 - Hearing CRUD smoke tests (7 tests, 28 assertions)
-test-integration-saas.js # ✅ Week 2 Day 8 - Integration tests (27 tests, 70 assertions)
-.env                     # ✅ Week 1 Day 1 - Environment configuration (gitignored)
-```
-
-### SQL Server Configuration (Week 1 Day 1)
-- **Version:** SQL Server 2025 Express (MSSQL17.SQLEXPRESS)
-- **Server:** localhost\SQLEXPRESS
-- **Database:** qanuni (created, 7 tables)
-- **Authentication:** 
-  - Local dev: Windows Auth via msnodesqlv8
-  - Production: SQL Auth via tedious (auto-selected by server/database.js)
-- **Protocols:** TCP/IP enabled, Named Pipes enabled
-- **Connection:** Verified working (3/3 tests passing)
-
 ## After Major Changes
-- Run `node test-integration.js` — must pass before commit (118/118 desktop)
-- Run `node test-mssql-connection.js` — verify SQL Server (SaaS work)
-- Run `node test-integration-saas.js` — must pass before SaaS commit (70/70 assertions)
+- Run `node test-integration.js` — must pass before commit
+- Run `node test-integration-saas.js` — must pass before SaaS commits
 - Update `KNOWN_FIXES.md` for bug fixes
 - Update `CLAUDE.md` for structural changes, phase completions
-- Update `test-integration.js` when adding new IPC handlers
+- Update `test-integration.js` when adding new handlers
+- Update `test-integration-saas.js` when adding new SaaS endpoints
 - Remind user to commit before any dist build
 
 ## Safety Rules
@@ -337,6 +285,7 @@ test-integration-saas.js # ✅ Week 2 Day 8 - Integration tests (27 tests, 70 as
 - NEVER deliver full JS files containing Arabic text — use Node.js scripts with \uXXXX escapes
 - ALWAYS run `node test-integration.js` before committing
 - ALWAYS run `node test-mssql-connection.js` before SaaS commits
+- ALWAYS run `node test-integration-saas.js` before SaaS commits
 - ALWAYS commit before `npm run dist`
 - After ANY batch file modification, run Arabic integrity scan before proceeding
 - Check `KNOWN_FIXES.md` before refactoring existing components
@@ -353,7 +302,7 @@ test-integration-saas.js # ✅ Week 2 Day 8 - Integration tests (27 tests, 70 as
 - **Invoice delete bug:** Doesn't restore advance balance (fix in v1.0.1 or during SaaS Week 5-6)
 
 ### SaaS Decisions
-- **RLS decision:** Skip RLS for Phase 1, use explicit `WHERE firm_id = @firmId` clauses
+- **RLS decision:** Skip RLS for Phase 1, use explicit `WHERE firm_id = @firm_id` clauses
 - **Database limitation:** SQLite AUTOINCREMENT accepted for MVP, migrate to sequences in Phase 2
 - **Driver architecture:** msnodesqlv8 (local Windows Auth) + tedious (production SQL Auth)
 
@@ -363,11 +312,28 @@ test-integration-saas.js # ✅ Week 2 Day 8 - Integration tests (27 tests, 70 as
 - **Validation format matters:** Desktop uses custom validation.check(), SaaS uses flat object format - never mix schema formats
 - **Always verify FK references:** Column names vary between tables (firms.firm_id, users.user_id, clients.client_id) - never assume
 
+### SaaS Learnings (Week 3)
+- **Architecture audit prevents mistakes:** Claude Code audit revealed 98% shareability - splitting repos would have created unnecessary maintenance burden
+- **Response normalization direction matters:** Unwrap SaaS responses to match Desktop format (not vice versa) to avoid breaking 55 components
+- **Per-method unwrapping > global wrapper:** Not all endpoints return `{ data, pagination }` - per-method handling is more explicit and type-safe
+- **JWT token persistence is critical:** localStorage persistence prevents re-login on page refresh
+- **401 auto-logout prevents confusion:** Auto-clear token on 401 provides clear "Authentication required" error vs generic failure
+- **Audit-first approach is gold standard:** Day 10 audit caught 13 issues before any code written - zero runtime failures, all tests green on first run
+- **Template-based development works:** "Use hearings.js as direct template" instruction prevented all API surface mismatches (db.query vs db.execute, etc.)
+- **HTTP smoke tests > raw SQL tests:** HTTP tests validate auth, middleware, business logic - not just database layer
+- **Column name drift between Desktop/SaaS:** Desktop lawyers.name vs SaaS lawyers.full_name caused runtime failure in timesheets JOIN - always verify column names against actual SaaS schema, not desktop
+- **Template-based acceleration:** Using judgments.js as template delivered 4 CRUD modules (Deadlines, Timesheets, Expenses) with 145 new assertions in a single session with zero-failure quality
+- **3 FK validation pattern:** Expenses introduced 3 optional FK validations (matter_id, lawyer_id, paid_by_lawyer_id) - reusable pattern for complex entities
+
 ### Known Working Configurations
 - **Desktop tests:** 118/118 passing consistently
 - **SQL Server tests:** 3/3 passing with msnodesqlv8
+- **SaaS integration tests:** 266/266 passing (was 121/121, +145 assertions from Days 12-15)
+- **Diary smoke tests:** 36/36 assertions passing (11 test scenarios)
 - **Environment:** .env file with empty DB_USER/DB_PASSWORD = Windows Auth
-- **Validation:** Now in shared/validation.js (imported by 16 desktop IPC files + 5 SaaS routes)
+- **Validation:** Now in shared/validation.js (imported by 16 desktop IPC files + 11 SaaS routes)
+- **Total API endpoints:** 59 (4 auth + 5×11 business entities)
+- **Total test coverage:** 387 assertions (118 desktop + 266 SaaS integration + 3 connection)
 
 ## Week 1 Progress Tracker
 
@@ -447,17 +413,105 @@ test-integration-saas.js # ✅ Week 2 Day 8 - Integration tests (27 tests, 70 as
 - Tests: 28/28 assertions (7 smoke tests) passing
 - Commit: dd60367a (pushed)
 
-### ✅ Day 8 Complete (4 hours)
-- Created server/utils/pagination.js (parsePagination, buildPaginationResponse)
-- Updated 4 route files with pagination + search + filtering
+### ✅ Day 8 Complete (6 hours)
+- Created server/utils/pagination.js (shared pagination helpers)
 - Created test-integration-saas.js (27 tests, 70 assertions)
-- **Breaking change:** List endpoints now return `{ data, pagination }` instead of `{ count, <entity> }`
-- Features: Pagination (page/limit/offset), full-text search (LIKE), multi-field filters
-- Skipped: Performance indexes (existing indexes sufficient), performance tests (premature)
-- Tests: 70/70 assertions passing
-- Commit: (pending)
+- Modified server/routes/clients.js (pagination + search + filters)
+- Modified server/routes/matters.js (pagination + search + filters)
+- Modified server/routes/lawyers.js (pagination + search + filters)
+- Modified server/routes/hearings.js (pagination + search + filters)
+- Modified test-lawyers-smoke.js (updated for new response format)
+- Modified test-hearings-smoke.js (updated for new response format)
+- **Breaking change:** List endpoints now return `{ data: [...], pagination: {...} }` instead of `{ count, <entity>: [...] }`
+- Tests: 70/70 SaaS integration tests passing, 118/118 desktop tests passing
+- Commit: 0b81afcb (pushed)
 
-**Week 2 Status:** 100% complete ✅
+**Week 2 Status:** 100% complete (Days 5-8 done) - Complete ✅
+
+## Week 3 Progress Tracker
+
+### ✅ Day 9 Complete (4 hours)
+- **Architecture Decision:** Single repository confirmed (98% shareability, 0 Electron-locked components)
+- **Claude Code Audit:** Analyzed 2,215-line api-client.js, identified response format mismatch
+- Modified src/api-client.js (JWT injection + SaaS response unwrapping)
+  - Added authToken with localStorage persistence
+  - Added setAuthToken() export for login flow
+  - Updated fetchAPI() with Authorization header injection
+  - 401 auto-clear mechanism
+  - Unwrapped response.data from 53 list methods
+- Modified package.json (added cross-env, dev:saas, build:web scripts)
+- **Bridge Layer:** All 55 React components now work in both Desktop (IPC) and SaaS (REST) modes with zero rewrites
+- Tests: 118/118 desktop + 70/70 SaaS passing (188 total assertions)
+- Commit: 9f8a8e5b (pushed)
+
+### ✅ Day 10 Complete (3 hours)
+- Created server/schema-diary.sql (diary table, 11 columns, 3 FKs, CHECK constraint)
+- Created server/routes/diary.js (5 endpoints: GET, GET/:id, POST, PUT, DELETE)
+- Modified shared/validation.js (diary_saas schema, 5 fields)
+- Modified server/index.js (registered /api/diary routes)
+- Created test-diary-smoke.js (11 tests, 36 assertions)
+- Modified test-integration-saas.js (added 9 diary tests, 23 assertions)
+- **Audit-First Success:** Claude Code audit caught 13 issues before implementation
+- Features: Matter linkage, entry type validation (7 types), date/time tracking, search filter
+- Tests: 36/36 smoke tests + 93/93 integration tests passing (was 70/70)
+- Commit: b25155e8 (pushed)
+
+### ✅ Day 11 Complete (3 hours)
+- Created server/schema-tasks.sql (tasks table, 25 columns, 7 FKs, 2 CHECK constraints)
+- Created server/routes/tasks.js (5 endpoints: GET, GET/:id, POST, PUT, DELETE)
+- Modified shared/validation.js (task_saas schema, 14 fields)
+- Modified server/index.js (registered /api/tasks routes)
+- Modified test-integration-saas.js (added 9 task tests, 28 assertions)
+- **Audit-First Success:** Claude Code audit caught 13 issues before implementation
+- Features: Optional FK validation, task_number auto-gen (WA-YYYY-NNNN), comprehensive field handling
+- Tests: 121/121 SaaS integration tests passing (was 93/93)
+- Commit: f8716230 (pushed)
+
+### ✅ Day 12 Complete (3 hours)
+- Created server/schema-judgments.sql (judgments table, 15 columns, 3 FKs, 2 CHECK constraints)
+- Created server/routes/judgments.js (5 endpoints: GET, GET/:id, POST, PUT, DELETE)
+- Modified shared/validation.js (judgment_saas schema, 9 fields)
+- Modified server/index.js (registered /api/judgments routes)
+- Modified test-integration-saas.js (added 12 judgment tests, 33 assertions)
+- Features: Matter linkage, judgment_type/status enums, date tracking, appeal support
+- Tests: 154/154 SaaS integration tests passing (was 121/121)
+- Commit: c7406236 (pushed)
+
+### ✅ Day 13 Complete (3 hours)
+- Created server/schema-deadlines.sql (deadlines table, 14 columns, 3 FKs, 2 CHECK constraints)
+- Created server/routes/deadlines.js (5 endpoints: GET, GET/:id, POST, PUT, DELETE)
+- Modified shared/validation.js (deadline_saas schema, 8 fields)
+- Modified server/index.js (registered /api/deadlines routes)
+- Modified test-integration-saas.js (added 12 deadline tests, 36 assertions)
+- Features: Matter/judgment linkage, priority/status enums, reminder_days, deadline_date ASC ordering
+- Tests: 190/190 SaaS integration tests passing (was 154/154)
+- Commit: 78bad2c8 (pushed)
+
+### ✅ Day 14 Complete (3 hours)
+- Created server/schema-timesheets.sql (timesheets table, 15 columns, 4 FKs, 2 CHECK constraints)
+- Created server/routes/timesheets.js (5 endpoints: GET, GET/:id, POST, PUT, DELETE)
+- Modified shared/validation.js (timesheet_saas schema, 9 fields)
+- Modified server/index.js (registered /api/timesheets routes)
+- Modified test-integration-saas.js (added 12 timesheet tests, 37 assertions)
+- **Bug fix:** SaaS lawyers table uses `full_name` not `name` — caught by integration test
+- Features: Matter/lawyer linkage, billable tracking, rate/currency, status workflow (draft→submitted→approved→billed)
+- Tests: 227/227 SaaS integration tests passing (was 190/190)
+- Commit: d31c0966 (pushed)
+
+### ✅ Day 15 Complete (3 hours)
+- Created server/schema-expenses.sql (expenses table, 20 columns, 5 FKs, 4 CHECK constraints)
+- Created server/routes/expenses.js (5 endpoints: GET, GET/:id, POST, PUT, DELETE)
+- Modified shared/validation.js (expense_saas schema, 14 fields)
+- Modified server/index.js (registered /api/expenses routes)
+- Modified test-integration-saas.js (added 12 expense tests, 39 assertions)
+- Features: expense_type/status enums, markup_percent, paid_by_firm/paid_by_lawyer, category, billable, 3 optional FK validations
+- Tests: 266/266 SaaS integration tests passing (was 227/227)
+- Commit: 3b2b83f3 (pushed)
+
+**Week 3 Status:** 87.5% complete (Day 15 of 8 days done) - Next: Day 16 (Advances CRUD) 🎯
+
+### 🔜 Remaining Week 3 Days
+- Day 16: Advances CRUD
 
 ### Quick Reference
 **Start Server:**
