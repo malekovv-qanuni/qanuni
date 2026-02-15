@@ -3,24 +3,39 @@
  *
  * Main server entry point for REST API.
  * Connects to SQL Server via server/database.js
- *
- * @version 1.0.0 (Week 1 Day 2)
  */
 
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const path = require('path');
 const database = require('./database');
 
 // Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// CORS configuration
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : ['http://localhost:3000', 'http://localhost:3001'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, same-origin)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
+// Body parsing with size limits
+app.use(bodyParser.json({ limit: '5mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '5mb' }));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -94,14 +109,25 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    path: req.path,
-    method: req.method
+// Serve static frontend in production (single-deployment mode)
+if (process.env.NODE_ENV === 'production') {
+  const buildPath = path.join(__dirname, '..', 'build');
+  app.use(express.static(buildPath));
+
+  // SPA fallback — any non-API route serves index.html
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(buildPath, 'index.html'));
   });
-});
+} else {
+  // 404 handler (dev only — in prod, SPA fallback handles unknown routes)
+  app.use((req, res) => {
+    res.status(404).json({
+      error: 'Not Found',
+      path: req.path,
+      method: req.method
+    });
+  });
+}
 
 // Error handler
 app.use((err, req, res, next) => {
