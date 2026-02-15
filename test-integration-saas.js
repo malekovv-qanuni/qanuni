@@ -18,7 +18,7 @@ let failed = 0;
 let totalAssertions = 0;
 
 // Track created resources for cleanup
-const cleanup = { expenses: [], timesheets: [], deadlines: [], judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
+const cleanup = { advances: [], expenses: [], timesheets: [], deadlines: [], judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
 
 // ==================== HTTP Helper ====================
 
@@ -1066,6 +1066,177 @@ async function testExpenses() {
   assert('Deleted expense not in list', !t91list.body.data.find(e => e.expense_id === deleteExpenseId));
 }
 
+// ==================== Advances Tests ====================
+
+async function testAdvances() {
+  console.log('\n--- ADVANCES TESTS ---\n');
+
+  // Test 92: Create client retainer advance (comprehensive - with client + matter)
+  console.log('  Test 92: Create client retainer (comprehensive)');
+  const t92 = await request('POST', '/api/advances', {
+    advance_type: 'client_retainer',
+    client_id: cleanup.clients[0],
+    matter_id: cleanup.matters[0],
+    amount: 5000,
+    currency: 'USD',
+    date_received: '2026-02-14',
+    payment_method: 'bank_transfer',
+    reference_number: 'RET-2026-001',
+    minimum_balance_alert: 500,
+    notes: 'Initial retainer deposit'
+  });
+  assert('Status 201', t92.status === 201, 'Got ' + t92.status);
+  assert('Has advance object', t92.body.advance != null);
+  assert('Has advance_id', t92.body.advance && t92.body.advance.advance_id > 0);
+  assert('Amount is 5000', t92.body.advance && t92.body.advance.amount === 5000);
+  assert('Status is active', t92.body.advance && t92.body.advance.status === 'active');
+  assert('Type is client_retainer', t92.body.advance && t92.body.advance.advance_type === 'client_retainer');
+  assert('Balance equals amount', t92.body.advance && t92.body.advance.balance_remaining === 5000);
+  const testAdvanceId = t92.body.advance ? t92.body.advance.advance_id : null;
+  if (testAdvanceId) cleanup.advances.push(testAdvanceId);
+
+  // Test 93: Create lawyer advance (minimal)
+  console.log('\n  Test 93: Create lawyer advance (minimal)');
+  const t93 = await request('POST', '/api/advances', {
+    advance_type: 'lawyer_advance',
+    lawyer_id: cleanup.lawyers[0],
+    amount: 2000,
+    date_received: '2026-02-15'
+  });
+  assert('Status 201', t93.status === 201, 'Got ' + t93.status);
+  assert('Created successfully', t93.body.success === true);
+  assert('Default status active', t93.body.advance && t93.body.advance.status === 'active');
+  assert('Default currency USD', t93.body.advance && t93.body.advance.currency === 'USD');
+  assert('Default payment bank_transfer', t93.body.advance && t93.body.advance.payment_method === 'bank_transfer');
+  assert('Balance equals amount', t93.body.advance && t93.body.advance.balance_remaining === 2000);
+  if (t93.body.advance) cleanup.advances.push(t93.body.advance.advance_id);
+
+  // Test 94: Reject invalid client_id
+  console.log('\n  Test 94: Reject invalid client_id');
+  const t94 = await request('POST', '/api/advances', {
+    advance_type: 'client_retainer',
+    client_id: 99999,
+    amount: 1000,
+    date_received: '2026-02-14'
+  });
+  assert('Status 404', t94.status === 404, 'Got ' + t94.status);
+  assert('Error mentions Client', t94.body.error && t94.body.error.includes('Client not found'));
+
+  // Test 95: Reject invalid lawyer_id
+  console.log('\n  Test 95: Reject invalid lawyer_id');
+  const t95 = await request('POST', '/api/advances', {
+    advance_type: 'lawyer_advance',
+    lawyer_id: 99999,
+    amount: 1000,
+    date_received: '2026-02-14'
+  });
+  assert('Status 404', t95.status === 404, 'Got ' + t95.status);
+  assert('Error mentions Lawyer', t95.body.error && t95.body.error.includes('Lawyer not found'));
+
+  // Test 96: Reject lawyer_advance without lawyer_id
+  console.log('\n  Test 96: Reject lawyer_advance without lawyer_id');
+  const t96 = await request('POST', '/api/advances', {
+    advance_type: 'lawyer_advance',
+    amount: 1000,
+    date_received: '2026-02-14'
+  });
+  assert('Status 400', t96.status === 400, 'Got ' + t96.status);
+  assert('Error mentions Lawyer ID required', t96.body.error && t96.body.error.includes('Lawyer ID is required'));
+
+  // Test 97: Reject client_retainer without client_id
+  console.log('\n  Test 97: Reject client_retainer without client_id');
+  const t97 = await request('POST', '/api/advances', {
+    advance_type: 'client_retainer',
+    amount: 1000,
+    date_received: '2026-02-14'
+  });
+  assert('Status 400', t97.status === 400, 'Got ' + t97.status);
+  assert('Error mentions Client ID required', t97.body.error && t97.body.error.includes('Client ID is required'));
+
+  // Test 98: Create fee payment (no balance tracking)
+  console.log('\n  Test 98: Create fee payment (no balance tracking)');
+  const t98 = await request('POST', '/api/advances', {
+    advance_type: 'fee_payment_initial',
+    client_id: cleanup.clients[0],
+    matter_id: cleanup.matters[0],
+    amount: 3000,
+    date_received: '2026-02-14',
+    fee_description: 'Initial consultation fee'
+  });
+  assert('Status 201', t98.status === 201, 'Got ' + t98.status);
+  assert('Type is fee_payment_initial', t98.body.advance && t98.body.advance.advance_type === 'fee_payment_initial');
+  assert('Balance is null for fee payment', t98.body.advance && t98.body.advance.balance_remaining === null);
+  assert('Fee description set', t98.body.advance && t98.body.advance.fee_description === 'Initial consultation fee');
+  if (t98.body.advance) cleanup.advances.push(t98.body.advance.advance_id);
+
+  // Test 99: List advances
+  console.log('\n  Test 99: List advances');
+  const t99 = await request('GET', '/api/advances');
+  assert('Has data array', Array.isArray(t99.body.data));
+  assert('Has pagination', t99.body.pagination != null);
+  assert('Has at least 3 advances', t99.body.data.length >= 3, 'Got ' + t99.body.data.length);
+
+  // Test 100: Filter by status
+  console.log('\n  Test 100: Filter by status');
+  const t100 = await request('GET', '/api/advances?status=active');
+  assert('Returns active advances', t100.body.data.length >= 1);
+  assert('All are active', t100.body.data.every(a => a.status === 'active'));
+
+  // Test 101: Filter by advance_type
+  console.log('\n  Test 101: Filter by advance_type');
+  const t101 = await request('GET', '/api/advances?advance_type=client_retainer');
+  assert('Returns client_retainer advances', t101.body.data.length >= 1);
+  assert('All are client_retainer', t101.body.data.every(a => a.advance_type === 'client_retainer'));
+
+  // Test 102: Filter by client_id
+  console.log('\n  Test 102: Filter by client_id');
+  const t102 = await request('GET', '/api/advances?client_id=' + cleanup.clients[0]);
+  assert('Returns advances for client', t102.body.data.length >= 1, 'Got ' + t102.body.data.length);
+  assert('All match client_id', t102.body.data.every(a => a.client_id === cleanup.clients[0]));
+
+  // Test 103: Search advances
+  console.log('\n  Test 103: Search advances');
+  const t103 = await request('GET', '/api/advances?search=RET-2026');
+  assert('Finds advance by reference number', t103.body.data.length >= 1);
+
+  // Test 104: Get single advance
+  console.log('\n  Test 104: Get single advance');
+  const t104 = await request('GET', '/api/advances/' + testAdvanceId);
+  assert('Status 200', t104.status === 200, 'Got ' + t104.status);
+  assert('Has advance object', t104.body.advance != null);
+  assert('advance_id matches', t104.body.advance && t104.body.advance.advance_id === testAdvanceId);
+  assert('Has client_name from JOIN', t104.body.advance && t104.body.advance.client_name != null);
+  assert('Has matter_name from JOIN', t104.body.advance && t104.body.advance.matter_name != null);
+
+  // Test 105: Update advance
+  console.log('\n  Test 105: Update advance');
+  const t105 = await request('PUT', '/api/advances/' + testAdvanceId, {
+    advance_type: 'client_retainer',
+    client_id: cleanup.clients[0],
+    matter_id: cleanup.matters[0],
+    amount: 7500,
+    date_received: '2026-02-14',
+    balance_remaining: 6000,
+    status: 'active',
+    reference_number: 'RET-2026-001-UPDATED'
+  });
+  assert('Status 200', t105.status === 200, 'Got ' + t105.status);
+  assert('Amount updated to 7500', t105.body.advance && t105.body.advance.amount === 7500);
+  assert('Balance updated to 6000', t105.body.advance && t105.body.advance.balance_remaining === 6000);
+  assert('Reference updated', t105.body.advance && t105.body.advance.reference_number === 'RET-2026-001-UPDATED');
+
+  // Test 106: Soft delete advance
+  console.log('\n  Test 106: Soft delete advance');
+  const deleteAdvanceId = cleanup.advances[1]; // Delete the lawyer advance
+  const t106 = await request('DELETE', '/api/advances/' + deleteAdvanceId);
+  assert('Status 200', t106.status === 200, 'Got ' + t106.status);
+  assert('Success message', t106.body.message === 'Advance deleted successfully');
+
+  // Verify not in list
+  const t106list = await request('GET', '/api/advances');
+  assert('Deleted advance not in list', !t106list.body.data.find(a => a.advance_id === deleteAdvanceId));
+}
+
 // ==================== Cross-Resource Tests ====================
 
 async function testCrossResource() {
@@ -1134,7 +1305,12 @@ async function testCrossResource() {
 async function cleanupData() {
   console.log('\nCleanup...');
 
-  // Delete in reverse dependency order: expenses -> timesheets -> deadlines -> judgments -> tasks -> diary -> hearings -> matters -> lawyers -> clients
+  // Delete in reverse dependency order: advances -> expenses -> timesheets -> deadlines -> judgments -> tasks -> diary -> hearings -> matters -> lawyers -> clients
+  for (const id of cleanup.advances) {
+    await request('DELETE', '/api/advances/' + id);
+  }
+  console.log('  Deleted ' + cleanup.advances.length + ' advances');
+
   for (const id of cleanup.expenses) {
     await request('DELETE', '/api/expenses/' + id);
   }
@@ -1201,6 +1377,7 @@ async function run() {
     await testDeadlines();
     await testTimesheets();
     await testExpenses();
+    await testAdvances();
     await testCrossResource();
     await cleanupData();
   } catch (err) {

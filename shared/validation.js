@@ -830,6 +830,28 @@ const schemas = {
     notes: { type: 'string', maxLength: 10000, label: 'Notes' }
   },
 
+  advance_saas: {
+    advance_type: {
+      required: true,
+      type: 'string',
+      oneOf: ['client_expense_advance', 'client_retainer', 'lawyer_advance', 'fee_payment_initial', 'fee_payment_interim', 'fee_payment_final'],
+      label: 'Advance type'
+    },
+    client_id: { type: 'number', label: 'Client' },
+    matter_id: { type: 'number', label: 'Matter' },
+    lawyer_id: { type: 'number', label: 'Lawyer' },
+    amount: { required: true, type: 'number', min: 0.01, label: 'Amount' },
+    currency: { type: 'string', maxLength: 3, label: 'Currency' },
+    date_received: { required: true, type: 'date', label: 'Date received' },
+    payment_method: { type: 'string', maxLength: 50, label: 'Payment method' },
+    reference_number: { type: 'string', maxLength: 100, label: 'Reference number' },
+    balance_remaining: { type: 'number', min: 0, label: 'Balance remaining' },
+    minimum_balance_alert: { type: 'number', min: 0, label: 'Minimum balance alert' },
+    fee_description: { type: 'string', maxLength: 500, label: 'Fee description' },
+    notes: { type: 'string', maxLength: 10000, label: 'Notes' },
+    status: { type: 'string', oneOf: ['active', 'depleted', 'refunded'], label: 'Status' }
+  },
+
   hearing_saas: {
     matter_id: {
       required: true,
