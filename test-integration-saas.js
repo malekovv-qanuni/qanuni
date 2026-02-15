@@ -2230,6 +2230,229 @@ async function testSettings() {
   console.log('\n  \u2705 All settings tests passed');
 }
 
+// ==================== Reports Tests ====================
+
+async function testReports() {
+  console.log('\n--- Reports Tests ---\n');
+
+  // Test 1: Dashboard stats
+  console.log('Test: GET /api/reports/dashboard-stats');
+  const dashRes = await request('GET', '/api/reports/dashboard-stats');
+  assert('Dashboard stats returns 200', dashRes.status === 200);
+  assert('activeMatters is number', typeof dashRes.body.activeMatters === 'number');
+  assert('totalClients is number', typeof dashRes.body.totalClients === 'number');
+  assert('pendingTasks is number', typeof dashRes.body.pendingTasks === 'number');
+  assert('draftInvoices is number', typeof dashRes.body.draftInvoices === 'number');
+  assert('upcomingHearings is number', typeof dashRes.body.upcomingHearings === 'number');
+  assert('overdueTasks is number', typeof dashRes.body.overdueTasks === 'number');
+  assert('outstandingInvoices is number', typeof dashRes.body.outstandingInvoices === 'number');
+  assert('pendingJudgments is number', typeof dashRes.body.pendingJudgments === 'number');
+  assert('thisMonthRevenue is number', typeof dashRes.body.thisMonthRevenue === 'number');
+  console.log('    Dashboard: ' + dashRes.body.activeMatters + ' active matters, ' + dashRes.body.totalClients + ' clients');
+
+  // Test 2: Pending invoices
+  console.log('Test: GET /api/reports/pending-invoices');
+  const pendingRes = await request('GET', '/api/reports/pending-invoices');
+  assert('Pending invoices returns 200', pendingRes.status === 200);
+  assert('Pending invoices is array', Array.isArray(pendingRes.body));
+
+  // Test 3: Generate report - outstanding receivables
+  console.log('Test: POST /api/reports/generate (outstanding-receivables)');
+  const receivablesRes = await request('POST', '/api/reports/generate', { reportType: 'outstanding-receivables' });
+  assert('Outstanding receivables returns 200', receivablesRes.status === 200);
+  assert('Outstanding receivables is array', Array.isArray(receivablesRes.body));
+
+  // Test 4: Generate report - revenue by client
+  console.log('Test: POST /api/reports/generate (revenue-by-client)');
+  const revClientRes = await request('POST', '/api/reports/generate', { reportType: 'revenue-by-client', dateFrom: '2020-01-01', dateTo: '2030-12-31' });
+  assert('Revenue by client returns 200', revClientRes.status === 200);
+  assert('Revenue by client is array', Array.isArray(revClientRes.body));
+
+  // Test 5: Generate report - revenue by matter
+  console.log('Test: POST /api/reports/generate (revenue-by-matter)');
+  const revMatterRes = await request('POST', '/api/reports/generate', { reportType: 'revenue-by-matter', dateFrom: '2020-01-01', dateTo: '2030-12-31' });
+  assert('Revenue by matter returns 200', revMatterRes.status === 200);
+  assert('Revenue by matter is array', Array.isArray(revMatterRes.body));
+
+  // Test 6: Generate report - time by lawyer
+  console.log('Test: POST /api/reports/generate (time-by-lawyer)');
+  const timeLawyerRes = await request('POST', '/api/reports/generate', { reportType: 'time-by-lawyer', dateFrom: '2020-01-01', dateTo: '2030-12-31' });
+  assert('Time by lawyer returns 200', timeLawyerRes.status === 200);
+  assert('Time by lawyer is array', Array.isArray(timeLawyerRes.body));
+
+  // Test 7: Generate report - active matters
+  console.log('Test: POST /api/reports/generate (active-matters)');
+  const activeMRes = await request('POST', '/api/reports/generate', { reportType: 'active-matters' });
+  assert('Active matters report returns 200', activeMRes.status === 200);
+  assert('Active matters is array', Array.isArray(activeMRes.body));
+
+  // Test 8: Generate report - upcoming hearings
+  console.log('Test: POST /api/reports/generate (upcoming-hearings)');
+  const hearingsRes = await request('POST', '/api/reports/generate', { reportType: 'upcoming-hearings' });
+  assert('Upcoming hearings returns 200', hearingsRes.status === 200);
+  assert('Upcoming hearings is array', Array.isArray(hearingsRes.body));
+
+  // Test 9: Generate report - pending judgments
+  console.log('Test: POST /api/reports/generate (pending-judgments)');
+  const judgmentsRes = await request('POST', '/api/reports/generate', { reportType: 'pending-judgments' });
+  assert('Pending judgments returns 200', judgmentsRes.status === 200);
+  assert('Pending judgments is array', Array.isArray(judgmentsRes.body));
+
+  // Test 10: Generate report - tasks overdue
+  console.log('Test: POST /api/reports/generate (tasks-overdue)');
+  const overdueRes = await request('POST', '/api/reports/generate', { reportType: 'tasks-overdue' });
+  assert('Tasks overdue returns 200', overdueRes.status === 200);
+  assert('Tasks overdue is array', Array.isArray(overdueRes.body));
+
+  // Test 11: Generate report - expenses by category
+  console.log('Test: POST /api/reports/generate (expenses-by-category)');
+  const expCatRes = await request('POST', '/api/reports/generate', { reportType: 'expenses-by-category', dateFrom: '2020-01-01', dateTo: '2030-12-31' });
+  assert('Expenses by category returns 200', expCatRes.status === 200);
+  assert('Expenses by category is array', Array.isArray(expCatRes.body));
+
+  // Test 12: Generate report - retainer balances
+  console.log('Test: POST /api/reports/generate (retainer-balances)');
+  const retBalRes = await request('POST', '/api/reports/generate', { reportType: 'retainer-balances' });
+  assert('Retainer balances returns 200', retBalRes.status === 200);
+  assert('Retainer balances is array', Array.isArray(retBalRes.body));
+
+  // Test 13: Generate report - unbilled time
+  console.log('Test: POST /api/reports/generate (unbilled-time)');
+  const unbilledRes = await request('POST', '/api/reports/generate', { reportType: 'unbilled-time' });
+  assert('Unbilled time returns 200', unbilledRes.status === 200);
+  assert('Unbilled time is array', Array.isArray(unbilledRes.body));
+
+  // Test 14: Generate report - time by client
+  console.log('Test: POST /api/reports/generate (time-by-client)');
+  const timeClientRes = await request('POST', '/api/reports/generate', { reportType: 'time-by-client', dateFrom: '2020-01-01', dateTo: '2030-12-31' });
+  assert('Time by client returns 200', timeClientRes.status === 200);
+  assert('Time by client is array', Array.isArray(timeClientRes.body));
+
+  // Test 15: Invoice aging report
+  console.log('Test: GET /api/reports/aging');
+  const agingRes = await request('GET', '/api/reports/aging');
+  assert('Aging report returns 200', agingRes.status === 200);
+  assert('Aging has buckets', agingRes.body.buckets !== undefined);
+  assert('Aging has totalOutstanding', typeof agingRes.body.totalOutstanding === 'number');
+  assert('Aging has invoices array', Array.isArray(agingRes.body.invoices));
+
+  // Test 16: Financial summary (convenience GET)
+  console.log('Test: GET /api/reports/financial-summary');
+  const finSumRes = await request('GET', '/api/reports/financial-summary');
+  assert('Financial summary returns 200', finSumRes.status === 200);
+  assert('Financial summary is array', Array.isArray(finSumRes.body));
+
+  // Test 17: Timesheet report (convenience GET)
+  console.log('Test: GET /api/reports/timesheet');
+  const tsRes = await request('GET', '/api/reports/timesheet');
+  assert('Timesheet report returns 200', tsRes.status === 200);
+  assert('Timesheet report is array', Array.isArray(tsRes.body));
+
+  // Test 18: Expense report (convenience GET)
+  console.log('Test: GET /api/reports/expense');
+  const expRes = await request('GET', '/api/reports/expense');
+  assert('Expense report returns 200', expRes.status === 200);
+  assert('Expense report is array', Array.isArray(expRes.body));
+
+  // Test 19: Lawyer productivity (convenience GET)
+  console.log('Test: GET /api/reports/lawyer-productivity');
+  const lpRes = await request('GET', '/api/reports/lawyer-productivity');
+  assert('Lawyer productivity returns 200', lpRes.status === 200);
+  assert('Lawyer productivity is array', Array.isArray(lpRes.body));
+
+  // Test 20: Matter stats (convenience GET)
+  console.log('Test: GET /api/reports/matter-stats');
+  const msRes = await request('GET', '/api/reports/matter-stats');
+  assert('Matter stats returns 200', msRes.status === 200);
+  assert('Matter stats is array', Array.isArray(msRes.body));
+
+  // Test 21: Revenue report (convenience GET)
+  console.log('Test: GET /api/reports/revenue');
+  const rvRes = await request('GET', '/api/reports/revenue');
+  assert('Revenue report returns 200', rvRes.status === 200);
+  assert('Revenue report is array', Array.isArray(rvRes.body));
+
+  // Test 22: Client report without clientId (returns revenue-by-client)
+  console.log('Test: GET /api/reports/client (no clientId)');
+  const clRptRes = await request('GET', '/api/reports/client');
+  assert('Client report returns 200', clRptRes.status === 200);
+  assert('Client report is array', Array.isArray(clRptRes.body));
+
+  // Test 23: Client statement (via generate)
+  console.log('Test: POST /api/reports/generate (client-statement)');
+  const csRes = await request('POST', '/api/reports/generate', { reportType: 'client-statement', clientId: cleanup.clients[0] });
+  assert('Client statement returns 200', csRes.status === 200);
+  assert('Client statement has client', csRes.body.client !== undefined);
+  assert('Client statement has invoices', Array.isArray(csRes.body.invoices));
+  assert('Client statement has payments', Array.isArray(csRes.body.payments));
+  assert('Client statement has summary', csRes.body.summary !== undefined);
+  assert('Summary has openingBalance', typeof csRes.body.summary.openingBalance === 'number');
+  assert('Client statement has period', csRes.body.period !== undefined);
+
+  // Test 24: Client statement missing clientId
+  console.log('Test: POST /api/reports/generate (client-statement, no clientId)');
+  const csNoIdRes = await request('POST', '/api/reports/generate', { reportType: 'client-statement' });
+  assert('Client statement without ID returns 400', csNoIdRes.status === 400);
+
+  // Test 25: Case status report
+  console.log('Test: POST /api/reports/generate (case-status-report)');
+  const caseRes = await request('POST', '/api/reports/generate', { reportType: 'case-status-report', clientId: cleanup.clients[0] });
+  assert('Case status report returns 200', caseRes.status === 200);
+  assert('Case status has client', caseRes.body.client !== undefined);
+  assert('Case status has matters', Array.isArray(caseRes.body.matters));
+  assert('Case status has hearings', Array.isArray(caseRes.body.hearings));
+  assert('Case status has summary', caseRes.body.summary !== undefined);
+  assert('Summary has totalMatters', caseRes.body.summary && typeof caseRes.body.summary.totalMatters === 'number');
+
+  // Test 26: Client 360 report
+  console.log('Test: POST /api/reports/generate (client-360-report)');
+  const c360Res = await request('POST', '/api/reports/generate', { reportType: 'client-360-report', clientId: cleanup.clients[0] });
+  assert('Client 360 returns 200', c360Res.status === 200);
+  assert('Client 360 has client', c360Res.body.client !== undefined);
+  assert('Client 360 has matters', Array.isArray(c360Res.body.matters));
+  assert('Client 360 has invoices', Array.isArray(c360Res.body.invoices));
+  assert('Client 360 has financial', c360Res.body.financial !== undefined);
+  assert('Financial has totalInvoiced', c360Res.body.financial && typeof c360Res.body.financial.totalInvoiced === 'number');
+  assert('Client 360 has summary', c360Res.body.summary !== undefined);
+  assert('Summary has totalMatters', c360Res.body.summary && typeof c360Res.body.summary.totalMatters === 'number');
+
+  // Test 27: Matter financials
+  console.log('Test: POST /api/reports/generate (matter-financials)');
+  const mfRes = await request('POST', '/api/reports/generate', { reportType: 'matter-financials', matterId: cleanup.matters[0] });
+  assert('Matter financials returns 200', mfRes.status === 200);
+  assert('Matter financials has matter', mfRes.body.matter !== undefined);
+  assert('Matter financials has invoices', Array.isArray(mfRes.body.invoices));
+  assert('Matter financials has timesheets', Array.isArray(mfRes.body.timesheets));
+  assert('Matter financials has financial', mfRes.body.financial !== undefined);
+
+  // Test 28: Generate report - missing reportType
+  console.log('Test: POST /api/reports/generate (missing reportType)');
+  const noTypeRes = await request('POST', '/api/reports/generate', {});
+  assert('Missing reportType returns 400', noTypeRes.status === 400);
+
+  // Test 29: Generate report - unknown type returns empty array
+  console.log('Test: POST /api/reports/generate (unknown type)');
+  const unknownRes = await request('POST', '/api/reports/generate', { reportType: 'non-existent-report' });
+  assert('Unknown report type returns 200', unknownRes.status === 200);
+  assert('Unknown report returns empty array', Array.isArray(unknownRes.body));
+
+  // Test 30: Client report with clientId (returns client-statement)
+  console.log('Test: GET /api/reports/client?clientId=' + cleanup.clients[0]);
+  const clWithIdRes = await request('GET', '/api/reports/client?clientId=' + cleanup.clients[0]);
+  assert('Client report with ID returns 200', clWithIdRes.status === 200);
+  assert('Client report with ID returns statement', clWithIdRes.body.client !== undefined);
+
+  // Test 31: Unauthenticated request
+  console.log('Test: Unauthenticated reports request');
+  const savedToken = TOKEN;
+  TOKEN = '';
+  const unauthRes = await request('GET', '/api/reports/dashboard-stats');
+  assert('Unauthenticated returns 401', unauthRes.status === 401);
+  TOKEN = savedToken;
+
+  console.log('\n  \u2705 All reports tests passed');
+}
+
 // ==================== Cleanup ====================
 
 // ==================== Corporate Secretary Tests ====================
@@ -2703,6 +2926,116 @@ async function cleanupData() {
   console.log('  Deleted ' + cleanup.clients.length + ' clients');
 }
 
+// ==================== Client Imports ====================
+
+async function testClientImports() {
+  console.log('\n--- Client Imports ---');
+
+  // 1. Import with valid rows
+  const importRes = await request('POST', '/api/client-imports', {
+    rows: [
+      { 'Client Name *': 'Import Test Corp', 'Client Type': 'Company', 'Email': 'import1@test.com', 'Phone': '+961-1-111111' },
+      { 'Client Name *': 'Import Test Individual', 'Client Type': 'Individual', 'Email': 'import2@test.com' },
+      { 'Client Name *': 'Import Test Arabic', 'Client Name (Arabic)': '\u0639\u0645\u064a\u0644 \u0627\u062e\u062a\u0628\u0627\u0631', 'Client Type': 'Individual' }
+    ]
+  });
+  assert('Import returns 201', importRes.status === 201);
+  assert('Import success flag', importRes.body.success === true);
+  assert('Import count 3', importRes.body.imported === 3);
+  assert('Import skipped 0', importRes.body.skipped === 0);
+  assert('Import total 3', importRes.body.total === 3);
+  assert('Import no errors', importRes.body.errors.length === 0);
+
+  // Track imported clients for cleanup - look them up by name
+  const lookupRes = await request('GET', '/api/clients?search=Import Test');
+  if (lookupRes.body.data) {
+    for (const c of lookupRes.body.data) {
+      cleanup.clients.push(c.client_id);
+    }
+  }
+
+  // 2. Verify imported clients exist via GET
+  assert('Imported clients found', lookupRes.body.data && lookupRes.body.data.length >= 3);
+
+  // Check that client_type was normalized
+  const corp = lookupRes.body.data.find(c => c.client_name === 'Import Test Corp');
+  assert('Corp client_type normalized', corp && (corp.client_type === 'legal_entity' || corp.client_type === 'company'));
+
+  const indiv = lookupRes.body.data.find(c => c.client_name === 'Import Test Individual');
+  assert('Individual client_type', indiv && indiv.client_type === 'individual');
+
+  // 3. Import with duplicate names — should skip
+  const dupeRes = await request('POST', '/api/client-imports', {
+    rows: [
+      { 'Client Name *': 'Import Test Corp', 'Email': 'dupe@test.com' },
+      { 'Client Name *': 'Brand New Client', 'Email': 'new@test.com' }
+    ]
+  });
+  assert('Dupe import returns 201', dupeRes.status === 201);
+  assert('Dupe import success', dupeRes.body.success === true);
+  assert('Dupe import imported 1', dupeRes.body.imported === 1);
+  assert('Dupe import skipped 1', dupeRes.body.skipped === 1);
+
+  // Track the new client for cleanup
+  const newLookup = await request('GET', '/api/clients?search=Brand New Client');
+  if (newLookup.body.data) {
+    for (const c of newLookup.body.data) {
+      cleanup.clients.push(c.client_id);
+    }
+  }
+
+  // 4. Import with no rows — should return 400
+  const emptyRes = await request('POST', '/api/client-imports', { rows: [] });
+  assert('Empty rows returns 400', emptyRes.status === 400);
+  assert('Empty rows error message', emptyRes.body.error && emptyRes.body.error.includes('No data'));
+
+  // 5. Import with missing client_name — should return 400
+  const noNameRes = await request('POST', '/api/client-imports', {
+    rows: [{ 'Email': 'noname@test.com', 'Phone': '123' }]
+  });
+  assert('No client_name returns 400', noNameRes.status === 400);
+  assert('No client_name error', noNameRes.body.error && noNameRes.body.error.includes('Client Name'));
+
+  // 6. Import with no body — should return 400
+  const noBodyRes = await request('POST', '/api/client-imports', {});
+  assert('No body returns 400', noBodyRes.status === 400);
+
+  // 7. Import with header normalization (alternative header names)
+  const altHeaderRes = await request('POST', '/api/client-imports', {
+    rows: [
+      { 'Client Name': 'Alt Header Client', 'Client Name (Arabic)': '\u0639\u0631\u0628\u064a', 'Currency': 'USD', 'Billing Terms': 'Flat Fee' }
+    ]
+  });
+  assert('Alt header import succeeds', altHeaderRes.status === 201);
+  assert('Alt header imported 1', altHeaderRes.body.imported === 1);
+
+  // Track for cleanup
+  const altLookup = await request('GET', '/api/clients?search=Alt Header Client');
+  if (altLookup.body.data) {
+    for (const c of altLookup.body.data) {
+      cleanup.clients.push(c.client_id);
+    }
+  }
+
+  // 8. Unauthenticated — should return 401
+  const savedToken = TOKEN;
+  TOKEN = '';
+  const unauthRes = await request('POST', '/api/client-imports', { rows: [{ 'Client Name *': 'Hacker' }] });
+  assert('Unauth import returns 401', unauthRes.status === 401);
+  TOKEN = savedToken;
+
+  // 9. All-duplicates import — should return 200 (not 201, nothing new)
+  const allDupeRes = await request('POST', '/api/client-imports', {
+    rows: [
+      { 'Client Name *': 'Import Test Corp' },
+      { 'Client Name *': 'Import Test Individual' }
+    ]
+  });
+  assert('All-dupes returns 200', allDupeRes.status === 200);
+  assert('All-dupes imported 0', allDupeRes.body.imported === 0);
+  assert('All-dupes skipped 2', allDupeRes.body.skipped === 2);
+}
+
 // ==================== Main ====================
 
 async function run() {
@@ -2725,7 +3058,9 @@ async function run() {
     await testTrash();
     await testLookups();
     await testSettings();
+    await testReports();
     await testCorporate();
+    await testClientImports();
     await testCrossResource();
     await cleanupData();
   } catch (err) {

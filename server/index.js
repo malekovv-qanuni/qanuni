@@ -48,6 +48,8 @@ const trashRoutes = require('./routes/trash');
 const lookupsRoutes = require('./routes/lookups');
 const settingsRoutes = require('./routes/settings');
 const corporateRoutes = require('./routes/corporate');
+const reportsRoutes = require('./routes/reports');
+const clientImportsRoutes = require('./routes/client-imports');
 app.use('/api/auth', authRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/matters', matterRoutes);
@@ -67,6 +69,8 @@ app.use('/api/trash', trashRoutes);
 app.use('/api/lookups', lookupsRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/corporate', corporateRoutes);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/client-imports', clientImportsRoutes);
 
 // Health check endpoint (root)
 app.get('/health', async (req, res) => {
