@@ -48,17 +48,17 @@
 - [x] Verify `npm run server` + `node test-integration-saas.js` still pass (118/118 desktop, 739/739 SaaS, 3/3 connection)
 
 **Day 3-5: Refactor 9 Components (replace direct electronAPI with apiClient)**
-- [ ] `src/components/forms/MatterForm.js` (9 refs)
-- [ ] `src/components/forms/ClientForm.js` (7 refs)
-- [ ] `src/components/forms/JudgmentForm.js` (5 refs)
-- [ ] `src/components/forms/HearingForm.js` (4 refs)
-- [ ] `src/components/lists/ClientsList.js` (4 refs)
-- [ ] `src/components/lists/JudgmentsList.js` (3 refs)
-- [ ] `src/components/lists/MattersList.js` (2 refs)
-- [ ] `src/components/lists/HearingsList.js` (2 refs)
-- [ ] `src/components/lists/DeadlinesList.js` (1 ref)
-- [ ] Update App.js to stop passing electronAPI prop to these components
-- [ ] Test `npm run build:web` succeeds
+- [x] `src/components/forms/MatterForm.js` (9 refs)
+- [x] `src/components/forms/ClientForm.js` (7 refs)
+- [x] `src/components/forms/JudgmentForm.js` (5 refs)
+- [x] `src/components/forms/HearingForm.js` (4 refs)
+- [x] `src/components/lists/ClientsList.js` (4 refs — import/export buttons hidden in web mode)
+- [x] `src/components/lists/JudgmentsList.js` (3 refs)
+- [x] `src/components/lists/MattersList.js` (2 refs)
+- [x] `src/components/lists/HearingsList.js` (2 refs)
+- [x] `src/components/lists/DeadlinesList.js` (1 ref — was only a comment, already clean)
+- [x] Update App.js to stop passing electronAPI prop to these components
+- [x] Test `npm run build:web` succeeds
 - [ ] Verify all 55 components render in browser (dev mode)
 
 ### Week 2: Auth UI & Database Setup

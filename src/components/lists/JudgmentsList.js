@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Plus, Search, X, ChevronDown, Clock, CheckCircle, Scale, Gavel, FileCheck } from 'lucide-react';
 import { tf } from '../../utils';
 import { useUI } from '../../contexts';
+import apiClient from '../../api-client';
 
 /**
  * JudgmentsList Component - v46.30
@@ -205,8 +206,7 @@ const JudgmentsList = ({
   showConfirm,
   showToast,
   hideConfirm,
-  refreshJudgments,
-  electronAPI
+  refreshJudgments
 }) => {
   const { openForm } = useUI();
   // Filter state
@@ -699,7 +699,7 @@ const JudgmentsList = ({
                               'Remove Deadline',
                               'Are you sure you want to remove this deadline?',
                               async () => {
-                                await electronAPI.deleteDeadline(judgmentDeadline.deadline_id);
+                                await apiClient.deleteDeadline(judgmentDeadline.deadline_id);
                                 await refreshJudgments();
                                 showToast('Deadline removed');
                                 hideConfirm();
@@ -723,7 +723,7 @@ const JudgmentsList = ({
                             'Delete Judgment',
                             'Are you sure you want to delete this judgment?',
                             async () => {
-                              await electronAPI.deleteJudgment(j.judgment_id);
+                              await apiClient.deleteJudgment(j.judgment_id);
                               await refreshJudgments();
                               showToast('Judgment deleted');
                               hideConfirm();

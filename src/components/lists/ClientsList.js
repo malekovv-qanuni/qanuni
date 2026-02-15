@@ -4,6 +4,7 @@ import { EmptyState } from '../common';
 import { tf } from '../../utils';
 import { useUI } from '../../contexts';
 import { useFilters } from '../../hooks/useFilters';
+import apiClient from '../../api-client';
 
 /**
  * ClientsList Component - v46.52
@@ -104,8 +105,7 @@ const ClientsList = ({
   showConfirm,
   showToast,
   hideConfirm,
-  refreshClients,
-  electronAPI
+  refreshClients
 }) => {
   const { openForm } = useUI();
   const { search: clientSearch, setSearch: setClientSearch } = useFilters('clients');
@@ -121,10 +121,14 @@ const ClientsList = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
-  // Import handler - v46.55 fix
+  // Electron-only: detect if running in Electron for import/export features
+  const isElectronApp = !!(window.electronAPI);
+
+  // Import handler - v46.55 fix (Electron-only: uses native file dialog)
   const handleImport = async () => {
+    if (!isElectronApp) return;
     try {
-      const result = await electronAPI.importClientsExcel();
+      const result = await apiClient.importClientsFromExcel();
       if (result?.success) {
         showToast(tf('Successfully imported {n} client(s)', { n: result.imported }), 'success');
         refreshClients();
@@ -137,8 +141,9 @@ const ClientsList = ({
   };
 
   const handleDownloadTemplate = async () => {
+    if (!isElectronApp) return;
     try {
-      const result = await electronAPI.exportClientTemplate();
+      const result = await window.electronAPI.exportClientTemplate();
       if (result?.success) {
         showToast('Template saved successfully', 'success');
       }
@@ -252,20 +257,24 @@ const ClientsList = ({
       <div data-tour="clients-header" className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">{'Clients'}</h2>
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleDownloadTemplate}
-            className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-gray-50 text-sm"
-            title={'Download import template'}
-          >
-            <Download className="w-4 h-4" /> {'Template'}
-          </button>
-          <button
-            data-tour="import-btn"
-            onClick={handleImport}
-            className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-gray-50 text-sm"
-          >
-            <Upload className="w-4 h-4" /> {'Import'}
-          </button>
+          {isElectronApp && (
+            <>
+              <button
+                onClick={handleDownloadTemplate}
+                className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-gray-50 text-sm"
+                title={'Download import template'}
+              >
+                <Download className="w-4 h-4" /> {'Template'}
+              </button>
+              <button
+                data-tour="import-btn"
+                onClick={handleImport}
+                className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-gray-50 text-sm"
+              >
+                <Upload className="w-4 h-4" /> {'Import'}
+              </button>
+            </>
+          )}
           <button 
             data-tour="add-client-btn"
             onClick={() => openForm('client')}
@@ -444,7 +453,7 @@ const ClientsList = ({
                           'Delete Client',
                           'Are you sure you want to delete this client?',
                           async () => {
-                            await electronAPI.deleteClient(client.client_id);
+                            await apiClient.deleteClient(client.client_id);
                             await refreshClients();
                             showToast('Client deleted');
                             hideConfirm();

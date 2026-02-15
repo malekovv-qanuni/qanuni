@@ -1114,7 +1114,7 @@ const App = () => {
               showToast={showToast}
               hideConfirm={hideConfirm}
               refreshClients={refreshClients}
-              electronAPI={apiClient}
+
             />
           )}
           {currentModule === 'matters' && (
@@ -1126,7 +1126,7 @@ const App = () => {
               showToast={showToast}
               hideConfirm={hideConfirm}
               refreshMatters={refreshMatters}
-              electronAPI={apiClient}
+
               onViewTimeline={(matter) => {
                 matterTimelineDialog.openDialog(matter);
               }}
@@ -1144,7 +1144,7 @@ const App = () => {
               showToast={showToast}
               hideConfirm={hideConfirm}
               refreshHearings={refreshHearings}
-              electronAPI={apiClient}
+
             />
           )}
           {currentModule === 'judgments' && (
@@ -1159,7 +1159,7 @@ const App = () => {
               showToast={showToast}
               hideConfirm={hideConfirm}
               refreshJudgments={refreshJudgments}
-              electronAPI={apiClient}
+
             />
           )}
           {currentModule === 'deadlines' && <DeadlinesList
@@ -1323,7 +1323,7 @@ const App = () => {
           refreshClients={refreshClients}
           refreshCorporateEntities={refreshCorporateEntities}
           entityTypes={entityTypes}
-          electronAPI={apiClient}
+
         />}
       {forms.matter.isOpen && <MatterForm
           showToast={showToast}
@@ -1337,7 +1337,7 @@ const App = () => {
           regions={regions}
           lawyers={lawyers}
           onViewMatter={(matter) => openForm('matter', matter)}
-          electronAPI={apiClient}
+
         />}
       {forms.hearing.isOpen && <HearingForm
           showToast={showToast}
@@ -1353,7 +1353,7 @@ const App = () => {
           lawyers={lawyers}
           judgments={judgments}
           selectedMatter={selectedMatter}
-          electronAPI={apiClient}
+
         />}
       {forms.task.isOpen && <TaskForm
           showToast={showToast}
@@ -1386,7 +1386,7 @@ const App = () => {
           hearings={hearings}
           hearingPurposes={hearingPurposes}
           onJudgmentAppealed={handleJudgmentAppealed}
-          electronAPI={apiClient}
+
         />}
       {forms.appointment.isOpen && <AppointmentForm
           showToast={showToast}

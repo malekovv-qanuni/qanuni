@@ -167,7 +167,6 @@ const MattersList = ({
   showToast,
   hideConfirm,
   refreshMatters,
-  electronAPI,
   onViewTimeline
 }) => {
   const { openForm } = useUI();
@@ -683,7 +682,7 @@ const MattersList = ({
                             'Delete Matter',
                             'Are you sure you want to delete this matter?',
                             async () => {
-                              await electronAPI.deleteMatter(matter.matter_id);
+                              await apiClient.deleteMatter(matter.matter_id);
                               await refreshMatters();
                               showToast('Matter deleted');
                               hideConfirm();

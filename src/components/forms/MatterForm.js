@@ -15,6 +15,7 @@ import { X, Scale, ChevronRight, Link2, AlertTriangle, Loader2 } from 'lucide-re
 import FormField from '../common/FormField';
 import AdversePartiesInput from '../common/AdversePartiesInput';
 import { useUI } from '../../contexts';
+import apiClient from '../../api-client';
 
 // Helper function for generating IDs
 const generateID = (prefix) => {
@@ -23,7 +24,7 @@ const generateID = (prefix) => {
   return `${prefix}-${year}-${random}`;
 };
 
-const MatterForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refreshMatters, refreshClients, clients, matters, courtTypes, regions, lawyers, onViewMatter, electronAPI}) => {
+const MatterForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refreshMatters, refreshClients, clients, matters, courtTypes, regions, lawyers, onViewMatter}) => {
   const { forms, closeForm } = useUI();
   const { editing: editingMatter, formData: matterFormData, setFormData: setMatterFormData } = forms.matter;
   const defaultFormData = {
@@ -107,8 +108,8 @@ const MatterForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refre
         setLoadingRelated(true);
         try {
           // Try to use API if available
-          if (electronAPI.getRelatedMatters) {
-            const related = await electronAPI.getRelatedMatters(editingMatter.matter_id);
+          if (apiClient.getRelatedMatters) {
+            const related = await apiClient.getRelatedMatters(editingMatter.matter_id);
             setRelatedMatters(related);
           } else {
             // Fallback: find related matters from the matters array
@@ -137,8 +138,8 @@ const MatterForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refre
   useEffect(() => {
     const loadCurrencies = async () => {
       try {
-        if (electronAPI.getCurrencies) {
-          const data = await electronAPI.getCurrencies();
+        if (apiClient.getCurrencies) {
+          const data = await apiClient.getCurrencies();
           setAvailableCurrencies(data || []);
         }
       } catch (error) {
@@ -236,7 +237,7 @@ const MatterForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refre
     
     setCheckingAdverse(true);
     try {
-      const results = await electronAPI.conflictCheck({ name: partyName });
+      const results = await apiClient.conflictCheck({ name: partyName });
       // Filter out current client from results (they're obviously adverse to their own matter)
       const conflicts = results.filter(r => r.client_id !== formData.client_id);
       setAdverseConflicts(conflicts);
@@ -263,7 +264,7 @@ const MatterForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refre
     setFileNumberWarning('');
     if (!fileNum) return;
     try {
-      const matches = await electronAPI.checkFileNumberUnique(fileNum, formData.matter_id || null);
+      const matches = await apiClient.checkFileNumberUnique(fileNum, formData.matter_id || null);
       if (matches && matches.length > 0) {
         const names = matches.map(m => m.matter_name).join(', ');
         setFileNumberWarning(
@@ -315,9 +316,9 @@ const MatterForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refre
 
       let result;
       if (editingMatter) {
-        result = await electronAPI.updateMatter(matterData);
+        result = await apiClient.updateMatter(matterData);
       } else {
-        result = await electronAPI.addMatter(matterData);
+        result = await apiClient.addMatter(matterData);
       }
       if (!result || !result.success) {
         showToast(result?.error || 'Failed to save matter', 'error');

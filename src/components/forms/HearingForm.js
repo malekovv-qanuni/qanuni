@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import FormField from '../common/FormField';
 import { useUI, useDialog } from '../../contexts';
+import apiClient from '../../api-client';
 
 
 /**
@@ -49,8 +50,7 @@ const HearingForm = React.memo(({
   regions,
   hearingPurposes,
   lawyers,
-  judgments,
-  electronAPI
+  judgments
 }) => {
   const { forms, closeForm } = useUI();
   const { selectedMatter } = useDialog('selectedMatter');
@@ -170,14 +170,14 @@ const HearingForm = React.memo(({
       
       let hearingId;
       if (editingHearing) {
-        const updateResult = await electronAPI.updateHearing(hearingData);
+        const updateResult = await apiClient.updateHearing(hearingData);
         if (updateResult && updateResult.success === false) {
           showToast(updateResult.error || 'Failed to update hearing', 'error');
           return;
         }
         hearingId = editingHearing.hearing_id;
       } else {
-        const result = await electronAPI.addHearing(hearingData);
+        const result = await apiClient.addHearing(hearingData);
         if (!result || result.success === false) {
           showToast(result?.error || 'Failed to add hearing', 'error');
           return;
@@ -192,7 +192,7 @@ const HearingForm = React.memo(({
         const existingJudgment = judgments.find(j => j.hearing_id == hearingId);
         if (!existingJudgment) {
           // Create pending judgment linked to this hearing
-          const newJudgment = await electronAPI.addJudgment({
+          const newJudgment = await apiClient.addJudgment({
             matter_id: formData.matter_id,
             hearing_id: hearingId,
             judgment_type: 'first_instance',

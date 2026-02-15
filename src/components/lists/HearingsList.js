@@ -134,8 +134,7 @@ const HearingsList = ({
   showConfirm,
   showToast,
   hideConfirm,
-  refreshHearings,
-  electronAPI
+  refreshHearings
 }) => {
   const { openForm } = useUI();
   // Filter state
@@ -773,7 +772,7 @@ const HearingsList = ({
                             'Delete Hearing',
                             'Are you sure you want to delete this hearing?',
                             async () => {
-                              await electronAPI.deleteHearing(hearing.hearing_id);
+                              await apiClient.deleteHearing(hearing.hearing_id);
                               await refreshHearings();
                               showToast('Hearing deleted');
                               hideConfirm();

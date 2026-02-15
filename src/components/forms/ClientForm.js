@@ -11,6 +11,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { CheckCircle, Loader2, Search, X, AlertTriangle } from 'lucide-react';
 import FormField from '../common/FormField';
 import { useUI } from '../../contexts';
+import apiClient from '../../api-client';
 
 // Helper function for generating IDs
 const generateID = (prefix) => {
@@ -19,7 +20,7 @@ const generateID = (prefix) => {
   return `${prefix}-${year}-${random}`;
 };
 
-const ClientForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refreshClients, refreshCorporateEntities, entityTypes, electronAPI}) => {
+const ClientForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refreshClients, refreshCorporateEntities, entityTypes}) => {
   const { forms, closeForm } = useUI();
   const { editing: editingClient, formData: clientFormData, setFormData: setClientFormData } = forms.client;
 
@@ -113,7 +114,7 @@ const ClientForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refre
     
     setChecking(true);
     try {
-      const results = await electronAPI.conflictCheck({
+      const results = await apiClient.conflictCheck({
         name: formData.client_name,
         registration_number: formData.registration_number,
         vat_number: formData.vat_number,
@@ -148,12 +149,6 @@ const ClientForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refre
     setSaving(true);
     
     try {
-      if (!electronAPI) {
-        alert('Error: App must run in Electron, not browser. Close browser and use the Electron window.');
-        setSaving(false);
-        return;
-      }
-
       const clientData = {
         ...formData,
         client_id: editingClient?.client_id || generateID('CLT')
@@ -161,11 +156,11 @@ const ClientForm = React.memo(({ showToast, markFormDirty, clearFormDirty, refre
 
       let result;
       if (editingClient) {
-        result = await electronAPI.updateClient(clientData);
+        result = await apiClient.updateClient(clientData);
       } else {
-        result = await electronAPI.addClient(clientData);
-        if (electronAPI.logConflictCheck) {
-          await electronAPI.logConflictCheck({
+        result = await apiClient.addClient(clientData);
+        if (apiClient.logConflictCheck) {
+          await apiClient.logConflictCheck({
             check_type: 'new_client',
             search_terms: { name: formData.client_name },
             results_found: conflicts,
