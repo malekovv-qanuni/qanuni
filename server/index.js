@@ -45,6 +45,7 @@ const invoicesRoutes = require('./routes/invoices');
 const appointmentsRoutes = require('./routes/appointments');
 const conflictCheckRoutes = require('./routes/conflict-check');
 const trashRoutes = require('./routes/trash');
+const lookupsRoutes = require('./routes/lookups');
 app.use('/api/auth', authRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/matters', matterRoutes);
@@ -61,6 +62,7 @@ app.use('/api/invoices', invoicesRoutes);
 app.use('/api/appointments', appointmentsRoutes);
 app.use('/api/conflict-check', conflictCheckRoutes);
 app.use('/api/trash', trashRoutes);
+app.use('/api/lookups', lookupsRoutes);
 
 // Health check endpoint (root)
 app.get('/health', async (req, res) => {

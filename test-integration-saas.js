@@ -18,7 +18,7 @@ let failed = 0;
 let totalAssertions = 0;
 
 // Track created resources for cleanup
-const cleanup = { appointments: [], invoices: [], advances: [], expenses: [], timesheets: [], deadlines: [], judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
+const cleanup = { lookups: [], appointments: [], invoices: [], advances: [], expenses: [], timesheets: [], deadlines: [], judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
 
 // ==================== HTTP Helper ====================
 
@@ -1778,10 +1778,224 @@ async function testTrash() {
   assert('Invalid type returns 400', badType.status === 400);
 }
 
+// ==================== Lookups Tests ====================
+
+async function testLookups() {
+  console.log('\n--- Lookups Tests ---');
+
+  // Test 1: Get court types (system seed data)
+  console.log('\n  Test: Get court types');
+  const courtTypes = await request('GET', '/api/lookups/court-types');
+  assert('Court types status 200', courtTypes.status === 200);
+  assert('Court types success', courtTypes.body.success === true);
+  assert('Court types is array', Array.isArray(courtTypes.body.data));
+  assert('At least 17 court types', courtTypes.body.data.length >= 17);
+  const singleJudge = courtTypes.body.data.find(c => c.name_en === 'Single Judge Civil');
+  assert('Single Judge Civil exists', !!singleJudge);
+  assert('Has Arabic name', !!singleJudge.name_ar);
+  assert('Is system item', singleJudge.is_system === true);
+
+  // Test 2: Get regions
+  console.log('\n  Test: Get regions');
+  const regions = await request('GET', '/api/lookups/regions');
+  assert('Regions status 200', regions.status === 200);
+  assert('At least 12 regions', regions.body.data.length >= 12);
+  const beirut = regions.body.data.find(r => r.name_en === 'Beirut');
+  assert('Beirut exists', !!beirut);
+  assert('Beirut has Arabic name', !!beirut.name_ar);
+
+  // Test 3: Get hearing purposes
+  console.log('\n  Test: Get hearing purposes');
+  const purposes = await request('GET', '/api/lookups/hearing-purposes');
+  assert('Hearing purposes status 200', purposes.status === 200);
+  assert('At least 10 hearing purposes', purposes.body.data.length >= 10);
+  const firstSession = purposes.body.data.find(p => p.name_en === 'First Session');
+  assert('First Session exists', !!firstSession);
+
+  // Test 4: Get task types (includes icon)
+  console.log('\n  Test: Get task types');
+  const taskTypes = await request('GET', '/api/lookups/task-types');
+  assert('Task types status 200', taskTypes.status === 200);
+  assert('At least 11 task types', taskTypes.body.data.length >= 11);
+  const memo = taskTypes.body.data.find(t => t.name_en === 'Memo');
+  assert('Memo exists', !!memo);
+  assert('Memo has icon', !!memo.icon);
+
+  // Test 5: Get expense categories
+  console.log('\n  Test: Get expense categories');
+  const categories = await request('GET', '/api/lookups/expense-categories');
+  assert('Expense categories status 200', categories.status === 200);
+  assert('At least 10 expense categories', categories.body.data.length >= 10);
+  const courtFees = categories.body.data.find(c => c.name_en === 'Court Fees');
+  assert('Court Fees exists', !!courtFees);
+
+  // Test 6: Get entity types (includes code)
+  console.log('\n  Test: Get entity types');
+  const entityTypes = await request('GET', '/api/lookups/entity-types');
+  assert('Entity types status 200', entityTypes.status === 200);
+  assert('At least 13 entity types', entityTypes.body.data.length >= 13);
+  const sal = entityTypes.body.data.find(e => e.code === 'SAL');
+  assert('SAL entity type exists', !!sal);
+  assert('SAL has correct name', sal.name_en === 'Joint Stock Company');
+
+  // Test 7: Get matter types (hardcoded enum)
+  console.log('\n  Test: Get matter types (hardcoded)');
+  const matterTypes = await request('GET', '/api/lookups/matter-types');
+  assert('Matter types status 200', matterTypes.status === 200);
+  assert('Matter types is array', Array.isArray(matterTypes.body.data));
+  assert('Has litigation', matterTypes.body.data.includes('litigation'));
+  assert('Has corporate', matterTypes.body.data.includes('corporate'));
+  assert('Has 6 matter types', matterTypes.body.data.length === 6);
+
+  // Test 8: Get matter statuses (hardcoded enum)
+  console.log('\n  Test: Get matter statuses (hardcoded)');
+  const matterStatuses = await request('GET', '/api/lookups/matter-statuses');
+  assert('Matter statuses status 200', matterStatuses.status === 200);
+  assert('Has active', matterStatuses.body.data.includes('active'));
+  assert('Has closed', matterStatuses.body.data.includes('closed'));
+  assert('Has 5 matter statuses', matterStatuses.body.data.length === 5);
+
+  // Test 9: Get courts (alias for court-types)
+  console.log('\n  Test: Get courts (alias)');
+  const courts = await request('GET', '/api/lookups/courts');
+  assert('Courts status 200', courts.status === 200);
+  assert('Courts matches court types count', courts.body.data.length === courtTypes.body.data.length);
+
+  // Test 10: Create custom court type
+  console.log('\n  Test: Create custom court type');
+  const newCourt = await request('POST', '/api/lookups', {
+    type: 'court-types',
+    name_en: 'Mediation Panel',
+    name_ar: '\u0644\u062c\u0646\u0629 \u0648\u0633\u0627\u0637\u0629',
+    name_fr: 'Panel de M\u00e9diation',
+    sort_order: 100
+  });
+  assert('Create court type status 201', newCourt.status === 201);
+  assert('Create court type success', newCourt.body.success === true);
+  assert('Has new court type ID', newCourt.body.id > 0);
+  cleanup.lookups.push({ type: 'court-types', id: newCourt.body.id });
+
+  // Test 11: Verify custom court type in list
+  console.log('\n  Test: Verify custom court type in list');
+  const updatedCourts = await request('GET', '/api/lookups/court-types');
+  const customCourt = updatedCourts.body.data.find(c => c.court_type_id === newCourt.body.id);
+  assert('Custom court appears in list', !!customCourt);
+  assert('Custom court name correct', customCourt.name_en === 'Mediation Panel');
+  assert('Custom court is NOT system', customCourt.is_system === false);
+  assert('Custom court has firm_id', customCourt.firm_id !== null);
+
+  // Test 12: Create custom task type with icon
+  console.log('\n  Test: Create task type with icon');
+  const newTask = await request('POST', '/api/lookups', {
+    type: 'task-types',
+    name_en: 'Contract Negotiation',
+    name_ar: '\u0645\u0641\u0627\u0648\u0636\u0627\u062a \u0639\u0642\u062f',
+    icon: '\ud83e\udd1d',
+    sort_order: 50
+  });
+  assert('Create task type status 201', newTask.status === 201);
+  assert('Has new task type ID', newTask.body.id > 0);
+  cleanup.lookups.push({ type: 'task-types', id: newTask.body.id });
+
+  // Test 13: Verify task type with icon
+  console.log('\n  Test: Verify task type with icon');
+  const updatedTasks = await request('GET', '/api/lookups/task-types');
+  const customTask = updatedTasks.body.data.find(t => t.task_type_id === newTask.body.id);
+  assert('Custom task appears in list', !!customTask);
+  assert('Custom task has icon', customTask.icon === '\ud83e\udd1d');
+
+  // Test 14: Update custom court type
+  console.log('\n  Test: Update custom court type');
+  const updateResult = await request('PUT', '/api/lookups/' + newCourt.body.id, {
+    type: 'court-types',
+    name_en: 'Mediation Tribunal',
+    name_ar: '\u0645\u062d\u0643\u0645\u0629 \u0648\u0633\u0627\u0637\u0629',
+    name_fr: 'Tribunal de M\u00e9diation',
+    sort_order: 101
+  });
+  assert('Update court type status 200', updateResult.status === 200);
+  assert('Update court type success', updateResult.body.success === true);
+
+  // Test 15: Verify update
+  console.log('\n  Test: Verify court type update');
+  const verifyUpdate = await request('GET', '/api/lookups/court-types');
+  const updatedCourt = verifyUpdate.body.data.find(c => c.court_type_id === newCourt.body.id);
+  assert('Updated name correct', updatedCourt.name_en === 'Mediation Tribunal');
+  assert('Updated sort_order correct', updatedCourt.sort_order === 101);
+
+  // Test 16: Attempt to update system court type (should fail)
+  console.log('\n  Test: Update system item (should fail)');
+  const systemCourt = courtTypes.body.data.find(c => c.is_system === true);
+  const updateSystem = await request('PUT', '/api/lookups/' + systemCourt.court_type_id, {
+    type: 'court-types',
+    name_en: 'Hacked Court'
+  });
+  assert('Update system item returns 404', updateSystem.status === 404);
+  assert('System item error mentions system', updateSystem.body.error.includes('system'));
+
+  // Test 17: Delete custom court type (soft delete)
+  console.log('\n  Test: Soft delete custom court type');
+  const deleteResult = await request('DELETE', '/api/lookups/court-types/' + newCourt.body.id);
+  assert('Delete court type status 200', deleteResult.status === 200);
+  assert('Delete court type success', deleteResult.body.success === true);
+
+  // Test 18: Verify deletion (should not appear in GET)
+  console.log('\n  Test: Verify deleted court type hidden');
+  const afterDelete = await request('GET', '/api/lookups/court-types');
+  const deletedCourt = afterDelete.body.data.find(c => c.court_type_id === newCourt.body.id);
+  assert('Deleted court type not in list', !deletedCourt);
+  // Remove from cleanup since already deleted
+  cleanup.lookups = cleanup.lookups.filter(l => !(l.type === 'court-types' && l.id === newCourt.body.id));
+
+  // Test 19: Attempt to delete system item (should fail)
+  console.log('\n  Test: Delete system item (should fail)');
+  const deleteSystem = await request('DELETE', '/api/lookups/court-types/' + systemCourt.court_type_id);
+  assert('Delete system item returns 404', deleteSystem.status === 404);
+
+  // Test 20: Validation - empty name_en
+  console.log('\n  Test: Validation - empty name');
+  const invalidCreate = await request('POST', '/api/lookups', {
+    type: 'court-types',
+    name_en: ''
+  });
+  assert('Empty name rejected', invalidCreate.status === 400);
+
+  // Test 21: Validation - invalid type
+  console.log('\n  Test: Validation - invalid type');
+  const invalidType = await request('POST', '/api/lookups', {
+    type: 'invalid-type',
+    name_en: 'Test'
+  });
+  assert('Invalid type rejected', invalidType.status === 400);
+
+  // Test 22: Validation - nonexistent item update
+  console.log('\n  Test: Update nonexistent item');
+  const invalidUpdate = await request('PUT', '/api/lookups/999999', {
+    type: 'court-types',
+    name_en: 'Nonexistent'
+  });
+  assert('Nonexistent item returns 404', invalidUpdate.status === 404);
+
+  // Test 23: Lawyer type rejected
+  console.log('\n  Test: Lawyer type rejected');
+  const lawyerCreate = await request('POST', '/api/lookups', {
+    type: 'lawyers',
+    name_en: 'Test Lawyer'
+  });
+  assert('Lawyer type rejected', lawyerCreate.status === 400);
+  assert('Error mentions /api/lawyers', lawyerCreate.body.error.includes('/api/lawyers'));
+}
+
 // ==================== Cleanup ====================
 
 async function cleanupData() {
   console.log('\nCleanup...');
+
+  // Cleanup lookups first (no dependencies)
+  for (const item of cleanup.lookups) {
+    await request('DELETE', '/api/lookups/' + item.type + '/' + item.id);
+  }
+  console.log('  Deleted ' + cleanup.lookups.length + ' lookup items');
 
   // Delete in reverse dependency order: appointments -> invoices -> advances -> expenses -> timesheets -> deadlines -> judgments -> tasks -> diary -> hearings -> matters -> lawyers -> clients
   for (const id of cleanup.appointments) {
@@ -1870,6 +2084,7 @@ async function run() {
     await testAppointments();
     await testConflictCheck();
     await testTrash();
+    await testLookups();
     await testCrossResource();
     await cleanupData();
   } catch (err) {

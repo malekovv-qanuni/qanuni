@@ -403,7 +403,28 @@ const schemas = {
     },
     name_ar: {
       type: 'string',
-      maxLength: 255
+      maxLength: 255,
+      label: 'Name (Arabic)'
+    },
+    name_fr: {
+      type: 'string',
+      maxLength: 255,
+      label: 'Name (French)'
+    },
+    icon: {
+      type: 'string',
+      maxLength: 50,
+      label: 'Icon'
+    },
+    code: {
+      type: 'string',
+      maxLength: 20,
+      label: 'Code'
+    },
+    sort_order: {
+      type: 'number',
+      min: 0,
+      label: 'Sort Order'
     }
   },
 
