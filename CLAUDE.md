@@ -4,11 +4,14 @@
 - **Desktop Version:** v1.0.0 (shipped)
 - **Desktop Backend:** Fully modularized — 21 IPC modules, 163 handlers
 - **Desktop Tests:** 118 integration tests passing (`node test-integration.js`)
-- **SaaS Transformation:** Week 3 Day 16 Complete (100%) - Advances CRUD Endpoints
-- **SQL Server:** 14 tables (firms, users, clients, matters, matter_clients, lawyers, hearings, diary, tasks, judgments, deadlines, timesheets, expenses, advances)
-- **API Endpoints:** 64 total (4 auth + 5×12 business entities)
-- **Frontend Bridge:** JWT auth + SaaS response unwrapping (53 methods in api-client.js)
-- **Next:** Week 4 Day 17 - TBD (Week 3 Complete)
+- **SaaS Transformation:** Week 5 Day 24 Complete (100%) - 21/21 modules converted
+- **SQL Server:** 33 tables created (Azure SQL: `qanuni-sql-server.database.windows.net/qanuni`)
+- **API Endpoints:** 171 total (5 auth + 166 business entities)
+- **Frontend Bridge:** JWT auth + SaaS response unwrapping (dual-mode ready)
+- **Auth UI:** Login, Register, ForgotPassword pages + ProtectedRoute + React Router v6
+- **Azure SQL:** Basic tier ($5/mo), UAE North, SQL Auth (user: Malek)
+- **Phase 1 Progress:** Week 2 Complete — Auth pages + Azure SQL provisioned
+- **Next:** Phase 1 Week 3 — Deploy API + Frontend to Azure
 
 ## Three-Party Workflow
 
@@ -70,7 +73,7 @@ At the start of EVERY new chat:
 1. Check what phase/day of work we're on
 2. Run `node test-integration.js` to confirm baseline (118/118 passing)
 3. Run `node test-mssql-connection.js` to verify SQL Server (if SaaS work)
-4. Run `node test-integration-saas.js` to verify SaaS baseline (266/266 passing)
+4. Run `node test-integration-saas.js` to verify SaaS baseline (561/561 passing)
 5. Request the files needed for that phase
 
 **For Desktop work:**
@@ -80,7 +83,7 @@ At the start of EVERY new chat:
 - `preload.js` — if adding new IPC channels
 
 **For SaaS transformation:**
-- SESSION_33_CHECKPOINT.md (or latest session checkpoint)
+- Session_40_Checkpoint.md (or latest session checkpoint)
 - WEEK_3_DAY_X_READY.md — tactical execution plan for current day (if exists)
 - SESSION_23_SAAS_FINAL_ROADMAP_v2.md — 10/10 verified strategy (reference)
 
@@ -149,7 +152,7 @@ node test-integration.js    # Must show 0 failures (currently 118/118)
 node test-mssql-connection.js    # Must show 3/3 passing
 
 # For SaaS work, verify integration tests
-node test-integration-saas.js    # Must show 266/266 passing
+node test-integration-saas.js    # Must show 561/561 passing
 
 # After ANY backend change, run tests before UI testing
 # After adding new IPC handlers, add test cases to test-integration.js
@@ -217,7 +220,7 @@ ALL forms live in `src/components/forms/` (13 forms). The old `src/forms/` direc
 - `npm run dist:clean` — Build for testing
 - `npm run dist` — Build for release
 - `node test-integration.js` — Run 118 integration tests (MANDATORY before commit)
-- `node test-integration-saas.js` — Run 313 SaaS integration tests
+- `node test-integration-saas.js` — Run 561 SaaS integration tests
 - `node test-mssql-connection.js` — Verify SQL Server connection (3 tests)
 - `git checkout preload.js` — Restore after dist if modified
 
@@ -325,15 +328,30 @@ src/
 - **Template-based acceleration:** Using judgments.js as template delivered 4 CRUD modules (Deadlines, Timesheets, Expenses) with 145 new assertions in a single session with zero-failure quality
 - **3 FK validation pattern:** Expenses introduced 3 optional FK validations (matter_id, lawyer_id, paid_by_lawyer_id) - reusable pattern for complex entities
 
+### SaaS Learnings (Week 4)
+- **Audit-then-implement is mandatory:** Day 20 instructions had wrong seed data for 4/6 lookup tables — Claude Code audit caught all before implementation
+- **Multi-row INSERT with Unicode fails in SQL Server:** Must use individual INSERTs via Node.js runner with \uXXXX escapes
+- **Express route ordering matters:** `/exchange-rates/for-date` must be defined BEFORE `/exchange-rates/:id` or Express matches "for-date" as :id parameter
+- **Broken stubs need full rewrite:** Settings stub imported Electron modules directly — faster to rewrite from scratch than patch 8 issues
+- **Test re-runnability requires care:** Soft-deleted rows still block UNIQUE constraints; use timestamp-based codes and reset state for idempotent tests
+- **sqlcmd unreliable for schema execution:** ODBC Driver 18 connection issues; Node.js runner via server/database.js (ODBC 17 + msnodesqlv8) is the reliable path
+- **Verify column names against actual schema:** invoice_date vs issue_date caught by reading schema-invoices.sql, not by trusting instructions
+
 ### Known Working Configurations
 - **Desktop tests:** 118/118 passing consistently
 - **SQL Server tests:** 3/3 passing with msnodesqlv8
-- **SaaS integration tests:** 313/313 passing (was 266/266, +47 assertions from Day 16)
+- **SaaS integration tests:** 739/739 passing (against Azure SQL)
 - **Diary smoke tests:** 36/36 assertions passing (11 test scenarios)
-- **Environment:** .env file with empty DB_USER/DB_PASSWORD = Windows Auth
-- **Validation:** Now in shared/validation.js (imported by 16 desktop IPC files + 12 SaaS routes)
-- **Total API endpoints:** 64 (4 auth + 5×12 business entities)
-- **Total test coverage:** 434 assertions (118 desktop + 313 SaaS integration + 3 connection)
+- **Environment (local dev):** .env file with empty DB_USER/DB_PASSWORD = Windows Auth
+- **Environment (Azure):** .env with DB_SERVER=qanuni-sql-server.database.windows.net, DB_USER=Malek, DB_ENCRYPT=true
+- **Validation:** Now in shared/validation.js (imported by 16 desktop IPC files + 21 SaaS routes)
+- **Total API endpoints:** 171 (5 auth + 166 business entities)
+- **Total SQL Server tables:** 33 (Azure SQL)
+- **Total route modules:** 21 (all registered in server/index.js)
+- **Total test coverage:** 860 assertions (118 desktop + 739 SaaS integration + 3 connection)
+- **Auth UI:** react-router-dom v6, AuthContext, LoginPage, RegisterPage, ForgotPasswordPage, ProtectedRoute
+- **Web build:** 196KB gzipped (npm run build:web)
+- **Schema deployment:** run-azure-schema.js (18 files + 6 system currencies seed)
 
 ## Week 1 Progress Tracker
 
@@ -522,6 +540,101 @@ src/
 - Commit: 268fdb36 (pushed)
 
 **Week 3 Status:** 100% complete (Days 9-16 done) ✅
+
+## Week 4 Progress Tracker
+
+### ✅ Day 17 Complete (4 hours)
+- Created server/schema-invoices.sql (2 tables: invoices + invoice_items)
+- Created server/routes/invoices.js (6 endpoints: 5 CRUD + next-number)
+- Modified shared/validation.js (invoice_saas schema, 22 fields)
+- Modified server/index.js (registered /api/invoices routes)
+- Modified test-integration-saas.js (added 12 invoice tests, 45 assertions)
+- Features: 1:many relationship, auto-numbering (INV-YYYY-NNNN), transactional creates/updates
+- Tests: 358/358 SaaS integration tests passing (was 313/313)
+- Commit: 40fb5f0a (pushed)
+
+### ✅ Day 18 Complete (4 hours)
+- Created server/schema-timesheets.sql (timesheets table, client_id column)
+- Rewrote server/routes/timesheets.js (8 endpoints: 5 CRUD + unbilled + matter + lawyer routes)
+- Modified shared/validation.js (updated timesheet_saas with client_id)
+- Modified server/routes/lawyers.js (added GET /api/lawyers/:id/timesheets)
+- Modified test-integration-saas.js (added 4 timesheet tests, 16 assertions)
+- Features: Gap closure (3 missing endpoints from api-client.js), unbilled time query for invoicing
+- Tests: 374/374 SaaS integration tests passing (was 358/358)
+- Commit: 87946341 (pushed)
+
+### ✅ Day 19 Complete (9 hours - batch implementation)
+- Created server/schema-appointments.sql (appointments table, 21 columns)
+- Created server/schema-conflict-check.sql (conflict_check_log table)
+- Created server/routes/appointments.js (5 endpoints: full CRUD)
+- Created server/routes/conflict-check.js (3 endpoints: search, log, history)
+- Created server/routes/trash.js (5 endpoints: list, count, restore, permanent-delete, empty)
+- Modified shared/validation.js (appointment_saas schema, 15 fields)
+- Modified server/index.js (registered 3 new route modules)
+- Modified test-integration-saas.js (added 71 assertions across 3 modules)
+- Features: Appointments with JSON attendees, partial conflict check (5/8 searches), trash with 13 entity types
+- Deferred: 3 conflict searches (need corporate tables), 2 searches (need client schema updates)
+- Tests: 446/446 SaaS integration tests passing (was 374/374)
+- Commit: 0e50e6ea (pushed)
+
+### ✅ Day 20 Complete (4 hours)
+- Created server/schema-lookups.sql (6 tables, 73 seed rows)
+- Rewrote server/routes/lookups.js (347 lines, 12 endpoints)
+- Modified shared/validation.js (expanded lookup_item: name_fr, icon, code, sort_order)
+- Modified server/index.js (registered /api/lookups routes)
+- Modified test-integration-saas.js (added 23 tests, 62 assertions)
+- **Audit-First Success:** Caught wrong seed data in 4/6 tables, wrong imports, wrong DB API, wrong auth pattern
+- Features: Hybrid firm scoping (system + user items), TYPE_MAP with camelCase + kebab-case, lawyer rejection
+- Tables: lookup_court_types(17), lookup_regions(12), lookup_hearing_purposes(10), lookup_task_types(11), lookup_expense_categories(10), lookup_entity_types(13)
+- Tests: 508/508 SaaS integration tests passing (was 446/446)
+- Commit: 6ffc0d26, Tag: v-saas-day20-lookups
+
+### ✅ Day 21 Complete (4 hours)
+- Created server/schema-settings.sql (3 tables: settings, firm_currencies, exchange_rates)
+- Rewrote server/routes/settings.js (675 lines, 23 endpoints — full rewrite from broken stub)
+- Modified shared/validation.js (added name_ar, symbol, sort_order to currency schema)
+- Modified server/index.js (registered /api/settings routes)
+- Modified test-integration-saas.js (added 38 tests, 53 assertions)
+- **Full stub rewrite:** Existing stub imported Electron modules (8 issues found), rewrote from scratch
+- Features: MERGE INTO upsert, JSON category settings, invoice/receipt number generators, exchange rate date lookup
+- Seed: 6 system currencies (USD, EUR, LBP, GBP, AED, SAR) with Arabic names
+- Tests: 561/561 SaaS integration tests passing (was 508/508)
+- Commit: e816ee3f, Tag: v-saas-day21-settings
+
+**Week 4 Status:** 100% complete (Days 17-21 done) ✅
+
+## Week 5 Progress Tracker
+
+### ✅ Day 22 Complete (4 hours)
+- Created server/schema-corporate.sql (7 tables: corporate_entities, shareholders, directors, share_transfers, commercial_register_filings, company_meetings + entity_sequence)
+- Rewrote server/routes/corporate.js (1400+ lines, 32 endpoints)
+- Modified shared/validation.js (6 SaaS schemas: corporate_entity, shareholder, director, share_transfer, filing, meeting)
+- Modified server/index.js (registered /api/corporate routes)
+- Modified test-integration-saas.js (added 27 tests, 67 assertions)
+- Features: Cap table, timeline, compliance tracking, share transfers with balance updates, company types/director roles lookups
+- Tests: 628/628 SaaS integration tests passing (was 561/561)
+- Commit: 05c16e67
+
+### ✅ Day 23 Complete (4 hours)
+- Rewrote server/routes/reports.js (780 lines, full rewrite from broken 59-line stub)
+- 11 route endpoints + internal generateReportSaaS() handling 19 report types
+- Modified server/index.js (registered /api/reports routes)
+- Modified test-integration-saas.js (added 31 tests, 87 assertions)
+- Features: Dashboard stats (10 parallel queries), invoice aging with buckets, client statement, case-status-report, client-360-report, matter-financials
+- Column fixes: matter_status (not status), no client_id on deadlines/expenses, created_at (not opening_date)
+- Tests: 715/715 SaaS integration tests passing (was 628/628)
+
+### ✅ Day 24 Complete (2 hours)
+- Rewrote server/routes/client-imports.js (179 lines, replaced broken stub importing Electron modules)
+- Modified server/index.js (registered /api/client-imports routes)
+- Modified test-integration-saas.js (added 9 tests, 24 assertions)
+- Features: Header normalization (HEADER_MAP), duplicate detection, client_type normalization, firm_id scoping
+- SaaS adaptations: SQLite→SQL Server syntax, is_deleted=0 (not deleted_at IS NULL), INT IDENTITY (not generateId), removed 10 columns not in SaaS schema
+- Tests: 739/739 SaaS integration tests passing (was 715/715)
+- Commit: 6436607b
+
+**Week 5 Status:** 100% complete (Days 22-24 done) ✅
+**SaaS Transformation: 21/21 modules converted — 100% COMPLETE** 🎉
 
 ### Quick Reference
 **Start Server:**

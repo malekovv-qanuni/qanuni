@@ -22,7 +22,7 @@
 | Metric | Value |
 |--------|-------|
 | API Endpoints | 171 (5 auth + 166 business) |
-| SQL Server Tables | 34 |
+| SQL Server Tables | 33 (Azure SQL: qanuni-sql-server.database.windows.net) |
 | Route Modules | 21/21 (100%) |
 | SaaS Test Assertions | 739/739 passing |
 | Desktop Test Assertions | 118/118 passing |
@@ -63,21 +63,24 @@
 
 ### Week 2: Auth UI & Database Setup
 
-**Day 1-3: Build Auth Pages**
-- [ ] LoginPage.js (email + password form, calls /api/auth/login)
-- [ ] RegisterPage.js (firm name + admin user, calls /api/auth/register)
-- [ ] ForgotPasswordPage.js (email input, calls /api/auth/forgot-password)
-- [ ] ProtectedRoute wrapper (redirect to /login if no token)
-- [ ] Logout button in app header (clear token + redirect)
-- [ ] React Router setup (public routes vs protected routes)
+**Day 1-3: Build Auth Pages** ✅
+- [x] LoginPage.js (email + password form, calls /api/auth/login)
+- [x] RegisterPage.js (firm name + admin user, calls /api/auth/register)
+- [x] ForgotPasswordPage.js (placeholder — "contact your administrator")
+- [x] ProtectedRoute wrapper (redirect to /login if no token)
+- [x] Logout button in app header (clear token + redirect)
+- [x] React Router v6 setup (public routes vs protected routes)
+- [x] AuthContext.js (user state, login/register/logout)
+- [x] 4 auth methods in api-client.js (login, register, refreshAuthToken, getMe)
 
-**Day 4-5: Azure SQL Provisioning**
-- [ ] Create Azure SQL Database (free tier: 32GB, DTU-5)
-- [ ] Run all schema-*.sql files against Azure SQL
-- [ ] Run seed data scripts (lookups, currencies)
-- [ ] Test connection from local machine with SQL Auth credentials
-- [ ] Run `node test-integration-saas.js` against Azure SQL
-- [ ] Document connection string in `.env.example`
+**Day 4-5: Azure SQL Provisioning** ✅
+- [x] Create Azure SQL Database (Basic tier: $5/mo, 2GB, UAE North)
+- [x] Fix database.js: remove instanceName from SQL Auth path (Azure compatibility)
+- [x] Run all 18 schema-*.sql files against Azure SQL (33 tables created)
+- [x] Seed 6 system currencies (USD, EUR, LBP, GBP, AED, SAR with Arabic names)
+- [x] Test connection from local machine with SQL Auth credentials
+- [x] Run `node test-integration-saas.js` against Azure SQL — 739/739 passing
+- [x] Created run-azure-schema.js (reusable deployment script)
 
 ### Week 3: Deployment & Live Testing
 
@@ -187,6 +190,10 @@
 | 2026-02-15 | Azure App Service + Azure SQL, not SmarterASP.NET | Code audit: msnodesqlv8 native module won't compile on IIS shared hosting; no iisnode/web.config in repo; IIS port binding conflicts with Express. Azure = same SQL Server engine, $0 free tier, git-push deploy |
 | 2026-02-15 | Not Railway | Splits infra across 2 platforms; Railway has no SQL Server; cross-region latency risk |
 | 2026-02-15 | Fix code before deploying (Week 1 prep) | 9 components have direct electronAPI usage; api-client.js has hardcoded localhost; msnodesqlv8 blocks npm install on Linux |
+| 2026-02-15 | BrowserRouter wrap (not full router migration) | Only auth boundary needs routes; state-based module nav inside app works fine; avoids touching 4000-line App.js |
+| 2026-02-15 | ForgotPassword as placeholder (not full flow) | No backend endpoint yet; build UI now, wire later; users expect the link on login page |
+| 2026-02-15 | Azure SQL Basic tier ($5/mo) not free tier | Predictable performance; free tier has vCore-second metering that can surprise |
+| 2026-02-15 | UAE North region for Azure SQL | Closest to MENA target market (Lebanon, UAE, Saudi Arabia) |
 
 ---
 
