@@ -18,7 +18,7 @@ let failed = 0;
 let totalAssertions = 0;
 
 // Track created resources for cleanup
-const cleanup = { tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
+const cleanup = { judgments: [], tasks: [], clients: [], matters: [], lawyers: [], hearings: [], diary: [] };
 
 // ==================== HTTP Helper ====================
 
@@ -553,6 +553,121 @@ async function testTasks() {
   assert('Deleted task not in list', !t45list.body.data.find(t => t.task_id === deleteTaskId));
 }
 
+// ==================== Judgments Tests ====================
+
+async function testJudgments() {
+  console.log('\n--- JUDGMENTS TESTS ---\n');
+
+  // Test 46: Create judgment (comprehensive - with matter + hearing)
+  console.log('  Test 46: Create judgment (comprehensive)');
+  const t46 = await request('POST', '/api/judgments', {
+    matter_id: cleanup.matters[0],
+    hearing_id: cleanup.hearings[0],
+    judgment_type: 'first_instance',
+    expected_date: '2026-04-01',
+    reminder_days: 14,
+    judgment_outcome: 'favorable',
+    judgment_summary: 'Court ruled in favor of plaintiff',
+    amount_awarded: 50000,
+    currency: 'USD',
+    in_favor_of: 'Alpha Corp',
+    appeal_deadline: '2026-05-01',
+    status: 'favorable',
+    notes: 'Full award granted'
+  });
+  assert('Status 201', t46.status === 201, 'Got ' + t46.status);
+  assert('Has judgment object', t46.body.judgment != null);
+  assert('Has judgment_id', t46.body.judgment && t46.body.judgment.judgment_id > 0);
+  assert('Status is favorable', t46.body.judgment && t46.body.judgment.status === 'favorable');
+  assert('Currency is USD', t46.body.judgment && t46.body.judgment.currency === 'USD');
+  assert('Amount is 50000', t46.body.judgment && t46.body.judgment.amount_awarded === 50000);
+  const testJudgmentId = t46.body.judgment ? t46.body.judgment.judgment_id : null;
+  if (testJudgmentId) cleanup.judgments.push(testJudgmentId);
+
+  // Test 47: Create judgment (minimal - matter_id only)
+  console.log('\n  Test 47: Create judgment (minimal)');
+  const t47 = await request('POST', '/api/judgments', {
+    matter_id: cleanup.matters[1]
+  });
+  assert('Status 201', t47.status === 201, 'Got ' + t47.status);
+  assert('Created successfully', t47.body.success === true);
+  assert('Default status pending', t47.body.judgment && t47.body.judgment.status === 'pending');
+  assert('Default currency USD', t47.body.judgment && t47.body.judgment.currency === 'USD');
+  assert('Default type first_instance', t47.body.judgment && t47.body.judgment.judgment_type === 'first_instance');
+  if (t47.body.judgment) cleanup.judgments.push(t47.body.judgment.judgment_id);
+
+  // Test 48: Reject invalid matter_id
+  console.log('\n  Test 48: Reject invalid matter_id');
+  const t48 = await request('POST', '/api/judgments', {
+    matter_id: 99999
+  });
+  assert('Status 404', t48.status === 404, 'Got ' + t48.status);
+  assert('Error mentions Matter', t48.body.error && t48.body.error.includes('Matter not found'));
+
+  // Test 49: Reject invalid hearing_id
+  console.log('\n  Test 49: Reject invalid hearing_id');
+  const t49 = await request('POST', '/api/judgments', {
+    matter_id: cleanup.matters[0],
+    hearing_id: 99999
+  });
+  assert('Status 404', t49.status === 404, 'Got ' + t49.status);
+  assert('Error mentions Hearing', t49.body.error && t49.body.error.includes('Hearing not found'));
+
+  // Test 50: List judgments
+  console.log('\n  Test 50: List judgments');
+  const t50 = await request('GET', '/api/judgments');
+  assert('Has data array', Array.isArray(t50.body.data));
+  assert('Has pagination', t50.body.pagination != null);
+  assert('Has at least 2 judgments', t50.body.data.length >= 2, 'Got ' + t50.body.data.length);
+
+  // Test 51: Filter by status
+  console.log('\n  Test 51: Filter by status');
+  const t51 = await request('GET', '/api/judgments?status=favorable');
+  assert('Returns favorable judgments', t51.body.data.length >= 1);
+  assert('All are favorable', t51.body.data.every(j => j.status === 'favorable'));
+
+  // Test 52: Filter by matter_id
+  console.log('\n  Test 52: Filter by matter_id');
+  const t52 = await request('GET', '/api/judgments?matter_id=' + cleanup.matters[0]);
+  assert('Returns judgments for matter', t52.body.data.length >= 1, 'Got ' + t52.body.data.length);
+  assert('All match matter_id', t52.body.data.every(j => j.matter_id === cleanup.matters[0]));
+
+  // Test 53: Get single judgment
+  console.log('\n  Test 53: Get single judgment');
+  const t53 = await request('GET', '/api/judgments/' + testJudgmentId);
+  assert('Status 200', t53.status === 200, 'Got ' + t53.status);
+  assert('Has judgment object', t53.body.judgment != null);
+  assert('judgment_id matches', t53.body.judgment && t53.body.judgment.judgment_id === testJudgmentId);
+  assert('Has matter_name from JOIN', t53.body.judgment && t53.body.judgment.matter_name != null);
+
+  // Test 54: Update judgment
+  console.log('\n  Test 54: Update judgment');
+  const t54 = await request('PUT', '/api/judgments/' + testJudgmentId, {
+    matter_id: cleanup.matters[0],
+    judgment_type: 'first_instance',
+    status: 'appealed',
+    judgment_summary: 'Updated: judgment appealed',
+    amount_awarded: 75000,
+    currency: 'EUR',
+    notes: 'Appealed by defendant'
+  });
+  assert('Status 200', t54.status === 200, 'Got ' + t54.status);
+  assert('Status updated to appealed', t54.body.judgment && t54.body.judgment.status === 'appealed');
+  assert('Amount updated to 75000', t54.body.judgment && t54.body.judgment.amount_awarded === 75000);
+  assert('Currency updated to EUR', t54.body.judgment && t54.body.judgment.currency === 'EUR');
+
+  // Test 55: Soft delete judgment
+  console.log('\n  Test 55: Soft delete judgment');
+  const deleteJudgmentId = cleanup.judgments[1]; // Delete the minimal judgment
+  const t55 = await request('DELETE', '/api/judgments/' + deleteJudgmentId);
+  assert('Status 200', t55.status === 200, 'Got ' + t55.status);
+  assert('Success message', t55.body.message === 'Judgment deleted successfully');
+
+  // Verify not in list
+  const t55list = await request('GET', '/api/judgments');
+  assert('Deleted judgment not in list', !t55list.body.data.find(j => j.judgment_id === deleteJudgmentId));
+}
+
 // ==================== Cross-Resource Tests ====================
 
 async function testCrossResource() {
@@ -621,7 +736,12 @@ async function testCrossResource() {
 async function cleanupData() {
   console.log('\nCleanup...');
 
-  // Delete in reverse dependency order: tasks -> diary -> hearings -> matters -> lawyers -> clients
+  // Delete in reverse dependency order: judgments -> tasks -> diary -> hearings -> matters -> lawyers -> clients
+  for (const id of cleanup.judgments) {
+    await request('DELETE', '/api/judgments/' + id);
+  }
+  console.log('  Deleted ' + cleanup.judgments.length + ' judgments');
+
   for (const id of cleanup.tasks) {
     await request('DELETE', '/api/tasks/' + id);
   }
@@ -664,6 +784,7 @@ async function run() {
     await testFilters();
     await testDiary();
     await testTasks();
+    await testJudgments();
     await testCrossResource();
     await cleanupData();
   } catch (err) {

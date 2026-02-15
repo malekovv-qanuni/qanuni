@@ -768,6 +768,28 @@ const schemas = {
     notes: { type: 'string', maxLength: 10000 }
   },
 
+  // ==================== SaaS JUDGMENT SCHEMA ====================
+  // Separate from desktop 'judgment' schema to avoid conflicts.
+  // firm_id comes from JWT token (req.user.firm_id), not from request body.
+  // matter_id existence is validated in route handler (FK check).
+
+  judgment_saas: {
+    matter_id: { required: true, type: 'number', label: 'Matter' },
+    hearing_id: { type: 'number', label: 'Hearing' },
+    judgment_type: { type: 'string', oneOf: ['first_instance', 'appeal', 'cassation', 'arbitration'], label: 'Judgment type' },
+    expected_date: { type: 'date', label: 'Expected date' },
+    actual_date: { type: 'date', label: 'Actual date' },
+    reminder_days: { type: 'number', min: 0, max: 365, label: 'Reminder days' },
+    judgment_outcome: { type: 'string', maxLength: 500, label: 'Judgment outcome' },
+    judgment_summary: { type: 'string', maxLength: 10000, label: 'Judgment summary' },
+    amount_awarded: { type: 'number', min: 0, label: 'Amount awarded' },
+    currency: { type: 'string', maxLength: 10, label: 'Currency' },
+    in_favor_of: { type: 'string', maxLength: 500, label: 'In favor of' },
+    appeal_deadline: { type: 'date', label: 'Appeal deadline' },
+    status: { type: 'string', oneOf: ['pending', 'favorable', 'unfavorable', 'partial', 'dismissed', 'settled', 'appealed', 'moved_to_hearing'], label: 'Status' },
+    notes: { type: 'string', maxLength: 10000 }
+  },
+
   hearing_saas: {
     matter_id: {
       required: true,

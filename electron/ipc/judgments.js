@@ -50,14 +50,15 @@ function updateJudgment(database, logger, judgment) {
 
   const now = new Date().toISOString();
   database.execute(`UPDATE judgments SET matter_id=?, hearing_id=?, judgment_type=?, expected_date=?,
-    actual_date=?, reminder_days=?, judgment_outcome=?, judgment_summary=?, amount_awarded=?, in_favor_of=?,
-    appeal_deadline=?, status=?, notes=?, updated_at=? WHERE judgment_id=?`,
+    actual_date=?, reminder_days=?, judgment_outcome=?, judgment_summary=?, amount_awarded=?,
+    currency=?, in_favor_of=?, appeal_deadline=?, status=?, notes=?, updated_at=? WHERE judgment_id=?`,
     [judgment.matter_id, judgment.hearing_id || null, judgment.judgment_type,
      judgment.expected_date, judgment.actual_date || null,
      judgment.reminder_days || 7, judgment.judgment_outcome || null,
      judgment.judgment_summary || null, judgment.amount_awarded || null,
-     judgment.in_favor_of || null, judgment.appeal_deadline || null,
-     judgment.status, judgment.notes || null, now, judgment.judgment_id]);
+     judgment.currency || 'USD', judgment.in_favor_of || null,
+     judgment.appeal_deadline || null, judgment.status, judgment.notes || null,
+     now, judgment.judgment_id]);
 
   logger.info('Judgment updated', { judgmentId: judgment.judgment_id });
   return { success: true };
