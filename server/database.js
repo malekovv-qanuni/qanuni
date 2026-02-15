@@ -47,10 +47,10 @@ if (useWindowsAuth) {
   config.options.instanceName = 'SQLEXPRESS';
   config.connectionString = `Driver={ODBC Driver 17 for SQL Server};Server=${config.server}\\${config.options.instanceName};Database=${config.database};Trusted_Connection=yes;`;
 } else {
-  // SQL Server Authentication (production) via tedious
+  // SQL Server Authentication (production/Azure) via tedious
   config.user = process.env.DB_USER;
   config.password = process.env.DB_PASSWORD;
-  config.options.instanceName = 'SQLEXPRESS';
+  // No instanceName for Azure SQL (only needed for local SQLEXPRESS)
 }
 
 // Connection pool (reused across requests)
